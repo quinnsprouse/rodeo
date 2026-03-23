@@ -46,6 +46,8 @@
     "vite-tsconfig-paths": "^6.1.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@playwright/test": "^1.58.2",
     "@tanstack/eslint-plugin-query": "^5.95.0",
     "@tanstack/eslint-plugin-router": "^1.161.6",

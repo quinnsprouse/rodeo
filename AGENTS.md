@@ -10,6 +10,19 @@ Agent-ready starter kit: Vite+ + TanStack Start + React 19, with shadcn/ui (Base
 
 1. Plan — 2. Execute — 3. Test — 4. Commit
 
+## Commits
+
+Conventional Commits enforced by commitlint. Format: `type(scope): description`
+
+Types: `feat`, `fix`, `refactor`, `chore`, `docs`, `test`, `style`, `perf`, `ci`, `build`
+
+```
+feat(auth): add login page
+fix(snippet): prevent clipboard error on SSR
+refactor(routes): extract layout into shared component
+chore(deps): update tanstack packages
+```
+
 ## Progressive Disclosure
 
 Open these only when relevant:
