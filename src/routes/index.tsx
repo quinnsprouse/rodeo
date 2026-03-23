@@ -18,12 +18,12 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
   {
     icon: Twotone.CancelCircleIcon,
     title: "No useEffect",
-    desc: "Banned via lint rule. Agents and developers use useMountEffect for mount-only sync — no race conditions, no infinite loops, no implicit control flow.",
+    desc: "Banned via lint rule. Agents and developers use useMountEffect for mount-only sync\u2009\u2014\u2009no race conditions, no infinite loops, no implicit control flow.",
   },
   {
     icon: Twotone.AiBookIcon,
     title: "Progressive agent docs",
-    desc: "AGENTS.md is 15 lines. Detailed guidance lives in docs/agents/ and loads only when relevant — keeping context windows small and agents focused.",
+    desc: "AGENTS.md is 15 lines. Detailed guidance lives in docs/agents/ and loads only when relevant\u2009\u2014\u2009keeping context windows small and agents focused.",
   },
   {
     icon: Twotone.Shield01Icon,
@@ -135,7 +135,7 @@ function Home() {
 
             {/* Headline */}
             <m.h1
-              className="text-[clamp(2.25rem,6vw,3.5rem)] leading-[1.05] font-bold tracking-[-0.04em] text-foreground"
+              className="text-[clamp(2.25rem,6vw,3.5rem)] leading-[1.05] font-bold tracking-[-0.04em] text-balance text-foreground"
               initial={skip ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
@@ -148,13 +148,14 @@ function Home() {
 
             {/* Description */}
             <m.p
-              className="mt-4 max-w-sm text-[15px] leading-[1.65] text-muted-foreground"
+              className="mt-4 max-w-sm text-[15px] leading-[1.65] text-pretty text-muted-foreground"
               initial={skip ? false : { opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.16, ease: [0.25, 0.46, 0.45, 0.94] }}
             >
-              A full-stack React starter with guardrails that keep AI agents — and developers —
-              writing correct code by default.
+              A full-stack React starter with guardrails that keep AI
+              agents&#x2009;&#x2014;&#x2009;and developers&#x2009;&#x2014;&#x2009;writing correct
+              code by default.
             </m.p>
 
             {/* Actions */}
@@ -180,7 +181,7 @@ function Home() {
                   GitHub
                   <Icon
                     icon={ArrowRight01Icon}
-                    className="size-3 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100"
+                    className="size-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-150 group-hover:translate-x-0 group-hover:opacity-100"
                     aria-hidden="true"
                   />
                 </a>
@@ -227,7 +228,9 @@ function Home() {
                       {f.title}
                     </h3>
                   </div>
-                  <p className="text-[13px] leading-[1.7] text-muted-foreground/70">{f.desc}</p>
+                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground/70">
+                    {f.desc}
+                  </p>
                 </m.div>
               ))}
             </div>
