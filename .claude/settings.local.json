@@ -34,7 +34,7 @@
       "Bash(ls*)",
       "Bash(cat*)",
       "Bash(mkdir*)",
-      "Bash(rm -f*)",
+
       "Bash(chmod*)",
       "Bash(which*)",
       "Bash(lsof*)",
