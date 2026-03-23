@@ -216,7 +216,7 @@ function Home() {
         {/* Features — scroll to see */}
         <section className="border-t border-border/40">
           <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
-            <p className="mb-14 text-sm text-muted-foreground/50">What ships out of the box</p>
+            <p className="mb-14 text-sm text-muted-foreground">What ships out of the box</p>
 
             <div className="space-y-12">
               {features.map((f) => (
@@ -228,11 +228,11 @@ function Home() {
                       strokeWidth={1.75}
                       aria-hidden="true"
                     />
-                    <h3 className="text-[15px] font-semibold tracking-tight text-foreground">
+                    <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
                       {f.title}
-                    </h3>
+                    </h2>
                   </div>
-                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground/70">
+                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground">
                     {f.desc}
                   </p>
                 </div>
@@ -250,7 +250,7 @@ function Home() {
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2 text-[11px] text-muted-foreground/40 transition-colors hover:text-foreground"
+                className="py-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               >
                 {s.name}
                 {i < stack.length - 1 && (

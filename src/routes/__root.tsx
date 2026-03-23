@@ -20,7 +20,12 @@ export const Route = createRootRoute({
         content: "#ffffff",
       },
       {
-        title: "Vite+ + shadcn/ui",
+        title: "Vite+ Starter — Agent-Ready React with TanStack Start",
+      },
+      {
+        name: "description",
+        content:
+          "A full-stack React starter with agent guardrails built in. Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
       },
     ],
     links: [
@@ -59,7 +64,7 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <HeadContent />
       </head>
       <body>
-        {children}
+        <main>{children}</main>
         <Analytics />
         <Scripts />
       </body>
