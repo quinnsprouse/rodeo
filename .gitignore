@@ -13,6 +13,7 @@ dist-ssr
 .output
 src/routeTree.gen.ts
 *.local
+!.claude/settings.local.json
 coverage
 test-results
 playwright-report
