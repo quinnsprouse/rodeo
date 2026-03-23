@@ -1,5 +1,6 @@
 {
   "includeCoAuthoredBy": false,
+  "includeGitInstructions": false,
   "permissions": {
     "allow": [
       "Bash(vp dev*)",
@@ -49,6 +50,16 @@
       "WebFetch(domain:nitro.build)",
       "WebFetch(domain:oxc.rs)",
       "WebFetch(domain:github.com)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git clean -f*)",
+      "Bash(npm publish*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(.npmrc)"
     ]
   },
   "hooks": {
