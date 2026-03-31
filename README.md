@@ -56,7 +56,6 @@ Git hooks enforce quality:
 - [shadcn/ui](https://ui.shadcn.com) on Base UI primitives
 - Tailwind CSS v4
 - [Motion](https://motion.dev) (`motion/react`)
-- [Paper Shaders](https://shaders.paper.design) (background effects)
 - Vitest + Testing Library + Playwright
 
 ## Key Conventions
