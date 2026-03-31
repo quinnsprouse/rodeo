@@ -220,21 +220,16 @@ function Home() {
 
         {/* Footer */}
         <footer className="border-t border-border/40">
-          <div className="mx-auto flex w-full max-w-2xl items-center gap-x-1.5 px-6 py-8 sm:px-10">
-            {stack.map((s, i) => (
+          <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-6 sm:gap-x-5 sm:px-10">
+            {stack.map((s) => (
               <a
                 key={s.name}
                 href={s.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2 text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                className="py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 {s.name}
-                {i < stack.length - 1 && (
-                  <span className="ml-1.5 text-muted-foreground/25" aria-hidden="true">
-                    /
-                  </span>
-                )}
               </a>
             ))}
           </div>
