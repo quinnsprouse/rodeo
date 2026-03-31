@@ -61,7 +61,9 @@
       "Bash(npm uninstall:*)",
       "Bash(unzip -o /tmp/yellowtail.zip -d /tmp/yellowtail)",
       "Bash(node:*)",
-      "WebFetch(domain:penflow.cretu.dev)"
+      "WebFetch(domain:penflow.cretu.dev)",
+      "Bash(npx vercel:*)",
+      "Bash(git push:*)"
     ],
     "ask": [
       "Bash(rm -rf *)",
