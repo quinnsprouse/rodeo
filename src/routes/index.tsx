@@ -2,7 +2,7 @@ import type { IconSvgElement } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Calligraph } from "calligraph";
 import { LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
-import { Penflow } from "penflow/react";
+import type { ComponentType } from "react";
 import { useState } from "react";
 
 import { Icon, Twotone, Github01Icon, ArrowRight01Icon } from "@/components/icons";
@@ -57,6 +57,19 @@ const stack = [
   { name: "Nitro", href: "https://nitro.build" },
 ];
 
+// typr.js (penflow dep) references `window` at import time — dynamic import avoids SSR crash
+function useClientPenflow() {
+  const [Comp, setComp] = useState<ComponentType<Record<string, unknown>> | null>(null);
+
+  useMountEffect(() => {
+    void import("penflow/react").then((m) =>
+      setComp(() => m.Penflow as ComponentType<Record<string, unknown>>),
+    );
+  });
+
+  return Comp;
+}
+
 function useRotatingWord(words: string[], intervalMs = 2000) {
   const [index, setIndex] = useState(0);
 
@@ -89,6 +102,7 @@ function Home() {
   const prefersReducedMotion = useReducedMotion();
   const skip = !!prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
+  const Penflow = useClientPenflow();
 
   return (
     <LazyMotion features={domAnimation}>
@@ -98,16 +112,22 @@ function Home() {
           <div className="mx-auto w-full max-w-2xl">
             {/* Brand */}
             <div className="-ml-12">
-              <Penflow
-                text="Rodeo"
-                fontUrl="/fonts/Yellowtail-Regular.ttf"
-                color="#863bff"
-                size={128}
-                brushScale={0.12}
-                quality="calm"
-                seed="rodeo"
-                animate={!skip}
-              />
+              {Penflow ? (
+                <Penflow
+                  text="Rodeo"
+                  fontUrl="/fonts/Yellowtail-Regular.ttf"
+                  color="#863bff"
+                  size={128}
+                  brushScale={0.12}
+                  quality="calm"
+                  seed="rodeo"
+                  animate={!skip}
+                />
+              ) : (
+                <span className="font-[Yellowtail] text-[128px] leading-[1] text-[#863bff]">
+                  Rodeo
+                </span>
+              )}
             </div>
 
             {/* Tagline */}
