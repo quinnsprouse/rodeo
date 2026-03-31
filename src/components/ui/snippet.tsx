@@ -69,7 +69,7 @@ export function Snippet({ text, prompt = true, className, onCopy }: SnippetProps
       <button
         type="button"
         onClick={handleCopy}
-        className="relative flex-none p-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none"
+        className="relative flex-none rounded-md p-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-[#863bff]/50 focus-visible:outline-none"
         aria-label={copied ? "Copied" : "Copy to clipboard"}
       >
         <div className="relative flex size-5 items-center justify-center">

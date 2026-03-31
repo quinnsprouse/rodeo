@@ -76,7 +76,13 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         <ScriptOnce>
           {`var l=document.createElement('link');l.rel='stylesheet';l.href='${GOOGLE_FONTS_URL}';document.head.appendChild(l);`}
         </ScriptOnce>
-        <main>{children}</main>
+        <a
+          href="#main"
+          className="fixed top-0 left-0 z-50 -translate-y-full bg-[#863bff] px-4 py-2 text-sm font-medium text-white transition-transform focus:translate-y-0"
+        >
+          Skip to content
+        </a>
+        <main id="main">{children}</main>
         <Analytics />
         <Scripts />
       </body>
