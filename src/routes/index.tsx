@@ -101,21 +101,9 @@ function useRotatingWord(words: string[], intervalMs = 2000) {
   return words[index];
 }
 
-function useSkipIntro() {
-  const [seen] = useState(() => {
-    if (typeof sessionStorage === "undefined") return false;
-    const key = "rodeo:intro";
-    const hasSeen = sessionStorage.getItem(key) === "1";
-    if (!hasSeen) sessionStorage.setItem(key, "1");
-    return hasSeen;
-  });
-  return seen;
-}
-
 function Home() {
   const prefersReducedMotion = useReducedMotion();
-  const hasSeenIntro = useSkipIntro();
-  const skip = !!prefersReducedMotion || hasSeenIntro;
+  const skip = !!prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
   const Penflow = useClientPenflow();
 
