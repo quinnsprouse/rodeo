@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Calligraph } from "calligraph";
 import { LazyMotion, m, useReducedMotion } from "motion/react";
 import type { ComponentType } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Icon, Twotone, Github01Icon, ArrowRight01Icon } from "@/components/icons";
 import { Snippet } from "@/components/ui/snippet";
@@ -60,6 +60,50 @@ const stack = [
   { name: "Nitro", href: "https://nitro.build" },
 ];
 
+// Polls the Penflow canvas to detect when the drawing animation finishes.
+// Samples a horizontal strip of alpha values; once they stabilise for a few
+// consecutive reads the animation is considered complete.
+function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>) {
+  const [done, setDone] = useState(false);
+
+  useMountEffect(() => {
+    let id: number;
+    let prev = 0;
+    let stable = 0;
+    let started = false;
+
+    function check() {
+      const canvas = ref.current?.querySelector("canvas");
+      if (!canvas) {
+        id = window.setTimeout(check, 50);
+        return;
+      }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const row = ctx.getImageData(0, Math.floor(canvas.height * 0.5), canvas.width, 1).data;
+      let sum = 0;
+      for (let i = 3; i < row.length; i += 4) sum += row[i];
+
+      if (sum > 0) started = true;
+      if (started && sum === prev) stable++;
+      else stable = 0;
+      prev = sum;
+
+      if (stable >= 3) {
+        setDone(true);
+        return;
+      }
+      id = window.setTimeout(check, 80);
+    }
+
+    id = window.setTimeout(check, 100);
+    return () => window.clearTimeout(id);
+  });
+
+  return done;
+}
+
 // typr.js (penflow dep) references `window` at import time — dynamic import avoids SSR crash
 function useClientPenflow() {
   const [Comp, setComp] = useState<ComponentType<Record<string, unknown>> | null>(null);
@@ -106,6 +150,9 @@ function Home() {
   const skip = !!prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
   const Penflow = useClientPenflow();
+  const penflowRef = useRef<HTMLDivElement>(null);
+  const penflowDone = usePenflowComplete(penflowRef);
+  const showContent = skip || penflowDone;
 
   return (
     <LazyMotion features={() => import("motion/react").then((mod) => mod.domAnimation)}>
@@ -114,7 +161,7 @@ function Home() {
         <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
           <div className="mx-auto w-full max-w-2xl">
             {/* Brand */}
-            <div className="-ml-12 h-[172px]">
+            <div ref={penflowRef} className="-ml-12 h-[172px]">
               {Penflow && (
                 <Penflow
                   text="Rodeo"
@@ -133,8 +180,8 @@ function Home() {
             <m.h1
               className="mt-4 text-[clamp(1.5rem,4vw,2.25rem)] leading-[1.2] font-bold tracking-[-0.03em] text-foreground"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.5, ease: EASE_OUT }}
+              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: 0.1, ease: EASE_OUT }}
             >
               Built for{" "}
               <Calligraph as="span" className="text-[#863bff]" animation="smooth" trend={1}>
@@ -146,8 +193,8 @@ function Home() {
             <m.p
               className="mt-3 max-w-sm text-[15px] leading-[1.65] text-pretty text-muted-foreground"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.65, ease: EASE_OUT }}
+              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: 0.25, ease: EASE_OUT }}
             >
               Guardrails that keep AI agents&#x2009;&#x2014;&#x2009;and
               developers&#x2009;&#x2014;&#x2009;writing correct code by default.
@@ -157,8 +204,8 @@ function Home() {
             <m.div
               className="mt-10"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.8, ease: EASE_OUT }}
+              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              transition={{ duration: 0.4, delay: 0.4, ease: EASE_OUT }}
             >
               <Snippet text="npx degit quinnsprouse/rodeo my-app" className="w-full" />
 
