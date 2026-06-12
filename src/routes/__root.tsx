@@ -1,19 +1,15 @@
 /// <reference types="vite/client" />
-import {
-  Outlet,
-  createRootRoute,
-  HeadContent,
-  Scripts,
-  ScriptOnce,
-  Link,
-} from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
 import { Analytics } from "@vercel/analytics/react";
-import type { ReactNode } from "react";
+
+import { RouteErrorComponent } from "@/components/route-error";
+import { RouteNotFoundComponent } from "@/components/route-not-found";
 
 import appCss from "@/styles/app.css?url";
 
 const GOOGLE_FONTS_URL =
   "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500&family=Yellowtail&display=swap";
+const SITE_URL = "https://rodeo-quinnsprouses-projects.vercel.app";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -29,13 +25,17 @@ export const Route = createRootRoute({
       },
       // Open Graph
       { property: "og:type", content: "website" },
+      { property: "og:url", content: SITE_URL },
       { property: "og:title", content: "Rodeo — Wrangle Your AI Agents" },
       {
         property: "og:description",
         content:
           "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
       },
-      { property: "og:image", content: "https://viteplus-shadcn-starter.vercel.app/og-image.png" },
+      {
+        property: "og:image",
+        content: `${SITE_URL}/og-image.png`,
+      },
       // Twitter Card
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Rodeo — Wrangle Your AI Agents" },
@@ -44,9 +44,13 @@ export const Route = createRootRoute({
         content:
           "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
       },
-      { name: "twitter:image", content: "https://viteplus-shadcn-starter.vercel.app/og-image.png" },
+      {
+        name: "twitter:image",
+        content: `${SITE_URL}/og-image.png`,
+      },
     ],
     links: [
+      { rel: "canonical", href: SITE_URL },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -55,19 +59,11 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
-  errorComponent: ErrorComponent,
-  notFoundComponent: NotFoundComponent,
+  errorComponent: RouteErrorComponent,
+  notFoundComponent: RouteNotFoundComponent,
 });
 
 function RootComponent() {
-  return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
-  );
-}
-
-function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="en">
       <head>
@@ -83,48 +79,12 @@ function RootDocument({ children }: Readonly<{ children: ReactNode }>) {
         >
           Skip to content
         </a>
-        <main id="main">{children}</main>
+        <main id="main">
+          <Outlet />
+        </main>
         <Analytics />
         <Scripts />
       </body>
     </html>
-  );
-}
-
-function ErrorComponent({ error }: { error: Error }) {
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Error</p>
-        <h1 className="text-3xl font-semibold text-balance">Something went wrong</h1>
-        <p className="text-pretty text-muted-foreground">{error.message}</p>
-      </div>
-      <Link
-        to="/"
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90"
-      >
-        Back home
-      </Link>
-    </div>
-  );
-}
-
-function NotFoundComponent() {
-  return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">404</p>
-        <h1 className="text-3xl font-semibold text-balance">Page not found</h1>
-        <p className="text-pretty text-muted-foreground">
-          The page you are looking for either moved or does not exist.
-        </p>
-      </div>
-      <Link
-        to="/"
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90"
-      >
-        Back home
-      </Link>
-    </div>
   );
 }

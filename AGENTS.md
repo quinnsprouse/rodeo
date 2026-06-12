@@ -3,7 +3,8 @@ Agent-ready starter kit: Vite+ + TanStack Start + React 19, with shadcn/ui (Base
 - Toolchain: `vp` (Vite+ CLI) — wraps Vite 8, oxlint, oxfmt, vitest, Rolldown
 - Quality gate: `npm run check` (fmt + lint + typecheck + tests)
 - Push gate: `npm run check:push` (check + Playwright e2e)
-- Dev: `vp dev` (localhost:3000)
+- React health: `npm run doctor` (react-doctor scan — security, performance, correctness, architecture; also runs on staged files at commit and in CI)
+- Dev: `npm run dev` (localhost:3000)
 - Build: `npm run build`
 
 ## Workflow
