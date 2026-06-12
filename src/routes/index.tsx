@@ -15,6 +15,7 @@ import {
   Shield01Icon,
   Target01Icon,
 } from "@/components/icons";
+import { TerminalDemo } from "@/components/terminal-demo";
 import { Snippet } from "@/components/ui/snippet";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
@@ -47,7 +48,7 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
   {
     icon: Bug01Icon,
     title: "Zero-config linting",
-    desc: "oxlint with react, react-perf, jsx-a11y, and TypeScript plugins. TanStack Router and Query rules via ESLint bridge. Type-aware, no setup needed.",
+    desc: "oxlint with ten plugins — react, jsx-a11y, unicorn, node, and more — plus React Doctor health scans. Type-aware, no setup needed.",
   },
   {
     icon: MagicWand01Icon,
@@ -58,6 +59,21 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
     icon: Target01Icon,
     title: "Dead code detection",
     desc: "Knip catches unused exports, dependencies, and files. One command to keep the codebase lean as it grows.",
+  },
+];
+
+const loop: { when: string; what: string }[] = [
+  {
+    when: "on write",
+    what: "Claude hooks run oxfmt and the typechecker after every file edit. Mistakes surface in seconds, not at code review.",
+  },
+  {
+    when: "on commit",
+    what: "Staged files are formatted, linted type-aware, and scanned by React Doctor. Bad code never enters history.",
+  },
+  {
+    when: "on push",
+    what: "The full gate runs: format check, lint, types, unit tests, then Playwright end-to-end. What lands on main is green.",
   },
 ];
 
@@ -261,13 +277,14 @@ function Home() {
 
             {/* Description */}
             <m.p
-              className="mt-3 max-w-sm text-[15px] leading-[1.65] text-pretty text-muted-foreground"
+              className="mt-3 max-w-md text-[15px] leading-[1.65] text-pretty text-muted-foreground"
               initial={skip ? false : { opacity: 0, y: 16 }}
               animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
               transition={{ duration: 0.4, delay: 0.25, ease: EASE_OUT }}
             >
-              Guardrails that keep AI agents&#x2009;&#x2014;&#x2009;and
-              developers&#x2009;&#x2014;&#x2009;writing correct code by default.
+              Agents move fast and break things. Rodeo catches it before it
+              ships&#x2009;&#x2014;&#x2009;every edit formatted, every commit linted, every push
+              tested end-to-end. Free and open source.
             </m.p>
 
             {/* Actions */}
@@ -277,7 +294,7 @@ function Home() {
               animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
               transition={{ duration: 0.4, delay: 0.4, ease: EASE_OUT }}
             >
-              <Snippet text="npx degit quinnsprouse/rodeo my-app" className="w-full" />
+              <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
 
               <div className="mt-5 flex items-center gap-5">
                 <a
@@ -304,6 +321,33 @@ function Home() {
                 </a>
               </div>
             </m.div>
+          </div>
+        </section>
+
+        {/* The feedback loop — terminal replay + how it works behind the scenes */}
+        <section className="border-t border-border/40">
+          <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
+            <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
+            <h2 className="max-w-md text-xl leading-snug font-bold tracking-[-0.02em] text-foreground">
+              Your agent gets caught before you do.
+            </h2>
+            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-pretty text-muted-foreground">
+              Every mistake is caught by the layer closest to it, so feedback arrives while the
+              agent still has context to fix it.
+            </p>
+
+            <TerminalDemo className="mt-10" />
+
+            <div className="mt-12 space-y-8">
+              {loop.map((step) => (
+                <div key={step.when} className="grid gap-2 sm:grid-cols-[200px_1fr] sm:gap-8">
+                  <p className="font-mono text-[13px] font-medium text-[#863bff]">{step.when}</p>
+                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground">
+                    {step.what}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
