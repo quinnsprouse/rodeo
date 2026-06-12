@@ -47,7 +47,7 @@
 
 ## Icons
 
-- Import from `@/components/icons` which re-exports HugeIcons Pro.
+- Import from `@/components/icons` which wraps Hugeicons Free icons.
 - Use the `Icon` wrapper for consistent size/stroke.
 - Pattern: `import { Icon, SomeIcon } from "@/components/icons"`.
 

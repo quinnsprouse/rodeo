@@ -4,12 +4,11 @@
 
 Run in order for non-trivial changes:
 
-1. `vp check` (format + lint + typecheck)
-2. `vp test run` (unit tests)
-3. `npm run test:e2e` (Playwright smoke) — for UI changes
-4. `vp build` — for release-critical changes
+1. `npm run check` (format + lint + typecheck + unit tests)
+2. `npm run test:e2e` (Playwright smoke) — for UI changes
+3. `npm run build` — for release-critical changes
 
-`npm run check` = steps 1-2. `npm run check:push` = steps 1-3.
+`npm run check:push` = check + Playwright smoke.
 
 ## Test Scope
 
@@ -24,7 +23,7 @@ Don't test what static analysis catches. Oxlint + TypeScript own type errors, un
 
 ## Unit Tests
 
-- Vitest via `vp test` with jsdom + Testing Library + user-event.
+- Vitest via `npm run test` with jsdom + Testing Library + user-event.
 - Setup in `src/test/setup.ts` runs `cleanup()` after each test.
 - Coverage: `npm run test:coverage` (v8, excludes generated files).
 

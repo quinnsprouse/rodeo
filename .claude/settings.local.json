@@ -63,7 +63,13 @@
       "Bash(node:*)",
       "WebFetch(domain:penflow.cretu.dev)",
       "Bash(npx vercel:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__plugin_context7_context7__resolve-library-id",
+      "mcp__plugin_context7_context7__query-docs",
+      "Bash(git reset:*)",
+      "Bash(git -C /Users/quinnsprouse/Developer/rodeo status --short)",
+      "Bash(git -C /Users/quinnsprouse/Developer/rodeo log --oneline -5)",
+      "Bash(ln -s ../../.agents/skills/react-doctor .claude/skills/react-doctor)"
     ],
     "ask": [
       "Bash(rm -rf *)",

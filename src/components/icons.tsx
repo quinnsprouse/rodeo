@@ -1,3 +1,15 @@
+import {
+  AiBookIcon,
+  ArrowRight01Icon,
+  Bug01Icon,
+  CancelCircleIcon,
+  Copy01Icon,
+  Github01Icon,
+  MagicWand01Icon,
+  Shield01Icon,
+  Target01Icon,
+  Tick02Icon,
+} from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type HugeiconsIconProps, type IconSvgElement } from "@hugeicons/react";
 
 interface IconProps extends Omit<HugeiconsIconProps, "icon"> {
@@ -17,6 +29,15 @@ export function Icon({ icon, className, size = 16, strokeWidth = 1.5, ...props }
   );
 }
 
-// Re-export icons from Pro packages
-export * from "@hugeicons-pro/core-stroke-rounded";
-export * as Twotone from "@hugeicons-pro/core-twotone-rounded";
+export {
+  AiBookIcon,
+  ArrowRight01Icon,
+  Bug01Icon,
+  CancelCircleIcon,
+  Copy01Icon,
+  Github01Icon,
+  MagicWand01Icon,
+  Shield01Icon,
+  Target01Icon,
+  Tick02Icon,
+};

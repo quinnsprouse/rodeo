@@ -17,6 +17,7 @@ dist-ssr
 coverage
 test-results
 playwright-report
+og-screenshot.mjs
 
 # Environment / secrets
 .env

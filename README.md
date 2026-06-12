@@ -1,6 +1,6 @@
 # Rodeo 🤠
 
-[viteplus-shadcn-starter.vercel.app](https://viteplus-shadcn-starter.vercel.app)
+[rodeo-quinnsprouses-projects.vercel.app](https://rodeo-quinnsprouses-projects.vercel.app)
 
 Wrangle your agents. Steer your stack. Ship with confidence.
 
@@ -11,10 +11,8 @@ An opinionated starter kit for agentic workflows — built on Vite+, TanStack St
 ```bash
 npx degit quinnsprouse/rodeo my-app
 cd my-app
-cp .npmrc.example .npmrc
-# add your HugeIcons Pro token to .npmrc
 npm install
-vp dev
+npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -22,13 +20,16 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Daily Commands
 
 ```bash
-vp dev              # local dev server
-vp check            # format + lint + typecheck (one command)
-vp check --fix      # auto-fix format + lint issues
-vp test run         # unit tests
-vp test watch       # test watch mode
+npm run dev         # local dev server
+npm run check       # format + lint + typecheck + unit tests
+npm run lint        # lint only
+npm run lint:fix    # auto-fix lint issues
+npm run fmt         # format files
+npm run fmt:check   # check formatting
+npm run test        # unit tests
+npm run test:watch  # test watch mode
+npm run setup:skills # optional: install recommended agent skills
 npm run test:e2e    # Playwright smoke tests
-npm run check       # vp check + tests
 npm run check:push  # check + e2e (same as pre-push hook)
 npm run knip        # dead code detection
 npm run build       # production build
@@ -38,8 +39,8 @@ npm run build       # production build
 
 For every non-trivial change:
 
-1. `vp check` (format + lint + typecheck)
-2. `vp test run` (unit tests)
+1. `npm run check` (format + lint + typecheck + unit tests)
+2. `npm run test:e2e` (Playwright smoke) for UI changes
 3. `npm run build` (before release/push)
 
 Git hooks enforce quality:
@@ -56,6 +57,7 @@ Git hooks enforce quality:
 - [shadcn/ui](https://ui.shadcn.com) on Base UI primitives
 - Tailwind CSS v4
 - [Motion](https://motion.dev) (`motion/react`)
+- [Hugeicons Free](https://hugeicons.com) icons
 - Vitest + Testing Library + Playwright
 
 ## Key Conventions
@@ -64,16 +66,11 @@ Git hooks enforce quality:
 - **Derive state inline** — don't sync state with effects.
 - **Use route loaders** — don't fetch in effects.
 
-## HugeIcons Pro Setup
+## Optional Agent Skills
 
-This repo uses `@hugeicons-pro/core-stroke-rounded`.
-
-1. Get a token from [hugeicons.com](https://hugeicons.com).
-2. `cp .npmrc.example .npmrc`
-3. Replace `YOUR_TOKEN_HERE` in `.npmrc`.
-4. `npm install`
-
-`.npmrc` is gitignored. Never commit tokens.
+Run `npm run setup:skills` after install to restore the recommended skills from `skills-lock.json`.
+The default install does not fetch skills automatically, so template installs and Vercel builds stay
+fast and predictable.
 
 ## Project Layout
 
@@ -86,6 +83,7 @@ src/
   styles/       # global styles + theme
 e2e/            # Playwright smoke tests
 docs/agents/    # progressive disclosure agent docs
+scripts/         # local setup scripts
 ```
 
 ## AI Agent Docs

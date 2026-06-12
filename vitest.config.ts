@@ -1,9 +1,16 @@
+import { fileURLToPath, URL } from "node:url";
+
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite-plus";
-import tsConfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-  plugins: [tsConfigPaths(), react()],
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
+    },
+    tsconfigPaths: true,
+  },
+  plugins: [react()],
   test: {
     environment: "jsdom",
     globals: true,

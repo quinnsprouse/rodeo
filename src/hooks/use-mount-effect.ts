@@ -7,8 +7,7 @@ import { useEffect } from "react";
  *
  * @see docs/agents/REACT_PATTERNS.md — Rule: no direct useEffect
  */
-// oxlint-disable-next-line react-hooks/exhaustive-deps
 export function useMountEffect(effect: () => void | (() => void)) {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // oxlint-disable-next-line react-hooks-js/exhaustive-deps -- this hook intentionally runs once.
   useEffect(effect, []);
 }
