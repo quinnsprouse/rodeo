@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils";
 interface SnippetProps {
   text: string | string[];
   prompt?: boolean;
+  /** Sweep a highlight through the command text to draw the eye */
+  shimmer?: boolean;
   className?: string;
   onCopy?: () => void;
 }
 
-export function Snippet({ text, prompt = true, className, onCopy }: SnippetProps) {
+export function Snippet({ text, prompt = true, shimmer = false, className, onCopy }: SnippetProps) {
   const [copied, setCopied] = useState(false);
   const timeoutRef = useRef<number | null>(null);
   const lines = Array.isArray(text) ? text : [text];
@@ -61,7 +63,13 @@ export function Snippet({ text, prompt = true, className, onCopy }: SnippetProps
                 "before:mr-2.5 before:text-muted-foreground/50 before:content-['$'] before:select-none",
             )}
           >
-            {line}
+            {shimmer ? (
+              <span className="shimmer-text" data-text={line}>
+                {line}
+              </span>
+            ) : (
+              line
+            )}
           </code>
         ))}
       </div>
