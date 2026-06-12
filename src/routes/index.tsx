@@ -1,11 +1,20 @@
 import type { IconSvgElement } from "@hugeicons/react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Calligraph } from "calligraph";
-import { LazyMotion, m, useReducedMotion } from "motion/react";
-import type { ComponentType } from "react";
+import { LazyMotion, m } from "motion/react";
 import { useRef, useState } from "react";
 
-import { Icon, Twotone, Github01Icon, ArrowRight01Icon } from "@/components/icons";
+import {
+  AiBookIcon,
+  ArrowRight01Icon,
+  Bug01Icon,
+  CancelCircleIcon,
+  Github01Icon,
+  Icon,
+  MagicWand01Icon,
+  Shield01Icon,
+  Target01Icon,
+} from "@/components/icons";
 import { Snippet } from "@/components/ui/snippet";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 
@@ -20,32 +29,32 @@ const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
 
 const features: { icon: IconSvgElement; title: string; desc: string }[] = [
   {
-    icon: Twotone.CancelCircleIcon,
+    icon: CancelCircleIcon,
     title: "No useEffect",
     desc: "Banned via lint rule. Agents and developers use useMountEffect for mount-only sync\u2009\u2014\u2009no race conditions, no infinite loops, no implicit control flow.",
   },
   {
-    icon: Twotone.AiBookIcon,
+    icon: AiBookIcon,
     title: "Progressive agent docs",
     desc: "AGENTS.md is 15 lines. Detailed guidance lives in docs/agents/ and loads only when relevant\u2009\u2014\u2009keeping context windows small and agents focused.",
   },
   {
-    icon: Twotone.Shield01Icon,
+    icon: Shield01Icon,
     title: "Three-layer quality gate",
     desc: "Pre-commit formats and lints staged files. Pre-push runs the full check suite plus Playwright e2e. Commitlint enforces Conventional Commits.",
   },
   {
-    icon: Twotone.Bug01Icon,
+    icon: Bug01Icon,
     title: "Zero-config linting",
     desc: "oxlint with react, react-perf, jsx-a11y, and TypeScript plugins. TanStack Router and Query rules via ESLint bridge. Type-aware, no setup needed.",
   },
   {
-    icon: Twotone.MagicWand01Icon,
+    icon: MagicWand01Icon,
     title: "Auto-format on every edit",
     desc: "Claude hooks run oxfmt and typecheck after every file write. Import sorting and Tailwind class sorting happen automatically\u2009\u2014\u2009agents never ship unformatted code.",
   },
   {
-    icon: Twotone.Target01Icon,
+    icon: Target01Icon,
     title: "Dead code detection",
     desc: "Knip catches unused exports, dependencies, and files. One command to keep the codebase lean as it grows.",
   },
@@ -63,11 +72,17 @@ const stack = [
 // Polls the Penflow canvas to detect when the drawing animation finishes.
 // Samples a horizontal strip of alpha values; once they stabilise for a few
 // consecutive reads the animation is considered complete.
-function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>) {
-  const [done, setDone] = useState(false);
+function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>, disabled: boolean) {
+  const [done, setDone] = useState(disabled);
 
   useMountEffect(() => {
+    if (disabled) {
+      setDone(true);
+      return undefined;
+    }
+
     let id: number;
+    let fallbackId: number;
     let prev = 0;
     let stable = 0;
     let started = false;
@@ -91,6 +106,7 @@ function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>) {
       prev = sum;
 
       if (stable >= 3) {
+        window.clearTimeout(fallbackId);
         setDone(true);
         return;
       }
@@ -98,23 +114,41 @@ function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>) {
     }
 
     id = window.setTimeout(check, 100);
-    return () => window.clearTimeout(id);
+    fallbackId = window.setTimeout(() => setDone(true), 3200);
+    return () => {
+      window.clearTimeout(id);
+      window.clearTimeout(fallbackId);
+    };
   });
 
   return done;
 }
 
 // typr.js (penflow dep) references `window` at import time — dynamic import avoids SSR crash
+type PenflowComponent = (typeof import("penflow/react"))["Penflow"];
+
 function useClientPenflow() {
-  const [Comp, setComp] = useState<ComponentType<Record<string, unknown>> | null>(null);
+  const [Comp, setComp] = useState<PenflowComponent | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useMountEffect(() => {
-    void import("penflow/react").then((m) =>
-      setComp(() => m.Penflow as ComponentType<Record<string, unknown>>),
-    );
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const mod = await import("penflow/react");
+        if (!cancelled) setComp(() => mod.Penflow);
+      } catch {
+        if (!cancelled) setFailed(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   });
 
-  return Comp;
+  return { Comp, failed };
 }
 
 function useRotatingWord(words: string[], intervalMs = 2000) {
@@ -145,14 +179,29 @@ function useRotatingWord(words: string[], intervalMs = 2000) {
   return words[index];
 }
 
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useMountEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  });
+
+  return reduced;
+}
+
 function Home() {
-  const prefersReducedMotion = useReducedMotion();
-  const skip = !!prefersReducedMotion;
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const skip = prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
-  const Penflow = useClientPenflow();
+  const { Comp: Penflow, failed: penflowFailed } = useClientPenflow();
   const penflowRef = useRef<HTMLDivElement>(null);
-  const penflowDone = usePenflowComplete(penflowRef);
-  const showContent = skip || penflowDone;
+  const penflowDone = usePenflowComplete(penflowRef, skip || penflowFailed);
+  const showContent = skip || penflowFailed || penflowDone;
 
   return (
     <LazyMotion features={() => import("motion/react").then((mod) => mod.domAnimation)}>
@@ -162,6 +211,11 @@ function Home() {
           <div className="mx-auto w-full max-w-2xl">
             {/* Brand */}
             <div ref={penflowRef} className="-ml-12 h-[172px]">
+              {!Penflow && (
+                <div className="pt-3 pl-12 font-[Yellowtail] text-[128px] leading-none text-[#863bff]">
+                  Rodeo
+                </div>
+              )}
               {Penflow && (
                 <Penflow
                   text="Rodeo"
