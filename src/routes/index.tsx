@@ -17,6 +17,7 @@ import {
 } from "@/components/icons";
 import { Snippet } from "@/components/ui/snippet";
 import { useMountEffect } from "@/hooks/use-mount-effect";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -133,11 +134,17 @@ function useClientPenflow() {
 
   useMountEffect(() => {
     let cancelled = false;
+    // Treat a hung import as a failure so the brand never stays blank
+    const timeoutId = window.setTimeout(() => setFailed(true), 4000);
 
     void (async () => {
       try {
         const mod = await import("penflow/react");
-        if (!cancelled) setComp(() => mod.Penflow);
+        if (!cancelled) {
+          window.clearTimeout(timeoutId);
+          setFailed(false);
+          setComp(() => mod.Penflow);
+        }
       } catch {
         if (!cancelled) setFailed(true);
       }
@@ -145,6 +152,7 @@ function useClientPenflow() {
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
   });
 
@@ -211,8 +219,16 @@ function Home() {
           <div className="mx-auto w-full max-w-2xl">
             {/* Brand */}
             <div ref={penflowRef} className="-ml-12 h-[172px]">
+              {/* Hidden until Penflow fails so the static text never flashes
+                  before the canvas animation; stays in the DOM for SSR,
+                  screen readers, and search engines */}
               {!Penflow && (
-                <div className="pt-3 pl-12 font-[Yellowtail] text-[128px] leading-none text-[#863bff]">
+                <div
+                  className={cn(
+                    "pt-3 pl-12 font-[Yellowtail] text-[128px] leading-none text-[#863bff] transition-opacity duration-300",
+                    penflowFailed ? "opacity-100" : "opacity-0",
+                  )}
+                >
                   Rodeo
                 </div>
               )}
