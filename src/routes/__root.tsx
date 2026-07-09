@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import { Outlet, createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
 import { RouteErrorComponent } from "@/components/route-error";
@@ -24,6 +24,13 @@ export const Route = createRootRoute({
       links: [
         ...siteHead.links,
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        {
+          rel: "preload",
+          href: "/fonts/Yellowtail-Regular.ttf",
+          as: "font",
+          type: "font/ttf",
+          crossOrigin: "anonymous",
+        },
         { rel: "preconnect", href: "https://fonts.googleapis.com" },
         { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
         { rel: "preload", href: GOOGLE_FONTS_URL, as: "style" },
@@ -48,9 +55,6 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <ScriptOnce>
-          {`var l=document.createElement('link');l.rel='stylesheet';l.href='${GOOGLE_FONTS_URL}';document.head.appendChild(l);`}
-        </ScriptOnce>
         <a
           href="#main"
           className="fixed top-0 left-0 z-50 -translate-y-full bg-[#863bff] px-4 py-2 text-sm font-medium text-white transition-transform focus:translate-y-0"

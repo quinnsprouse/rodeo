@@ -39,6 +39,7 @@
     "calligraph": "^1.4.1",
     "clsx": "^2.1.1",
     "motion": "^12.40.0",
+    "penflow": "^0.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0",
