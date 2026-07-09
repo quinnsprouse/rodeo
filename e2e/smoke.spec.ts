@@ -19,7 +19,10 @@ test("home page renders and copy flow works", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/");
 
-  await expect(page.getByText("Rodeo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Rodeo" })).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => document.fonts.check('128px "Yellowtail"')))
+    .toBe(true);
   await expect(page.getByLabel("agents.")).toBeVisible();
   await expect(page.getByRole("link", { name: /github/i })).toBeVisible();
   await expect(page.getByText(installCommand)).toBeVisible();
@@ -50,7 +53,7 @@ test("home page fits on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await expect(page.getByText("Rodeo", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Rodeo" })).toBeVisible();
   await expect(page.getByText(installCommand)).toBeVisible();
 
   const hasHorizontalOverflow = await page.evaluate(
