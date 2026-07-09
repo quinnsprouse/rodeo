@@ -31,3 +31,7 @@
 - TanStack Start SSR is automatic via `tanstackStart()` Vite plugin.
 - Production: `node .output/server/index.mjs`.
 - URL should always reflect application state — use search params, not hidden state.
+
+## Executable Example
+
+See `docs/agents/FULL_STACK_EXAMPLE.md` for the homepage's tested search state → loader dependency → server function → rendered result → error UI flow. Copy that vertical shape before inventing a new data-loading pattern.

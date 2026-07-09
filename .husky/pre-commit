@@ -1,5 +1,0 @@
-vp staged
-# Advisory React health scan of staged files — surfaces regressions without blocking the commit
-npx --no -- react-doctor --staged --blocking warning || {
-  echo "React Doctor found staged regressions. Run 'npm run doctor' to inspect and fix." >&2
-}

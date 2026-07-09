@@ -46,17 +46,5 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
 
-      - name: Check
-        run: npm run check
-
-      - name: Build
-        run: npm run build
-
-      - name: E2E
-        run: npm run test:e2e
-
-      - name: Dead code
-        run: npm run knip -- --reporter compact
-
-      - name: Audit
-        run: npm audit --audit-level=high
+      - name: Verify starter contract
+        run: npm run check:ci

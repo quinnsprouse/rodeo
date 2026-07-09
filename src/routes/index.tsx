@@ -1,5 +1,6 @@
 import type { IconSvgElement } from "@hugeicons/react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { Calligraph } from "calligraph";
 import { LazyMotion, m } from "motion/react";
 import { useRef, useState } from "react";
@@ -18,9 +19,37 @@ import {
 import { TerminalDemo } from "@/components/terminal-demo";
 import { Snippet } from "@/components/ui/snippet";
 import { useMountEffect } from "@/hooks/use-mount-effect";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { resolveStarterStatus, validateStarterStatusInput } from "@/lib/starter-status";
 import { cn } from "@/lib/utils";
 
+type DemoSearch = {
+  demo?: "error";
+};
+
+function validateDemoSearch(search: Record<string, unknown>): DemoSearch {
+  return search.demo === "error" ? { demo: "error" } : {};
+}
+
+const getStarterStatus = createServerFn({ method: "GET" })
+  .validator(validateStarterStatusInput)
+  .handler(({ data }) => resolveStarterStatus(data));
+
+async function loadStarterStatus(fail: boolean) {
+  try {
+    return await getStarterStatus({ data: { fail } });
+  } catch (error) {
+    return {
+      state: "error" as const,
+      message: error instanceof Error ? error.message : "The starter server function failed.",
+    };
+  }
+}
+
 export const Route = createFileRoute("/")({
+  validateSearch: validateDemoSearch,
+  loaderDeps: ({ search }) => ({ fail: search.demo === "error" }),
+  loader: async ({ deps }) => await loadStarterStatus(deps.fail),
   component: Home,
 });
 
@@ -38,12 +67,12 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
   {
     icon: AiBookIcon,
     title: "Progressive agent docs",
-    desc: "AGENTS.md is 15 lines. Detailed guidance lives in docs/agents/ and loads only when relevant\u2009\u2014\u2009keeping context windows small and agents focused.",
+    desc: "AGENTS.md stays a short entry point. Domain language, decisions, and detailed guidance load only when relevant\u2009\u2014\u2009keeping context windows small and agents focused.",
   },
   {
     icon: Shield01Icon,
     title: "Three-layer quality gate",
-    desc: "Pre-commit formats and lints staged files. Pre-push runs the full check suite plus Playwright e2e. Commitlint enforces Conventional Commits.",
+    desc: "Pre-commit checks staged files. Pre-push runs the cached check, build, dead-code, and Playwright graph. CI verifies the clean template journey too.",
   },
   {
     icon: Bug01Icon,
@@ -73,7 +102,7 @@ const loop: { when: string; what: string }[] = [
   },
   {
     when: "on push",
-    what: "The full gate runs: format check, lint, types, unit tests, then Playwright end-to-end. What lands on main is green.",
+    what: "The cached graph runs format, lint, types, unit tests, build, dead-code analysis, then Playwright end-to-end. What lands on main is green.",
   },
 ];
 
@@ -203,22 +232,9 @@ function useRotatingWord(words: string[], intervalMs = 2000) {
   return words[index];
 }
 
-function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(false);
-
-  useMountEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const update = () => setReduced(query.matches);
-
-    update();
-    query.addEventListener("change", update);
-    return () => query.removeEventListener("change", update);
-  });
-
-  return reduced;
-}
-
 function Home() {
+  const starterStatus = Route.useLoaderData();
+  const starterStatusFailed = starterStatus.state === "error";
   const prefersReducedMotion = usePrefersReducedMotion();
   const skip = prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
@@ -337,6 +353,44 @@ function Home() {
             </p>
 
             <TerminalDemo className="mt-10" />
+
+            <div
+              className="mt-8 grid gap-5 rounded-xl border border-border bg-muted/30 p-5 sm:grid-cols-[1fr_auto] sm:items-center"
+              role={starterStatusFailed ? "alert" : "status"}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "size-2 rounded-full",
+                      starterStatusFailed ? "bg-amber-500" : "bg-emerald-500",
+                    )}
+                    aria-hidden="true"
+                  />
+                  <h3 className="text-sm font-semibold tracking-tight text-foreground">
+                    {starterStatusFailed ? "Handled server error" : "Live full-stack example"}
+                  </h3>
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-pretty text-muted-foreground">
+                  {starterStatus.message}
+                </p>
+                <p className="mt-2 font-mono text-[11px] text-muted-foreground/70">
+                  route loader → server function → rendered result
+                </p>
+              </div>
+              <Link
+                to="/"
+                search={starterStatusFailed ? {} : { demo: "error" }}
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-[#863bff]"
+              >
+                {starterStatusFailed ? "Return to ready state" : "Preview the error path"}
+                <Icon
+                  icon={ArrowRight01Icon}
+                  className="size-3 transition-transform duration-150 group-hover:translate-x-0.5"
+                  aria-hidden="true"
+                />
+              </Link>
+            </div>
 
             <div className="mt-12 space-y-8">
               {loop.map((step) => (

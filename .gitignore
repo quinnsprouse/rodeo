@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 .output
+.tanstack
+.tanstack-start
 # src/routeTree.gen.ts — checked in for CI builds
 *.local
 !.claude/settings.local.json
@@ -36,3 +38,14 @@ og-screenshot.mjs
 *.sln
 *.sw?
 .vercel
+
+# Disposable agent and local experiments
+/.scratch/
+/tmp/
+
+# Python caches (Python source remains trackable)
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

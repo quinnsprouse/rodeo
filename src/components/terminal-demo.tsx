@@ -1,5 +1,6 @@
-import { m, useReducedMotion } from "motion/react";
+import { m } from "motion/react";
 
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 // ease-out-quint — matches the hero entrance easing
@@ -16,7 +17,8 @@ const lines: { kind: LineKind; text: string }[] = [
   { kind: "dim", text: "[main 1f2a9c3] feat: add billing page" },
   { kind: "cmd", text: "git push" },
   { kind: "ok", text: "check — fmt · lint · types · unit tests" },
-  { kind: "ok", text: "playwright — 3 e2e passed (4.8s)" },
+  { kind: "ok", text: "build + knip — production-ready, no dead code" },
+  { kind: "ok", text: "playwright — 4 e2e passed (7.2s)" },
   { kind: "note", text: "shipped. nothing broken." },
 ];
 
@@ -25,7 +27,7 @@ const lines: { kind: LineKind; text: string }[] = [
  * push. Lines stagger in as the panel scrolls into view.
  */
 export function TerminalDemo({ className }: { className?: string }) {
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
 
   return (
     <div

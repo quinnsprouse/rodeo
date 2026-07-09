@@ -6,6 +6,32 @@ import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite-plus";
 
+// Explicit inputs keep Vite Task caching reliable inside restricted agent sandboxes,
+// where automatic file tracing may not be able to create its shared-memory channel.
+const verificationInputs = [
+  ".env.example",
+  ".github/**",
+  ".vite-hooks/**",
+  "AGENTS.md",
+  "CONTEXT.md",
+  "README.md",
+  "commitlint.config.ts",
+  "components.json",
+  "docs/**",
+  "doctor.config.ts",
+  "e2e/**",
+  "knip.config.ts",
+  "package-lock.json",
+  "package.json",
+  "playwright.config.ts",
+  "public/**",
+  "scripts/**",
+  "src/**",
+  "tsconfig*.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+];
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -18,6 +44,46 @@ export default defineConfig({
   },
   staged: {
     "*": "vp check --fix",
+  },
+  run: {
+    tasks: {
+      "verify:fast": {
+        command: ["vp check", "vp test run"],
+        input: verificationInputs,
+        env: ["VITE_*", "NODE_ENV"],
+      },
+      "verify:build": {
+        command: ["tsc -b", "vp build --logLevel error"],
+        dependsOn: ["verify:fast"],
+        input: verificationInputs,
+        output: [".output/**"],
+        env: ["VITE_*", "NODE_ENV"],
+      },
+      "verify:dead-code": {
+        command: "knip --reporter compact",
+        dependsOn: ["verify:build"],
+        input: verificationInputs,
+      },
+      "verify:push": {
+        command: "env -u NO_COLOR playwright test",
+        dependsOn: ["verify:dead-code"],
+        cache: false,
+      },
+      "verify:template": {
+        command: "node scripts/test-template.mjs",
+        dependsOn: ["verify:push"],
+        cache: false,
+      },
+      "verify:doctor": {
+        command: "react-doctor --verbose --blocking warning",
+        cache: false,
+      },
+      "verify:ci": {
+        command: ["vp run verify:doctor", "npm audit --audit-level=high"],
+        dependsOn: ["verify:template"],
+        cache: false,
+      },
+    },
   },
 
   // Oxfmt — https://oxc.rs/docs/guide/usage/formatter/config.html

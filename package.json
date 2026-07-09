@@ -8,7 +8,8 @@
     "build": "tsc -b && vp build --logLevel error",
     "preview": "vp preview",
     "start": "node .output/server/index.mjs",
-    "prepare": "node scripts/prepare.mjs",
+    "prepare": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs",
     "setup:skills": "npx skills experimental_install",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
@@ -16,15 +17,17 @@
     "fmt:check": "vp fmt --check",
     "test": "vp test run",
     "test:watch": "vp test watch",
-    "test:coverage": "vp test run --coverage",
+    "test:coverage": "node scripts/test-coverage.mjs",
     "test:e2e": "env -u NO_COLOR playwright test",
     "test:e2e:ui": "env -u NO_COLOR playwright test --ui",
     "test:e2e:headed": "env -u NO_COLOR playwright test --headed",
     "test:e2e:install": "playwright install chromium",
+    "test:template": "node scripts/test-template.mjs",
     "typecheck": "tsc -b",
     "knip": "knip",
-    "check": "vp check && vp test run",
-    "check:push": "npm run check && npm run test:e2e",
+    "check": "vp run verify:fast",
+    "check:push": "vp run verify:push",
+    "check:ci": "vp run verify:ci",
     "doctor": "react-doctor --verbose"
   },
   "dependencies": {
@@ -56,20 +59,30 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "4.1.8",
     "eslint-plugin-jest-dom": "^5.5.0",
     "eslint-plugin-playwright": "^2.10.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-testing-library": "^7.16.2",
-    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.16.1",
     "nitro": "^3.0.260610-beta",
     "oxlint": "^1.69.0",
-    "react-doctor": "^0.5.1",
+    "react-doctor": "0.7.3",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.1.24",
-    "vitest": "^4.1.5"
+    "vite-plus": "^0.1.24"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "11.x",
+      "onFail": "error"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "24.x",
+      "onFail": "error"
+    }
   },
   "engines": {
     "node": "24.x"
