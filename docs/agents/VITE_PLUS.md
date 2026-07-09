@@ -11,6 +11,7 @@
 | Format                    | `vp fmt`                         |
 | Lint                      | `vp lint`                        |
 | Tests                     | `vp test run`                    |
+| Cached task               | `vp run <task>`                  |
 | Build                     | `vp build`                       |
 | Add dependency            | `vp add <pkg>`                   |
 | One-off binary            | `vp dlx <pkg>`                   |
@@ -18,19 +19,29 @@
 
 ## Import Convention
 
-Always import from `vite-plus`, not `vite` or `vitest`:
+Import configuration from `vite-plus` and test helpers from `vite-plus/test`:
 
-```ts
+```tsx
 import { defineConfig } from "vite-plus";
+import { describe, expect, it } from "vite-plus/test";
 ```
+
+## Verification Tasks
+
+Fast, Push, and CI profiles are defined under `run.tasks` in `vite.config.ts`. Package scripts, hooks, and CI call those profiles instead of rebuilding the command sequence.
+
+Keep cached verification tasks on explicit `input` globs. Vite Task's automatic file tracer may be unavailable in restricted agent sandboxes, and broad directory tracing makes disposable files invalidate otherwise reusable results.
+
+Call Verification Profiles through their `npm run check*` scripts. The verification adapter keeps caching enabled normally and retries without cache only when a restricted sandbox blocks Vite Task communication.
 
 ## Pitfalls
 
-- Do not install vitest, oxlint, oxfmt, or tsdown directly — Vite+ bundles them.
+- Vite+ 0.2 pins a direct `vitest` package and override to the bundled runner version. Keep that exact lockstep; do not install oxlint, oxfmt, or tsdown directly.
 - `vp dev` runs the Vite dev server, not a `package.json` script. Use `vp run dev` for custom scripts.
 - Use `vp dlx` instead of `npx`.
 - `vp vitest` / `vp oxlint` don't exist — use `vp test` / `vp lint`.
+- Run coverage through `npm run test:coverage`; the coverage provider is pinned to Vite+'s Vitest version.
 
 ## Pre-commit
 
-`vp staged` runs `vp check --fix` on staged files (configured in `vite.config.ts` → `staged`).
+`vp config --hooks-dir .vite-hooks` installs the sole Git hook adapter. `vp staged` runs `vp check --fix` on staged files using the `staged` configuration in `vite.config.ts`.

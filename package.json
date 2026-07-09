@@ -8,8 +8,9 @@
     "build": "tsc -b && vp build --logLevel error",
     "preview": "vp preview",
     "start": "node .output/server/index.mjs",
-    "prepare": "node scripts/prepare.mjs",
-    "setup:skills": "npx skills experimental_install",
+    "prepare": "node scripts/setup.mjs",
+    "setup": "node scripts/setup.mjs",
+    "setup:skills": "vp dlx skills@1.5.15 experimental_install",
     "lint": "vp lint",
     "lint:fix": "vp lint --fix",
     "fmt": "vp fmt",
@@ -17,14 +18,16 @@
     "test": "vp test run",
     "test:watch": "vp test watch",
     "test:coverage": "vp test run --coverage",
-    "test:e2e": "env -u NO_COLOR playwright test",
-    "test:e2e:ui": "env -u NO_COLOR playwright test --ui",
-    "test:e2e:headed": "env -u NO_COLOR playwright test --headed",
-    "test:e2e:install": "playwright install chromium",
+    "test:e2e": "node scripts/run-playwright.mjs test",
+    "test:e2e:ui": "node scripts/run-playwright.mjs test --ui",
+    "test:e2e:headed": "node scripts/run-playwright.mjs test --headed",
+    "test:e2e:install": "node scripts/run-playwright.mjs install chromium",
+    "test:template": "node scripts/test-template.mjs",
     "typecheck": "tsc -b",
     "knip": "knip",
-    "check": "vp check && vp test run",
-    "check:push": "npm run check && npm run test:e2e",
+    "check": "node scripts/run-verification.mjs verify:fast",
+    "check:push": "node scripts/run-verification.mjs verify:push",
+    "check:ci": "node scripts/run-verification.mjs verify:ci",
     "doctor": "react-doctor --verbose"
   },
   "dependencies": {
@@ -33,11 +36,9 @@
     "@tailwindcss/vite": "^4.3.0",
     "@tanstack/react-router": "^1.168.23",
     "@tanstack/react-start": "^1.168.25",
-    "@vercel/analytics": "^2.0.1",
     "calligraph": "^1.4.1",
     "clsx": "^2.1.1",
     "motion": "^12.40.0",
-    "penflow": "^0.1.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwind-merge": "^3.6.0",
@@ -48,7 +49,6 @@
     "@commitlint/cli": "^21.0.2",
     "@commitlint/config-conventional": "^21.0.2",
     "@playwright/test": "^1.60.0",
-    "@tanstack/eslint-plugin-query": "^5.101.0",
     "@tanstack/eslint-plugin-router": "^1.162.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -56,23 +56,37 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "4.1.10",
     "eslint-plugin-jest-dom": "^5.5.0",
     "eslint-plugin-playwright": "^2.10.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-testing-library": "^7.16.2",
-    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "knip": "^6.16.1",
     "nitro": "^3.0.260610-beta",
-    "oxlint": "^1.69.0",
-    "react-doctor": "^0.5.1",
+    "react-doctor": "0.7.3",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.1.24",
-    "vitest": "^4.1.5"
+    "vite-plus": "0.2.4",
+    "vitest": "4.1.10"
+  },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@0.2.4",
+    "vitest": "4.1.10"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "version": "^11.12.0",
+      "onFail": "error"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24.11.0",
+      "onFail": "error"
+    }
   },
   "engines": {
-    "node": "24.x"
+    "node": "^24.11.0"
   },
   "packageManager": "npm@11.12.0"
 }

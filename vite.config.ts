@@ -6,6 +6,32 @@ import react from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite-plus";
 
+// Explicit inputs keep Vite Task caching reliable inside restricted agent sandboxes,
+// where automatic file tracing may not be able to create its shared-memory channel.
+const verificationInputs = [
+  ".env*",
+  ".github/**",
+  ".vite-hooks/**",
+  "AGENTS.md",
+  "CONTEXT.md",
+  "README.md",
+  "commitlint.config.ts",
+  "components.json",
+  "docs/**",
+  "doctor.config.ts",
+  "e2e/**",
+  "knip.config.ts",
+  "package-lock.json",
+  "package.json",
+  "playwright.config.ts",
+  "public/**",
+  "scripts/**",
+  "src/**",
+  "tsconfig*.json",
+  "vite.config.ts",
+  "vitest.config.ts",
+];
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -18,6 +44,53 @@ export default defineConfig({
   },
   staged: {
     "*": "vp check --fix",
+  },
+  run: {
+    tasks: {
+      "verify:fast": {
+        command: ["vp check", "vp test run"],
+        input: verificationInputs,
+        env: ["VITE_*", "NODE_ENV"],
+      },
+      "verify:build": {
+        command: ["tsc -b", "vp build --logLevel error"],
+        dependsOn: ["verify:fast"],
+        input: verificationInputs,
+        output: [".output/**"],
+        env: ["VITE_*", "NODE_ENV"],
+      },
+      "verify:dead-code": {
+        command: "knip --reporter compact",
+        dependsOn: ["verify:build"],
+        input: verificationInputs,
+      },
+      "verify:push": {
+        command: "node scripts/run-playwright.mjs --production test",
+        dependsOn: ["verify:dead-code"],
+        cache: false,
+      },
+      "verify:template": {
+        command: "node scripts/test-template.mjs",
+        dependsOn: ["verify:push"],
+        cache: false,
+      },
+      "verify:doctor": {
+        command: "react-doctor --verbose --blocking warning",
+        cache: false,
+      },
+      "verify:coverage": {
+        command: ["node scripts/check-toolchain.mjs", "vp test run --coverage --reporter=dot"],
+        dependsOn: ["verify:fast"],
+        input: verificationInputs,
+        output: ["coverage/**"],
+        env: ["VITE_*", "NODE_ENV"],
+      },
+      "verify:ci": {
+        command: ["vp run verify:doctor", "npm audit --audit-level=high"],
+        dependsOn: ["verify:template", "verify:coverage"],
+        cache: false,
+      },
+    },
   },
 
   // Oxfmt — https://oxc.rs/docs/guide/usage/formatter/config.html
@@ -83,10 +156,6 @@ export default defineConfig({
         name: "eslint-tanstack-router",
         specifier: "@tanstack/eslint-plugin-router",
       },
-      {
-        name: "eslint-tanstack-query",
-        specifier: "@tanstack/eslint-plugin-query",
-      },
     ],
     rules: {
       "no-deprecated": "warn",
@@ -119,15 +188,6 @@ export default defineConfig({
 
       // TanStack Router
       "eslint-tanstack-router/create-route-property-order": "warn",
-
-      // TanStack Query
-      "eslint-tanstack-query/exhaustive-deps": "warn",
-      "eslint-tanstack-query/stable-query-client": "warn",
-      "eslint-tanstack-query/no-rest-destructuring": "warn",
-      "eslint-tanstack-query/no-unstable-deps": "warn",
-      "eslint-tanstack-query/infinite-query-property-order": "warn",
-      "eslint-tanstack-query/no-void-query-fn": "warn",
-      "eslint-tanstack-query/mutation-property-order": "warn",
 
       // React hooks (React Compiler compatible rules)
       "react-hooks-js/rules-of-hooks": "error",
@@ -233,5 +293,10 @@ export default defineConfig({
     ignorePatterns: ["dist", ".output", "routeTree.gen.ts"],
   },
 
-  plugins: [tanstackStart(), nitro(), react(), tailwindcss()],
+  plugins: [
+    tanstackStart({ importProtection: { behavior: "error" } }),
+    nitro(),
+    react(),
+    tailwindcss(),
+  ],
 });
