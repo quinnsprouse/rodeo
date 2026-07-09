@@ -9,7 +9,7 @@ The path from copying Rodeo into a Git-less directory through Git initialization
 _Avoid_: Bootstrap flow, onboarding flow
 
 **Starter Contract**:
-The observable promises Rodeo makes to a new repository, including installed hooks, working verification profiles, a production build, and executable tests.
+The observable promises Rodeo makes to a new repository, including installed hooks, working verification profiles, a bootable production build, and executable tests.
 _Avoid_: Scaffold assumptions, setup checklist
 
 **Feedback Loop**:
@@ -29,14 +29,19 @@ The pre-push Verification Profile that adds a production build, dead-code analys
 _Avoid_: Full check, release check
 
 **CI Profile**:
-The repository Verification Profile that adds the clean Starter Journey, React health, and dependency audit to the Push Profile.
+The repository Verification Profile that adds coverage, the clean Starter Journey, React health, and dependency audit to the Push Profile.
 _Avoid_: GitHub check, remote gate
+
+**Edit Feedback**:
+Portable, project-owned formatting and type diagnostics returned immediately after an agent writes code.
+_Avoid_: Claude magic, local hook script
 
 ## Relationships
 
 - The **Starter Journey** must satisfy the **Starter Contract**.
 - The **Feedback Loop** is expressed through three **Verification Profiles**.
 - The **Push Profile** contains the **Fast Profile**; the **CI Profile** contains the **Push Profile**.
+- **Edit Feedback** is the earliest layer of the **Feedback Loop**.
 
 ## Example dialogue
 

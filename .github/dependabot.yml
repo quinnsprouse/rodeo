@@ -11,6 +11,15 @@ updates:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - vite-plus
+          - vitest
+          - "@vitest/coverage-v8"
+      vite-plus-toolchain:
+        patterns:
+          - vite-plus
+          - vitest
+          - "@vitest/coverage-v8"
     commit-message:
       prefix: chore
       include: scope

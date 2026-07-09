@@ -17,7 +17,7 @@ useEffect(() => setFiltered(items.filter(pred)), [items]);
 const filtered = items.filter(pred);
 ```
 
-**Use data-fetching libraries:**
+**Use route data:**
 
 ```tsx
 // BAD — race condition, no caching
@@ -25,8 +25,11 @@ useEffect(() => {
   fetch(url).then(setData);
 }, [id]);
 
-// GOOD — TanStack Query or route loaders
-const { data } = useQuery({ queryKey: ["item", id], queryFn: () => fetchItem(id) });
+// GOOD — load before rendering
+export const Route = createFileRoute("/items/$id")({
+  loader: ({ params }) => getItem({ data: { id: params.id } }),
+  component: ItemPage,
+});
 ```
 
 **Handle events in handlers:**

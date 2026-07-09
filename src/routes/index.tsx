@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { Calligraph } from "calligraph";
 import { LazyMotion, m } from "motion/react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import {
   AiBookIcon,
@@ -24,11 +24,11 @@ import { resolveStarterStatus, validateStarterStatusInput } from "@/lib/starter-
 import { cn } from "@/lib/utils";
 
 type DemoSearch = {
-  demo?: "error";
+  demo?: "crash" | "error";
 };
 
 function validateDemoSearch(search: Record<string, unknown>): DemoSearch {
-  return search.demo === "error" ? { demo: "error" } : {};
+  return search.demo === "error" || search.demo === "crash" ? { demo: search.demo } : {};
 }
 
 const getStarterStatus = createServerFn({ method: "GET" })
@@ -48,8 +48,11 @@ async function loadStarterStatus(fail: boolean) {
 
 export const Route = createFileRoute("/")({
   validateSearch: validateDemoSearch,
-  loaderDeps: ({ search }) => ({ fail: search.demo === "error" }),
-  loader: async ({ deps }) => await loadStarterStatus(deps.fail),
+  loaderDeps: ({ search }) => ({ crash: search.demo === "crash", fail: search.demo === "error" }),
+  loader: async ({ deps }) => {
+    if (deps.crash) return await getStarterStatus({ data: { fail: true } });
+    return await loadStarterStatus(deps.fail);
+  },
   component: Home,
 });
 
@@ -82,7 +85,7 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
   {
     icon: MagicWand01Icon,
     title: "Auto-format on every edit",
-    desc: "Claude hooks run oxfmt and typecheck after every file write. Import sorting and Tailwind class sorting happen automatically\u2009\u2014\u2009agents never ship unformatted code.",
+    desc: "Portable Edit Feedback formats supported files after every write and typechecks TypeScript edits. Import and Tailwind class sorting happen automatically.",
   },
   {
     icon: Target01Icon,
@@ -94,7 +97,7 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
 const loop: { when: string; what: string }[] = [
   {
     when: "on write",
-    what: "Claude hooks run oxfmt and the typechecker after every file edit. Mistakes surface in seconds, not at code review.",
+    what: "Project-owned Claude hooks format every supported file and typecheck TypeScript edits. Mistakes surface in seconds, not at code review.",
   },
   {
     when: "on commit",
@@ -114,95 +117,6 @@ const stack = [
   { name: "shadcn/ui", href: "https://ui.shadcn.com" },
   { name: "Nitro", href: "https://nitro.build" },
 ];
-
-// Polls the Penflow canvas to detect when the drawing animation finishes.
-// Samples a horizontal strip of alpha values; once they stabilise for a few
-// consecutive reads the animation is considered complete.
-function usePenflowComplete(ref: React.RefObject<HTMLDivElement | null>, disabled: boolean) {
-  const [done, setDone] = useState(disabled);
-
-  useMountEffect(() => {
-    if (disabled) {
-      setDone(true);
-      return undefined;
-    }
-
-    let id: number;
-    let fallbackId: number;
-    let prev = 0;
-    let stable = 0;
-    let started = false;
-
-    function check() {
-      const canvas = ref.current?.querySelector("canvas");
-      if (!canvas) {
-        id = window.setTimeout(check, 50);
-        return;
-      }
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      const row = ctx.getImageData(0, Math.floor(canvas.height * 0.5), canvas.width, 1).data;
-      let sum = 0;
-      for (let i = 3; i < row.length; i += 4) sum += row[i];
-
-      if (sum > 0) started = true;
-      if (started && sum === prev) stable++;
-      else stable = 0;
-      prev = sum;
-
-      if (stable >= 3) {
-        window.clearTimeout(fallbackId);
-        setDone(true);
-        return;
-      }
-      id = window.setTimeout(check, 80);
-    }
-
-    id = window.setTimeout(check, 100);
-    fallbackId = window.setTimeout(() => setDone(true), 3200);
-    return () => {
-      window.clearTimeout(id);
-      window.clearTimeout(fallbackId);
-    };
-  });
-
-  return done;
-}
-
-// typr.js (penflow dep) references `window` at import time — dynamic import avoids SSR crash
-type PenflowComponent = (typeof import("penflow/react"))["Penflow"];
-
-function useClientPenflow() {
-  const [Comp, setComp] = useState<PenflowComponent | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useMountEffect(() => {
-    let cancelled = false;
-    // Treat a hung import as a failure so the brand never stays blank
-    const timeoutId = window.setTimeout(() => setFailed(true), 4000);
-
-    void (async () => {
-      try {
-        const mod = await import("penflow/react");
-        if (!cancelled) {
-          window.clearTimeout(timeoutId);
-          setFailed(false);
-          setComp(() => mod.Penflow);
-        }
-      } catch {
-        if (!cancelled) setFailed(true);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  });
-
-  return { Comp, failed };
-}
 
 function useRotatingWord(words: string[], intervalMs = 2000) {
   const [index, setIndex] = useState(0);
@@ -238,10 +152,6 @@ function Home() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const skip = prefersReducedMotion;
   const currentWord = useRotatingWord(rotatingWords, 2500);
-  const { Comp: Penflow, failed: penflowFailed } = useClientPenflow();
-  const penflowRef = useRef<HTMLDivElement>(null);
-  const penflowDone = usePenflowComplete(penflowRef, skip || penflowFailed);
-  const showContent = skip || penflowFailed || penflowDone;
 
   return (
     <LazyMotion features={() => import("motion/react").then((mod) => mod.domAnimation)}>
@@ -250,39 +160,20 @@ function Home() {
         <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
           <div className="mx-auto w-full max-w-2xl">
             {/* Brand */}
-            <div ref={penflowRef} className="-ml-12 h-[172px]">
-              {/* Hidden until Penflow fails so the static text never flashes
-                  before the canvas animation; stays in the DOM for SSR,
-                  screen readers, and search engines */}
-              {!Penflow && (
-                <div
-                  className={cn(
-                    "pt-3 pl-12 font-[Yellowtail] text-[128px] leading-none text-[#863bff] transition-opacity duration-300",
-                    penflowFailed ? "opacity-100" : "opacity-0",
-                  )}
-                >
-                  Rodeo
-                </div>
-              )}
-              {Penflow && (
-                <Penflow
-                  text="Rodeo"
-                  fontUrl="/fonts/Yellowtail-Regular.ttf"
-                  color="#863bff"
-                  size={128}
-                  brushScale={0.12}
-                  quality="calm"
-                  seed="rodeo"
-                  animate={!skip}
-                />
-              )}
-            </div>
+            <m.div
+              className="font-[Yellowtail] text-[clamp(6rem,20vw,8rem)] leading-none text-[#863bff]"
+              initial={skip ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: EASE_OUT }}
+            >
+              Rodeo
+            </m.div>
 
             {/* Tagline */}
             <m.h1
               className="mt-4 text-[clamp(1.5rem,4vw,2.25rem)] leading-[1.2] font-bold tracking-[-0.03em] text-foreground"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.1, ease: EASE_OUT }}
             >
               Built for{" "}
@@ -295,7 +186,7 @@ function Home() {
             <m.p
               className="mt-3 max-w-md text-[15px] leading-[1.65] text-pretty text-muted-foreground"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.25, ease: EASE_OUT }}
             >
               Agents move fast and break things. Rodeo catches it before it
@@ -307,7 +198,7 @@ function Home() {
             <m.div
               className="mt-10"
               initial={skip ? false : { opacity: 0, y: 16 }}
-              animate={showContent ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.4, ease: EASE_OUT }}
             >
               <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />

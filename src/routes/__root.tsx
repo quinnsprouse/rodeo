@@ -1,69 +1,47 @@
 /// <reference types="vite/client" />
 import { Outlet, createRootRoute, HeadContent, Scripts, ScriptOnce } from "@tanstack/react-router";
-import { Analytics } from "@vercel/analytics/react";
+import type { ReactNode } from "react";
 
 import { RouteErrorComponent } from "@/components/route-error";
 import { RouteNotFoundComponent } from "@/components/route-not-found";
+import { createSiteHead } from "@/config/site";
 
 import appCss from "@/styles/app.css?url";
 
 const GOOGLE_FONTS_URL =
   "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500&family=Yellowtail&display=swap";
-const SITE_URL = "https://rodeo-quinnsprouses-projects.vercel.app";
-
 export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "theme-color", content: "#ffffff" },
-      { title: "Rodeo — Wrangle Your AI Agents" },
-      {
-        name: "description",
-        content:
-          "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
-      },
-      // Open Graph
-      { property: "og:type", content: "website" },
-      { property: "og:url", content: SITE_URL },
-      { property: "og:title", content: "Rodeo — Wrangle Your AI Agents" },
-      {
-        property: "og:description",
-        content:
-          "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
-      },
-      {
-        property: "og:image",
-        content: `${SITE_URL}/og-image.png`,
-      },
-      // Twitter Card
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "Rodeo — Wrangle Your AI Agents" },
-      {
-        name: "twitter:description",
-        content:
-          "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
-      },
-      {
-        name: "twitter:image",
-        content: `${SITE_URL}/og-image.png`,
-      },
-    ],
-    links: [
-      { rel: "canonical", href: SITE_URL },
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "preload", href: GOOGLE_FONTS_URL, as: "style" },
-      { rel: "stylesheet", href: appCss },
-    ],
-  }),
+  head: () => {
+    const siteHead = createSiteHead("/");
+
+    return {
+      meta: [
+        { charSet: "utf-8" },
+        { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { name: "theme-color", content: "#ffffff" },
+        ...siteHead.meta,
+      ],
+      links: [
+        ...siteHead.links,
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "preconnect", href: "https://fonts.googleapis.com" },
+        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+        { rel: "preload", href: GOOGLE_FONTS_URL, as: "style" },
+        { rel: "stylesheet", href: appCss },
+      ],
+    };
+  },
   component: RootComponent,
+  shellComponent: RootShell,
   errorComponent: RouteErrorComponent,
   notFoundComponent: RouteNotFoundComponent,
 });
 
 function RootComponent() {
+  return <Outlet />;
+}
+
+function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
@@ -79,10 +57,7 @@ function RootComponent() {
         >
           Skip to content
         </a>
-        <main id="main">
-          <Outlet />
-        </main>
-        <Analytics />
+        <main id="main">{children}</main>
         <Scripts />
       </body>
     </html>

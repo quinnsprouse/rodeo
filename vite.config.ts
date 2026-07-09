@@ -9,7 +9,7 @@ import { defineConfig } from "vite-plus";
 // Explicit inputs keep Vite Task caching reliable inside restricted agent sandboxes,
 // where automatic file tracing may not be able to create its shared-memory channel.
 const verificationInputs = [
-  ".env.example",
+  ".env*",
   ".github/**",
   ".vite-hooks/**",
   "AGENTS.md",
@@ -65,7 +65,7 @@ export default defineConfig({
         input: verificationInputs,
       },
       "verify:push": {
-        command: "env -u NO_COLOR playwright test",
+        command: "node scripts/run-playwright.mjs --production test",
         dependsOn: ["verify:dead-code"],
         cache: false,
       },
@@ -78,9 +78,16 @@ export default defineConfig({
         command: "react-doctor --verbose --blocking warning",
         cache: false,
       },
+      "verify:coverage": {
+        command: ["node scripts/check-toolchain.mjs", "vp test run --coverage --reporter=dot"],
+        dependsOn: ["verify:fast"],
+        input: verificationInputs,
+        output: ["coverage/**"],
+        env: ["VITE_*", "NODE_ENV"],
+      },
       "verify:ci": {
         command: ["vp run verify:doctor", "npm audit --audit-level=high"],
-        dependsOn: ["verify:template"],
+        dependsOn: ["verify:template", "verify:coverage"],
         cache: false,
       },
     },
@@ -149,10 +156,6 @@ export default defineConfig({
         name: "eslint-tanstack-router",
         specifier: "@tanstack/eslint-plugin-router",
       },
-      {
-        name: "eslint-tanstack-query",
-        specifier: "@tanstack/eslint-plugin-query",
-      },
     ],
     rules: {
       "no-deprecated": "warn",
@@ -185,15 +188,6 @@ export default defineConfig({
 
       // TanStack Router
       "eslint-tanstack-router/create-route-property-order": "warn",
-
-      // TanStack Query
-      "eslint-tanstack-query/exhaustive-deps": "warn",
-      "eslint-tanstack-query/stable-query-client": "warn",
-      "eslint-tanstack-query/no-rest-destructuring": "warn",
-      "eslint-tanstack-query/no-unstable-deps": "warn",
-      "eslint-tanstack-query/infinite-query-property-order": "warn",
-      "eslint-tanstack-query/no-void-query-fn": "warn",
-      "eslint-tanstack-query/mutation-property-order": "warn",
 
       // React hooks (React Compiler compatible rules)
       "react-hooks-js/rules-of-hooks": "error",
@@ -299,5 +293,10 @@ export default defineConfig({
     ignorePatterns: ["dist", ".output", "routeTree.gen.ts"],
   },
 
-  plugins: [tanstackStart(), nitro(), react(), tailwindcss()],
+  plugins: [
+    tanstackStart({ importProtection: { behavior: "error" } }),
+    nitro(),
+    react(),
+    tailwindcss(),
+  ],
 });

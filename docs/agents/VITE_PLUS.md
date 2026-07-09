@@ -32,13 +32,15 @@ Fast, Push, and CI profiles are defined under `run.tasks` in `vite.config.ts`. P
 
 Keep cached verification tasks on explicit `input` globs. Vite Task's automatic file tracer may be unavailable in restricted agent sandboxes, and broad directory tracing makes disposable files invalidate otherwise reusable results.
 
+Call Verification Profiles through their `npm run check*` scripts. The verification adapter keeps caching enabled normally and retries without cache only when a restricted sandbox blocks Vite Task communication.
+
 ## Pitfalls
 
-- Do not install Vitest, oxlint, oxfmt, or tsdown directly — Vite+ bundles them.
+- Vite+ 0.2 pins a direct `vitest` package and override to the bundled runner version. Keep that exact lockstep; do not install oxlint, oxfmt, or tsdown directly.
 - `vp dev` runs the Vite dev server, not a `package.json` script. Use `vp run dev` for custom scripts.
 - Use `vp dlx` instead of `npx`.
 - `vp vitest` / `vp oxlint` don't exist — use `vp test` / `vp lint`.
-- Run coverage through `npm run test:coverage`; its small wrapper corrects Vite+ 0.1.x version metadata before loading the matching coverage provider.
+- Run coverage through `npm run test:coverage`; the coverage provider is pinned to Vite+'s Vitest version.
 
 ## Pre-commit
 
