@@ -163,6 +163,8 @@ export default defineConfig({
       { name: "testing-library", specifier: "eslint-plugin-testing-library" },
       { name: "jest-dom", specifier: "eslint-plugin-jest-dom" },
       { name: "playwright", specifier: "eslint-plugin-playwright" },
+      // Design-system rules for Tailwind + shadcn/ui — https://github.com/shadcn-ui/lint
+      { name: "shadcn", specifier: "@shadcn/lint" },
       {
         name: "eslint-tanstack-router",
         specifier: "@tanstack/eslint-plugin-router",
@@ -243,10 +245,18 @@ export default defineConfig({
       // Project rules — docs/agents/LINT_RULES.md
       "rodeo/no-disable-directives": "error",
       "rodeo/server-fn-requires-validator": "error",
-      "rodeo/no-hex-colors-in-classname": "error",
       "rodeo/no-state-from-props": "error",
       "rodeo/no-module-scope-browser-globals": "error",
       "rodeo/no-window-navigation": "error",
+
+      // Design system (@shadcn/lint) — errors name the token, size, or variant to use instead.
+      // Components and theme are discovered from components.json and src/styles/app.css.
+      "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+      "shadcn/no-raw-colors": "error",
+      "shadcn/no-arbitrary-values": ["error", { allow: ["layout"] }],
+      "shadcn/no-inline-styles": "error",
+      "shadcn/no-unknown-classes": "error",
+      "shadcn/require-static-classes": "error",
 
       // TanStack Router
       "eslint-tanstack-router/create-route-property-order": "warn",
@@ -295,6 +305,16 @@ export default defineConfig({
           "import/no-default-export": "off",
           "no-console": "off",
           "unicorn/no-array-for-each": "off",
+        },
+      },
+      {
+        // The shadcn kit owns its appearance and may need structural values such as ring-[3px].
+        // no-raw-colors and no-inline-styles stay on inside it.
+        files: ["src/components/ui/**"],
+        rules: {
+          "shadcn/no-restyle": "off",
+          "shadcn/no-arbitrary-values": "off",
+          "shadcn/require-static-classes": "off",
         },
       },
       {

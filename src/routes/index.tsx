@@ -125,17 +125,17 @@ function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) 
       <div>
         <div className="flex items-center gap-2">
           <span
-            className={cn("size-2 rounded-full", failed ? "bg-amber-500" : "bg-emerald-500")}
+            className={cn("size-2 rounded-full", failed ? "bg-warning" : "bg-success")}
             aria-hidden="true"
           />
           <h3 className="text-sm font-semibold tracking-tight text-foreground">
             {failed ? "Handled server error" : "Live full-stack example"}
           </h3>
         </div>
-        <p className="mt-2 text-[13px] leading-relaxed text-pretty text-muted-foreground">
+        <p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
           {starterStatus.message}
         </p>
-        <p className="mt-2 font-mono text-[11px] text-muted-foreground/70">
+        <p className="mt-2 font-mono text-xs text-muted-foreground/70">
           route loader → server function → rendered result
         </p>
       </div>
@@ -169,7 +169,7 @@ function Home() {
             <Wordmark animate={!prefersReducedMotion} />
 
             {/* Tagline */}
-            <h1 className="mt-4 text-[clamp(1.5rem,4vw,2.25rem)] leading-[1.2] font-bold tracking-[-0.03em] text-foreground">
+            <h1 className="mt-4 text-2xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
               Built for{" "}
               {prefersReducedMotion ? (
                 <span className="text-brand">agents.</span>
@@ -179,7 +179,7 @@ function Home() {
             </h1>
 
             {/* Description */}
-            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-pretty text-muted-foreground">
+            <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
               A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
               routing, server rendering, and agent docs. Free and open source.
             </p>
@@ -199,7 +199,7 @@ function Home() {
                   GitHub
                   <Icon
                     icon={ArrowRight01Icon}
-                    className="size-3 -translate-x-1 opacity-0 transition-[transform,opacity] duration-150 group-hover:translate-x-0 group-hover:opacity-100"
+                    className="size-3 -translate-x-1 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100"
                     aria-hidden="true"
                   />
                 </a>
@@ -220,10 +220,10 @@ function Home() {
         <section className="border-t border-border/40">
           <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
             <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
-            <h2 className="max-w-md text-xl leading-snug font-bold tracking-[-0.02em] text-foreground">
+            <h2 className="max-w-md text-xl leading-snug font-bold tracking-tight text-foreground">
               Check changes before they reach main.
             </h2>
-            <p className="mt-3 max-w-md text-[15px] leading-[1.65] text-pretty text-muted-foreground">
+            <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
               Run focused checks while editing, then build and test the app before pushing.
             </p>
 
@@ -234,8 +234,8 @@ function Home() {
             <div className="mt-12 space-y-8">
               {loop.map((step) => (
                 <div key={step.when} className="grid gap-2 sm:grid-cols-[200px_1fr] sm:gap-8">
-                  <p className="font-mono text-[13px] font-medium text-brand">{step.when}</p>
-                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground">
+                  <p className="font-mono text-sm font-medium text-brand">{step.when}</p>
+                  <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
                     {step.what}
                   </p>
                 </div>
@@ -259,11 +259,11 @@ function Home() {
                       strokeWidth={1.75}
                       aria-hidden="true"
                     />
-                    <h2 className="text-[15px] font-semibold tracking-tight text-foreground">
+                    <h2 className="text-base font-semibold tracking-tight text-foreground">
                       {f.title}
                     </h2>
                   </div>
-                  <p className="text-[13px] leading-[1.7] text-pretty text-muted-foreground">
+                  <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
                     {f.desc}
                   </p>
                 </div>

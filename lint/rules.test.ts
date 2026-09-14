@@ -18,7 +18,6 @@ const oxlintBinary = resolve(dirname(require.resolve("oxlint/package.json")), "b
 const ruleNames = [
   "no-disable-directives",
   "server-fn-requires-validator",
-  "no-hex-colors-in-classname",
   "no-state-from-props",
   "no-module-scope-browser-globals",
   "no-window-navigation",
@@ -134,39 +133,6 @@ export const a = createServerFn({ method: "POST" }).validator((d: unknown) => d)
 export const b = createServerFn({ method: "POST" }).inputValidator((d: unknown) => d).handler(({ data }) => data);
 export const c = createServerFn({ method: "GET" }).handler(() => "ok");
 export const d = createServerFn({ method: "GET" }).handler(({ context }) => context);`),
-    ).toEqual([]);
-  });
-});
-
-describe("no-hex-colors-in-classname", () => {
-  it("reports arbitrary hex values in className strings, templates, and cn() calls", () => {
-    expect(
-      rulesHit(`
-import { cn } from "@/lib/utils";
-export function C({ on }: { on: boolean }) {
-  return (
-    <div className="text-[#ff0000]">
-      <span className={\`bg-[#fff]\`} />
-      <span className={cn("p-2", on && "border-[#123456]")} />
-    </div>
-  );
-}`),
-    ).toEqual([
-      "no-hex-colors-in-classname",
-      "no-hex-colors-in-classname",
-      "no-hex-colors-in-classname",
-    ]);
-  });
-
-  it("allows tokens everywhere and hex values inside the shadcn kit", () => {
-    expect(
-      rulesHit(`export const C = () => <div className="text-brand bg-primary/20" />;`),
-    ).toEqual([]);
-    expect(
-      rulesHit(
-        `export const C = () => <div className="text-[#ff0000]" />;`,
-        "src/components/ui/probe.tsx",
-      ),
     ).toEqual([]);
   });
 });

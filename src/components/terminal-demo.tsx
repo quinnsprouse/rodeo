@@ -26,22 +26,17 @@ export function TerminalDemo({ className }: { className?: string }) {
   const reducedMotion = usePrefersReducedMotion();
 
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl bg-[oklch(0.17_0.005_285)] shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_16px_40px_-16px_rgba(134,59,255,0.25)]",
-        className,
-      )}
-    >
+    <div className={cn("overflow-hidden rounded-xl bg-terminal shadow-terminal", className)}>
       {/* Title bar */}
       <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
         <span className="size-2.5 rounded-full bg-white/10" />
         <span className="size-2.5 rounded-full bg-white/10" />
         <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="ml-2 font-mono text-[11px] text-white/30">my-app — zsh</span>
+        <span className="ml-2 font-mono text-xs text-white/30">my-app — zsh</span>
       </div>
 
       {/* Replay */}
-      <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-[12.5px] leading-relaxed sm:px-5">
+      <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:px-5">
         {lines.map((line, i) => (
           <m.div
             key={line.text}
@@ -58,7 +53,7 @@ export function TerminalDemo({ className }: { className?: string }) {
             )}
           >
             {line.kind === "cmd" && <span className="text-white/30 select-none">$</span>}
-            {line.kind === "ok" && <span className="text-emerald-400 select-none">✓</span>}
+            {line.kind === "ok" && <span className="text-terminal-success select-none">✓</span>}
             {line.kind === "note" && <span className="select-none">→</span>}
             <span>{line.text}</span>
           </m.div>

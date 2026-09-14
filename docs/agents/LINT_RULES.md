@@ -1,10 +1,11 @@
 # Lint Rules
 
-Rodeo's lint gate has three layers. All three run on every `vp lint`, in the post-edit hook after supported edits, in `vp staged` at commit, and in every `npm run check*` command. Warnings fail the gate: `lint.options.denyWarnings` is on.
+Rodeo's lint gate has four layers. All four run on every `vp lint`, in the post-edit hook after supported edits, in `vp staged` at commit, and in every `npm run check*` command. Warnings fail the gate: `lint.options.denyWarnings` is on.
 
 1. **Oxlint categories** — `correctness`, `suspicious`, and `perf`, plus type-aware `typescript/*` rules through tsgolint.
 2. **Named restriction rules** — individually chosen Oxlint rules that ban known agent mistakes.
 3. **Project rules** — the `rodeo/*` plugin in `lint/rules.js`, written for patterns no stock rule expresses.
+4. **Design-system rules** — the `shadcn/*` plugin from `@shadcn/lint`, which checks Tailwind classes against the theme and the UI kit.
 
 ## No inline suppression
 
@@ -52,13 +53,27 @@ TypeScript's `noImplicitReturns` replaces `typescript/consistent-return` for Typ
 
 `lint/policy.test.ts` runs the actual configuration against failing examples and valid code, including intentional null checks and exhaustive switches without unnecessary defaults. The rule behavior follows the upstream references for [switches](https://typescript-eslint.io/rules/switch-exhaustiveness-check/), [button types](https://github.com/jsx-eslint/eslint-plugin-react/blob/master/docs/rules/button-has-type.md), [equality](https://eslint.org/docs/latest/rules/eqeqeq), and [promise rejections](https://typescript-eslint.io/rules/prefer-promise-reject-errors/).
 
+## Design-system rules (`shadcn/*`)
+
+[`@shadcn/lint`](https://github.com/shadcn-ui/lint) checks Tailwind classes against the theme in `src/styles/app.css` and the components in `src/components/ui`, both discovered through `components.json`. Its errors name the token, scale step, size, or variant to use instead, so fix the class rather than the rule.
+
+| Rule                     | Catches                                                                    | Do this instead                                                                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-raw-colors`          | Palette colors such as `bg-emerald-500`, undeclared color tokens           | A semantic token (`text-success`, `bg-brand`), or declare `--color-<name>`                                                                                                  |
+| `no-arbitrary-values`    | `text-[13px]`, `bg-[#333]`, `leading-[1.7]` (layout values allowed)        | A scale step (`text-sm`, `leading-relaxed`). A custom font-size token needs a t-shirt name such as `--text-2xs`; the class grammar reads any other `text-<name>` as a color |
+| `no-restyle`             | Appearance classes on a kit component, such as `<Snippet className="p-4">` | A size or variant prop; only layout classes (`w-full`, `mt-4`) pass                                                                                                         |
+| `no-inline-styles`       | `style={{ … }}` and `<style>` elements                                     | Tailwind classes                                                                                                                                                            |
+| `no-unknown-classes`     | Classes Tailwind cannot generate, such as `rounded-huge`                   | Fix the spelling, or declare it with `@utility`                                                                                                                             |
+| `require-static-classes` | Class strings the linter cannot read, such as `` `bg-${color}` ``          | A lookup object of full class names                                                                                                                                         |
+
+Inside `src/components/ui/**`, `no-restyle`, `no-arbitrary-values`, and `require-static-classes` are off (`lint.overrides`): the kit owns its appearance and may need structural values. `no-raw-colors` and `no-inline-styles` stay on there.
+
 ## Project rules (`rodeo/*`)
 
 | Rule                              | Catches                                                                                        |
 | --------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `no-disable-directives`           | Any `oxlint-disable` or `eslint-disable` comment                                               |
 | `server-fn-requires-validator`    | A `createServerFn` handler that reads `data` without `.validator()` or `.inputValidator()`     |
-| `no-hex-colors-in-classname`      | `[#hex]` arbitrary values in `className` outside `src/components/ui/`                          |
 | `no-state-from-props`             | `useState(prop)` seeded from a prop not named `default*` or `initial*`                         |
 | `no-module-scope-browser-globals` | `window`, `document`, `localStorage`, `navigator`, `location` read at module scope (SSR crash) |
 | `no-window-navigation`            | `window.location.href = …`, `location.assign()`, `location.replace()`                          |

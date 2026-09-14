@@ -6,7 +6,6 @@ export default {
   rules: {
     "rodeo/no-disable-directives": "error",
     "rodeo/server-fn-requires-validator": "error",
-    "rodeo/no-hex-colors-in-classname": "error",
     "rodeo/no-state-from-props": "error",
     "rodeo/no-module-scope-browser-globals": "error",
     "rodeo/no-window-navigation": "error",
