@@ -122,6 +122,27 @@ export function Probe() {
 }`,
     },
     {
+      name: "raw palette colors outside the theme",
+      rule: "shadcn(no-raw-colors)",
+      source: `export function Probe() { return <span className="bg-emerald-500" />; }`,
+    },
+    {
+      name: "arbitrary appearance values",
+      rule: "shadcn(no-arbitrary-values)",
+      source: `export function Probe() { return <p className="text-[13px]">Ready</p>; }`,
+    },
+    {
+      name: "restyling a kit component",
+      rule: "shadcn(no-restyle)",
+      source: `import { Snippet } from "@/components/ui/snippet";
+export function Probe() { return <Snippet text="npm ci" className="bg-brand" />; }`,
+    },
+    {
+      name: "classes Tailwind cannot generate",
+      rule: "shadcn(no-unknown-classes)",
+      source: `export function Probe() { return <span className="rounded-huge" />; }`,
+    },
+    {
       name: "inline dependency suppressions",
       rule: "rodeo(no-disable-directives)",
       source: `/* oxlint-disable react-hooks-js/exhaustive-deps */
@@ -139,6 +160,7 @@ export function Probe({ title }: { title: string }) {
 
   it("allows explicit behavior and external synchronization with cleanup", () => {
     const result = lint(`import { useEffect, useState } from "react";
+import { Snippet } from "@/components/ui/snippet";
 export function Probe({ delay }: { delay: number }) {
   const [ticks, setTicks] = useState(0);
   useEffect(() => {
@@ -177,6 +199,14 @@ export function Editable() {
   const [checked, setChecked] = useState(false);
   return <input type="checkbox" aria-label="Notifications" checked={checked}
     onChange={(event) => setChecked(event.currentTarget.checked)} />;
+}
+export function Themed() {
+  return (
+    <>
+      <Snippet text="npm ci" className="mt-4 w-full" />
+      <p className="text-sm leading-relaxed text-success">Ready</p>
+    </>
+  );
 }`);
     expect(result.stdout).toMatch(/"diagnostics":\s*\[\]/);
     expect(result.status).toBe(0);

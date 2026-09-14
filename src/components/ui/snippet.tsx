@@ -62,7 +62,7 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
           <code
             key={line}
             className={cn(
-              "block font-mono text-[13px] whitespace-nowrap text-foreground/90",
+              "block font-mono text-sm whitespace-nowrap text-foreground/90",
               prompt &&
                 "before:mr-2.5 before:text-muted-foreground/50 before:content-['$'] before:select-none",
             )}
@@ -86,7 +86,7 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
       >
         <Icon
           icon={copied ? Tick02Icon : Copy01Icon}
-          className={cn("size-5", copied && "text-emerald-600 dark:text-emerald-400")}
+          className={cn("size-5", copied && "text-success")}
           aria-hidden="true"
         />
       </button>

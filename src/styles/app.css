@@ -15,6 +15,14 @@
   /* Brand accent. Use text-brand / bg-brand / border-brand; never an arbitrary hex in className. */
   --color-brand: #863bff;
   --color-brand-soft: #b794ff;
+  /* Status colors. Use text-success / bg-warning; values flip with the theme below. */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-script: "Yellowtail", cursive;
+  /* The terminal demo is a fixed dark surface, so its palette does not follow the theme. */
+  --color-terminal: oklch(0.17 0.005 285);
+  --color-terminal-success: oklch(76.5% 0.177 163.223);
+  --shadow-terminal: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 16px 40px -16px rgba(134, 59, 255, 0.25);
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
   --radius-sm: calc(var(--radius) - 4px);
@@ -56,6 +64,8 @@
 
 :root {
   --radius: 0.625rem;
+  --success: oklch(59.6% 0.145 163.225);
+  --warning: oklch(76.9% 0.188 70.08);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -90,6 +100,8 @@
 }
 
 .dark {
+  --success: oklch(76.5% 0.177 163.223);
+  --warning: oklch(82.8% 0.189 84.429);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

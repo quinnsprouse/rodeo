@@ -15,9 +15,7 @@ const BROWSER_GLOBALS = new Set([
   "location",
 ]);
 const DISABLE_DIRECTIVE = /^\s*((?:oxlint|eslint)-disable(?:-next-line|-line)?)/;
-const ARBITRARY_HEX = /\[#[0-9a-fA-F]{3,8}\]/;
 const INITIAL_PROP = /^(?:default|initial)[A-Z_]/;
-const UI_KIT = /(?:^|\/)src\/components\/ui\//;
 
 /** @param {import("@oxlint/plugins").ESTree.Node} node */
 function isFunction(node) {
@@ -177,61 +175,6 @@ const serverFnRequiresValidator = defineRule({
   },
 });
 
-const noHexColorsInClassName = defineRule({
-  meta: {
-    type: "suggestion",
-    docs: {
-      description:
-        "Ban arbitrary hex colors in className outside the shadcn kit; use the semantic tokens declared in src/styles/app.css.",
-    },
-    messages: {
-      hex: "Arbitrary hex color in className. Use a semantic token such as text-brand or bg-primary from src/styles/app.css, or add a token there. See docs/agents/UI_MOTION.md",
-    },
-    schema: [],
-  },
-  create(context) {
-    if (UI_KIT.test(context.filename)) return {};
-    function check(node) {
-      if (
-        node.type === "Literal" &&
-        typeof node.value === "string" &&
-        ARBITRARY_HEX.test(node.value)
-      ) {
-        context.report({ node, messageId: "hex" });
-      } else if (node.type === "TemplateLiteral") {
-        for (const quasi of node.quasis) {
-          if (ARBITRARY_HEX.test(quasi.value.raw))
-            context.report({ node: quasi, messageId: "hex" });
-        }
-      } else if (node.type === "JSXExpressionContainer") {
-        check(node.expression);
-      } else if (node.type === "CallExpression") {
-        node.arguments.forEach(check);
-      } else if (node.type === "ConditionalExpression") {
-        check(node.consequent);
-        check(node.alternate);
-      } else if (node.type === "LogicalExpression") {
-        check(node.right);
-      } else if (node.type === "ArrayExpression") {
-        node.elements.forEach((element) => element && check(element));
-      } else if (node.type === "ObjectExpression") {
-        for (const property of node.properties) {
-          if (property.type === "Property" && property.key.type === "Literal") check(property.key);
-          if (property.type === "Property" && property.key.type === "TemplateLiteral")
-            check(property.key);
-        }
-      }
-    }
-    return {
-      JSXAttribute(node) {
-        if (node.name.type !== "JSXIdentifier") return;
-        if (node.name.name !== "className" && node.name.name !== "class") return;
-        if (node.value) check(node.value);
-      },
-    };
-  },
-});
-
 const noStateFromProps = defineRule({
   meta: {
     type: "problem",
@@ -386,7 +329,6 @@ export default definePlugin({
   rules: {
     "no-disable-directives": noDisableDirectives,
     "server-fn-requires-validator": serverFnRequiresValidator,
-    "no-hex-colors-in-classname": noHexColorsInClassName,
     "no-state-from-props": noStateFromProps,
     "no-module-scope-browser-globals": noModuleScopeBrowserGlobals,
     "no-window-navigation": noWindowNavigation,
