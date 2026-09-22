@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolveStarterStatus, validateStarterStatusInput } from "./starter-status";
+import { resolveStarterStatus, starterStatusInputSchema } from "./starter-status";
 
 describe("starter status", () => {
   it("returns the ready contract", () => {
@@ -16,7 +16,11 @@ describe("starter status", () => {
     );
   });
 
-  it("preserves valid server-function input", () => {
-    expect(validateStarterStatusInput({ fail: false })).toEqual({ fail: false });
+  it("accepts valid server-function input", () => {
+    expect(starterStatusInputSchema.parse({ fail: false })).toEqual({ fail: false });
+  });
+
+  it("rejects malformed server-function input", () => {
+    expect(starterStatusInputSchema.safeParse({ fail: "yes" }).success).toBe(false);
   });
 });

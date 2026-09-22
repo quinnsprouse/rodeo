@@ -2,6 +2,7 @@ import type { IconSvgElement } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { LazyMotion } from "motion/react";
+import { z } from "zod";
 
 import {
   AiBookIcon,
@@ -19,19 +20,16 @@ import { TerminalDemo } from "@/components/terminal-demo";
 import { Snippet } from "@/components/ui/snippet";
 import { Wordmark } from "@/components/wordmark";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { resolveStarterStatus, validateStarterStatusInput } from "@/lib/starter-status";
+import { resolveStarterStatus, starterStatusInputSchema } from "@/lib/starter-status";
 import { cn } from "@/lib/utils";
 
-type DemoSearch = {
-  demo?: "crash" | "error";
-};
-
-function validateDemoSearch(search: Record<string, unknown>): DemoSearch {
-  return search.demo === "error" || search.demo === "crash" ? { demo: search.demo } : {};
-}
+// Search params are user input too. An unknown ?demo= value falls back to the normal page.
+const demoSearchSchema = z.object({
+  demo: z.enum(["crash", "error"]).optional().catch(undefined),
+});
 
 const getStarterStatus = createServerFn({ method: "GET" })
-  .validator(validateStarterStatusInput)
+  .validator(starterStatusInputSchema)
   .handler(({ data }) => resolveStarterStatus(data));
 
 async function loadStarterStatus(fail: boolean) {
@@ -46,7 +44,7 @@ async function loadStarterStatus(fail: boolean) {
 }
 
 export const Route = createFileRoute("/")({
-  validateSearch: validateDemoSearch,
+  validateSearch: demoSearchSchema,
   loaderDeps: ({ search }) => ({ crash: search.demo === "crash", fail: search.demo === "error" }),
   loader: async ({ deps }) => {
     if (deps.crash) return await getStarterStatus({ data: { fail: true } });
@@ -91,7 +89,7 @@ const features: { icon: IconSvgElement; title: string; desc: string }[] = [
 const loop: { when: string; what: string }[] = [
   {
     when: "on write",
-    what: "Project-owned Claude hooks format, lint, and typecheck every edited file. Mistakes surface in seconds, not at code review.",
+    what: "Project-owned hooks for Claude Code and Codex format, lint, and typecheck every edited file. Mistakes surface in seconds, not at code review.",
   },
   {
     when: "on commit",
@@ -135,7 +133,7 @@ function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) 
         <p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
           {starterStatus.message}
         </p>
-        <p className="mt-2 font-mono text-xs text-muted-foreground/70">
+        <p className="mt-2 font-mono text-xs text-muted-foreground">
           route loader → server function → rendered result
         </p>
       </div>
@@ -155,13 +153,17 @@ function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) 
   );
 }
 
+// Defined at module scope because React Compiler can't compile import() inside a component.
+// LazyMotion also gets the same loader on every render.
+const loadMotionFeatures = () => import("motion/react").then((mod) => mod.domAnimation);
+
 function Home() {
   const starterStatus = Route.useLoaderData();
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
-    <LazyMotion features={() => import("motion/react").then((mod) => mod.domAnimation)}>
-      <div className="bg-white selection:bg-brand/20">
+    <LazyMotion features={loadMotionFeatures}>
+      <div className="bg-background selection:bg-brand/20">
         {/* Hero — fills viewport */}
         <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
           <div className="mx-auto w-full max-w-2xl">

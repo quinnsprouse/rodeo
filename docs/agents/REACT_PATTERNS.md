@@ -62,5 +62,5 @@ Lint cannot prove that every subscription is cleaned up or that an effect is nee
 - Prefer composition with `children` over accumulating configuration props.
 - Use explicit variants when booleans describe mutually exclusive states.
 - Lift state only as high as needed.
-- Use `useMemo` and `useCallback` when measured performance or an API's identity requirements justify them.
+- React Compiler memoizes components and hooks. `reactCompilerPreset` in `vite.config.ts` turns it on. Don't add `useMemo`, `useCallback`, or `memo` for performance. Use them only when an API needs a stable identity. When the compiler can't compile a component, a `react-hooks-js/*` rule fails lint.
 - Prefer animating `transform` and `opacity`; avoid `transition: all`.

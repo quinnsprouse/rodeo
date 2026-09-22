@@ -7,8 +7,6 @@ import { createSiteHead } from "@/config/site";
 
 import appCss from "@/styles/app.css?url";
 
-const GOOGLE_FONTS_URL =
-  "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=JetBrains+Mono:wght@400;500&display=swap";
 export const Route = createRootRoute({
   head: () => {
     const siteHead = createSiteHead("/");
@@ -17,7 +15,9 @@ export const Route = createRootRoute({
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        { name: "theme-color", content: "#ffffff" },
+        // Browser chrome matches --background in each theme (app.css).
+        { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#ffffff" },
+        { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#0a0a0a" },
         ...siteHead.meta,
       ],
       links: [
@@ -30,9 +30,6 @@ export const Route = createRootRoute({
           type: "font/ttf",
           crossOrigin: "anonymous",
         },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        { rel: "stylesheet", href: GOOGLE_FONTS_URL },
         { rel: "stylesheet", href: appCss },
       ],
     };
@@ -56,7 +53,7 @@ function RootShell({ children }: { children: ReactNode }) {
       <body>
         <a
           href="#main"
-          className="fixed top-0 left-0 z-50 -translate-y-full bg-brand px-4 py-2 text-sm font-medium text-white transition-transform focus:translate-y-0"
+          className="fixed top-0 left-0 z-50 -translate-y-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-transform focus:translate-y-0"
         >
           Skip to content
         </a>

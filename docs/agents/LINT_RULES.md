@@ -35,6 +35,8 @@ The category defaults already enable checks for floating promises, unsafe promis
 
 React effects are allowed. The configured `react-hooks-js/*` rules come from `eslint-plugin-react-hooks`. Missing dependencies, conditional hooks, synchronous state updates in effects, and render-time mutations fail checks. Warnings also fail; inline suppression remains an error. See [React patterns](REACT_PATTERNS.md) and [React's lint reference](https://react.dev/reference/eslint-plugin-react-hooks).
 
+React Compiler is on, so `react-hooks-js/todo` fails any component the compiler can't compile, such as one that calls `import()` in its body. Move that code to module scope. A component the compiler skips gets no automatic memoization.
+
 Cleanup correctness still needs code review and behavior tests.
 
 ## Explicit behavior checks
@@ -85,4 +87,4 @@ Rules live in `lint/rules.js` and are tested end to end through the real Oxlint 
 1. Identify a concrete failure and check whether the effective configuration already catches it. Prefer a compiler check or documented built-in rule.
 2. Test valid and invalid examples against the project configuration in `lint/policy.test.ts`, including legitimate edge cases. Do not enable a rule that forces unnecessary code to satisfy it.
 3. Enable the rule in `vite.config.ts` and document the diagnostic's fix here. If it produces a false positive, reproduce it before choosing a narrower option or a documented file-scoped exception.
-4. Write a custom rule only when existing checks cannot express a recurring project requirement. Use `defineRule` from `@oxlint/plugins`, give the diagnostic a concrete fix, test both outcomes in `lint/rules.test.ts`, and register it in both lint and React Doctor configurations.
+4. Write a custom rule only when existing checks cannot express a recurring project requirement. Use `defineRule` from `vite-plus/lint/plugins`, give the diagnostic a concrete fix, test both outcomes in `lint/rules.test.ts`, and register it in both lint and React Doctor configurations.

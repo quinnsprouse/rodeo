@@ -1,19 +1,17 @@
-export type StarterStatusInput = {
-  fail: boolean;
-};
+import { z } from "zod";
+
+// Server functions receive untrusted input. TanStack Start runs this schema before the handler and
+// infers the handler's `data` type from the schema's output.
+export const starterStatusInputSchema = z.object({
+  fail: z.boolean(),
+});
+
+export type StarterStatusInput = z.infer<typeof starterStatusInputSchema>;
 
 export type StarterStatus = {
   state: "ready";
   message: string;
 };
-
-export function validateStarterStatusInput(input: StarterStatusInput): StarterStatusInput {
-  if (typeof input?.fail !== "boolean") {
-    throw new Error("Invalid starter status input.");
-  }
-
-  return { fail: input.fail };
-}
 
 export function resolveStarterStatus({ fail }: StarterStatusInput): StarterStatus {
   if (fail) {

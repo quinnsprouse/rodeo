@@ -16,7 +16,7 @@ The checks live in the Vite Task graph in `vite.config.ts`. Cached tasks use exp
 
 Don't test what static analysis catches. Oxlint + TypeScript own type errors, unused vars, hook deps, formatting. Tests own **runtime behavior through public interfaces**.
 
-Lint enforcement is the exception: `lint/rules.test.ts` runs each `rodeo/*` rule through the real Oxlint binary, and `lint/policy.test.ts` tests the actual project's configuration with valid and invalid React, TypeScript, and browser code. `.claude/hooks/pre-tool-guard.test.ts` checks every guard decision. These run in `npm run check`.
+Lint enforcement is the exception: `lint/rules.test.ts` runs each `rodeo/*` rule through the real Oxlint binary, and `lint/policy.test.ts` tests the actual project's configuration with valid and invalid React, TypeScript, and browser code. `.agents/hooks/pre-tool-guard.test.ts` checks every guard decision. These run in `npm run check`.
 
 ## Test Design
 
@@ -40,6 +40,7 @@ Lint enforcement is the exception: `lint/rules.test.ts` runs each `rodeo/*` rule
 - `npm run typecheck` includes `e2e/`. Playwright runs TypeScript without checking types.
 - Capture both `pageerror` events and browser `console.error` messages; assert zero errors at test end.
 - Use accessible selectors: `page.getByRole(...)`, `page.getByText(...)`.
+- `e2e/accessibility.spec.ts` runs axe against WCAG 2.2 AA on each page, in the light and the dark theme. It also checks the security headers. Add each new route to it. Fix violations instead of turning off axe rules.
 
 ## Clean template test
 
@@ -49,9 +50,22 @@ Stage intended starter changes before running it. Failures preserve the temporar
 
 ## Agent Hooks
 
-- **Before a tool call**: `.claude/hooks/pre-tool-guard.mjs` denies edits to generated files, hook bypasses, and non-npm package managers, and asks a human before destructive Git commands. It matches on raw command text, so a shell heredoc that merely mentions a banned flag is blocked too; write such content with the file tools instead.
-- **After a write**: `.claude/hooks/post-edit.mjs` formats the file, lints it, and typechecks TypeScript. Lint errors appear in the hook output immediately.
-- Edits made through shell commands bypass the post-edit hook; the commit hook is the backstop.
+Claude Code (`.claude/settings.json`) and Codex (`.codex/hooks.json`) run the same scripts from `.agents/hooks/`. Codex loads project hooks only after you trust the project.
+
+- **Before a tool call**: `pre-tool-guard.mjs` denies edits to generated files, and it checks every file in a Codex `apply_patch`. It denies non-npm package managers and Git hook bypasses: `--no-verify` on commit or push, a `core.hooksPath` override, `HUSKY=0`, and `VITE_GIT_HOOKS=0`. It asks a human before a force push or a destructive Git command. `--force-with-lease` passes.
+- The guard matches raw command text, so it also blocks a shell heredoc that only mentions a banned flag. Write that content with the file tools instead.
+- **After a write**: `post-edit.mjs` formats each edited file, lints it, and typechecks TypeScript. Lint errors appear in the hook output immediately.
+- Edits made through shell commands skip the post-edit hook. The Stop hook and the commit hook still check them.
+- **Before the agent ends its turn**: `stop-check.mjs` checks the files changed since the last commit. It runs `vp check` on those files, an incremental `tsc -b`, and `vp test run --changed` in parallel, then sends the agent back with the errors if one fails.
+
+The Stop hook's cost follows the size of the change, not the size of the project:
+
+- If the working tree matches the last state that passed, the hook exits after a few `git` calls. A turn that only answers a question costs about 0.2 seconds.
+- `vp test run --changed` runs only the tests whose imports reach a changed file. Changes to `package.json`, the Vite configs, `lint/`, or `.agents/hooks/` run every test, because those tests start their subjects as processes instead of importing them (`forceRerunTriggers` in `vitest.config.ts`).
+- The production build and the Playwright tests stay in the pre-push gate.
+- If the agent retries without changing anything, the hook lets the turn end and tells the user the check still fails, instead of looping.
+
+Keep new tests fast enough for this loop. A test that starts a process per case should run its cases with `it.concurrent`, as `lint/policy.test.ts` does.
 
 ## Git Hooks
 

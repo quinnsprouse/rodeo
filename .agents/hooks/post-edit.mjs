@@ -58,20 +58,25 @@ function report(message) {
   );
 }
 
-try {
-  const input = JSON.parse(readFileSync(0, "utf8"));
-  if (
-    input.hook_event_name !== "PostToolUse" ||
-    !["Edit", "Write"].includes(input.tool_name) ||
-    typeof input.tool_input?.file_path !== "string"
-  ) {
-    process.exit(0);
+// Codex's apply_patch sends the patch text. A header line in the patch names each file it touches.
+function editedFiles(toolName, toolInput) {
+  if (toolName === "apply_patch" && typeof toolInput?.command === "string") {
+    return [
+      ...toolInput.command.matchAll(/^\*\*\* (?:Add|Update) File: (.+)$|^\*\*\* Move to: (.+)$/gm),
+    ].map((match) => (match[1] ?? match[2]).trim());
   }
+  if (
+    ["Edit", "Write", "MultiEdit"].includes(toolName) &&
+    typeof toolInput?.file_path === "string"
+  ) {
+    return [toolInput.file_path];
+  }
+  return [];
+}
 
-  const candidate = isAbsolute(input.tool_input.file_path)
-    ? input.tool_input.file_path
-    : resolve(projectRoot, input.tool_input.file_path);
-  if (!existsSync(candidate) || !lstatSync(candidate).isFile()) process.exit(0);
+function projectFile(filePath) {
+  const candidate = isAbsolute(filePath) ? filePath : resolve(projectRoot, filePath);
+  if (!existsSync(candidate) || !lstatSync(candidate).isFile()) return null;
 
   const target = realpathSync(candidate);
   const projectPath = relative(projectRoot, target);
@@ -79,35 +84,53 @@ try {
     projectPath === "" ||
     projectPath.startsWith("..") ||
     isAbsolute(projectPath) ||
-    ignoredRoots.some((root) => projectPath === root || projectPath.startsWith(`${root}/`))
+    ignoredRoots.some((root) => projectPath === root || projectPath.startsWith(`${root}/`)) ||
+    !supportedExtensions.has(extname(target).toLowerCase())
   ) {
-    process.exit(0);
+    return null;
   }
+  return { target, projectPath };
+}
 
-  const extension = extname(target).toLowerCase();
-  if (!supportedExtensions.has(extension)) process.exit(0);
+try {
+  const input = JSON.parse(readFileSync(0, "utf8"));
+  if (input.hook_event_name !== "PostToolUse") process.exit(0);
 
-  const format = run(packageBinary("vite-plus", "vp"), ["fmt", target]);
-  if (format.status !== 0) {
-    report(`Automatic formatting failed for ${projectPath}.\n${format.stderr || format.stdout}`);
-    process.exit(0);
-  }
+  const files = editedFiles(input.tool_name, input.tool_input)
+    .map(projectFile)
+    .filter((file) => file !== null);
+  if (files.length === 0) process.exit(0);
 
+  const vp = packageBinary("vite-plus", "vp");
   const feedback = [];
 
-  if (lintExtensions.has(extension)) {
-    // Lint the edited file alone so the banned patterns surface on write, not at commit.
-    const lint = run(packageBinary("vite-plus", "vp"), ["lint", target]);
-    if (lint.status !== 0) {
-      feedback.push(`Lint found an issue in ${projectPath}.\n${lint.stdout || lint.stderr}`);
+  for (const { target, projectPath } of files) {
+    const format = run(vp, ["fmt", target]);
+    if (format.status !== 0) {
+      feedback.push(
+        `Automatic formatting failed for ${projectPath}.\n${format.stderr || format.stdout}`,
+      );
+      continue;
+    }
+
+    if (lintExtensions.has(extname(target).toLowerCase())) {
+      // Lint the edited file alone so the banned patterns surface on write, not at commit.
+      const lint = run(vp, ["lint", target]);
+      if (lint.status !== 0) {
+        feedback.push(`Lint found an issue in ${projectPath}.\n${lint.stdout || lint.stderr}`);
+      }
     }
   }
 
-  if (typeScriptExtensions.has(extension)) {
+  // One project typecheck covers every edited TypeScript file.
+  const typeScriptFile = files.find(({ target }) =>
+    typeScriptExtensions.has(extname(target).toLowerCase()),
+  );
+  if (typeScriptFile) {
     const typecheck = run(packageBinary("typescript", "tsc"), ["-b", "--pretty", "false"]);
     if (typecheck.status !== 0) {
       feedback.push(
-        `Type checking found an issue after editing ${projectPath}.\n${typecheck.stdout || typecheck.stderr}`,
+        `Type checking found an issue after editing ${typeScriptFile.projectPath}.\n${typecheck.stdout || typecheck.stderr}`,
       );
     }
   }
