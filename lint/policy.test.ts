@@ -1,10 +1,10 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, it } from "vite-plus/test";
 
 const require = createRequire(import.meta.url);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -22,20 +22,32 @@ beforeAll(() => {
 
 afterAll(() => rmSync(sandbox, { recursive: true, force: true }));
 
+let probeCount = 0;
+
+// Each probe gets its own file, so the cases can lint in parallel.
 function lint(source: string) {
-  const target = join(sandbox, "probe.tsx");
+  probeCount += 1;
+  const target = join(sandbox, `probe-${probeCount}.tsx`);
   writeFileSync(target, source);
   // Exercise the project's real configuration, including warnings and suppression policy.
-  return spawnSync(process.execPath, [vp, "lint", "--no-ignore", "--format", "json", target], {
-    cwd: repoRoot,
-    encoding: "utf8",
-    timeout: 20_000,
+  return new Promise<{ status: number | null; stdout: string }>((resolvePromise, reject) => {
+    const child = spawn(process.execPath, [vp, "lint", "--no-ignore", "--format", "json", target], {
+      cwd: repoRoot,
+    });
+    let stdout = "";
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (status) => resolvePromise({ status, stdout }));
   });
 }
 
-// Compiler startup can exceed the unit-test timeout while CI runs coverage and builds.
+// Each case starts the linter, so the cases run concurrently. Compiler startup can exceed the
+// unit-test timeout while CI runs coverage and builds.
 describe("Lint policy", { timeout: 30_000 }, () => {
-  it.each([
+  it.concurrent.for([
     {
       name: "unexplained empty catch blocks",
       rule: "no-empty",
@@ -122,6 +134,15 @@ export function Probe() {
 }`,
     },
     {
+      name: "components React Compiler cannot compile",
+      rule: "react-hooks-js(todo)",
+      source: `import { lazy } from "react";
+export function Probe() {
+  const Panel = lazy(() => import("./panel"));
+  return <Panel />;
+}`,
+    },
+    {
       name: "raw palette colors outside the theme",
       rule: "shadcn(no-raw-colors)",
       source: `export function Probe() { return <span className="bg-emerald-500" />; }`,
@@ -152,14 +173,16 @@ export function Probe({ title }: { title: string }) {
   return null;
 }`,
     },
-  ])("rejects $name", ({ rule, source }) => {
-    const result = lint(source);
+  ])("rejects $name", async ({ rule, source }, { expect }) => {
+    const result = await lint(source);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain(rule);
   });
 
-  it("allows explicit behavior and external synchronization with cleanup", () => {
-    const result = lint(`import { useEffect, useState } from "react";
+  it.concurrent("allows explicit behavior and external synchronization with cleanup", async ({
+    expect,
+  }) => {
+    const result = await lint(`import { useEffect, useState } from "react";
 import { Snippet } from "@/components/ui/snippet";
 export function Probe({ delay }: { delay: number }) {
   const [ticks, setTicks] = useState(0);

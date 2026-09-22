@@ -1,11 +1,15 @@
-// PreToolUse guard: blocks the handful of agent actions that no lint rule can express.
-// Denied: edits to generated or tool-owned files, hook bypasses, and package managers other than
-// npm and Vite+. Destructive git commands are escalated to the human with "ask". Everything else
-// passes through untouched.
+// PreToolUse guard for Claude Code (.claude/settings.json) and Codex (.codex/hooks.json). It blocks
+// the few agent actions that no lint rule can express.
+// It denies edits to generated or tool-owned files, Git hook bypasses, and package managers other
+// than npm and Vite+. It answers "ask" for history rewrites and destructive Git commands, so a human
+// decides. Everything else passes.
 import { readFileSync } from "node:fs";
-import { isAbsolute, relative, resolve } from "node:path";
+import { dirname, isAbsolute, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const projectRoot = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
+// The hooks live in <root>/.agents/hooks for both agents, whatever the session cwd is.
+const projectRoot =
+  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 const protectedPaths = [
   {
@@ -30,18 +34,35 @@ const protectedPaths = [
   },
 ];
 
+const hookBypass =
+  "Fix the reported problems instead of skipping the Git hooks, or ask a human to bypass them.";
+
+// Each pattern is matched against the raw command text, so it also sees chained commands.
 const guardedCommands = [
   {
-    test: /\bgit\s+(?:-\S+\s+)*commit\b.*\s(?:--no-verify|-n)\b/,
+    // --no-verify, or -n alone or inside a short-flag cluster such as -nm.
+    test: /\bgit\b[^\n;&|]*\bcommit\b[^\n;&|]*\s(?:--no-verify\b|-[a-zA-Z]*n[a-zA-Z]*\b)/,
     decision: "deny",
-    reason:
-      "Committing with --no-verify skips the pre-commit gate. Fix the reported problems, or ask a human to bypass the hook.",
+    reason: `Committing with --no-verify skips the pre-commit and commit-msg checks. ${hookBypass}`,
   },
   {
-    test: /\bgit\s+(?:-\S+\s+)*push\b.*\s(?:--force|-f)\b/,
+    // `git push -n` is a dry run, so only the long flag skips pre-push.
+    test: /\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*\s--no-verify\b/,
+    decision: "deny",
+    reason: `Pushing with --no-verify skips the pre-push gate (npm run check:push). ${hookBypass}`,
+  },
+  {
+    test: /core\.hooksPath|\b(?:HUSKY|VITE_GIT_HOOKS)=0\b/i,
+    decision: "deny",
+    reason: `Overriding core.hooksPath or setting HUSKY=0 / VITE_GIT_HOOKS=0 disables the Git hooks. ${hookBypass}`,
+  },
+  {
+    // --force and -f overwrite the remote unconditionally, as does a +refspec.
+    // --force-with-lease refuses to clobber commits you have not seen, so it passes.
+    test: /\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*\s(?:--force(?![-\w])|-[a-zA-Z]*f[a-zA-Z]*\b|\+\S)/,
     decision: "ask",
     reason:
-      "Force pushes rewrite shared history. Prefer --force-with-lease, and only when a human has asked for it.",
+      "A force push can overwrite commits on the remote. Use --force-with-lease, and only when a human has asked for a history rewrite.",
   },
   {
     test: /\bgit\s+(?:-\S+\s+)*(?:reset\s+--hard|checkout\s+--\s+\.|restore\s+(?:--worktree\s+)?\.|clean\s+-[a-zA-Z]*f)/,
@@ -81,15 +102,31 @@ function projectPath(filePath) {
   return path.startsWith("..") ? null : path;
 }
 
+// Codex's apply_patch sends the patch text. A header line in the patch names each file it touches.
+function patchTargets(patch) {
+  return [
+    ...patch.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/gm),
+  ].map((match) => (match[1] ?? match[2]).trim());
+}
+
+function editTargets(toolName, toolInput) {
+  if (toolName === "apply_patch" && typeof toolInput?.command === "string") {
+    return patchTargets(toolInput.command);
+  }
+  if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(toolName)) {
+    const target = toolInput?.file_path ?? toolInput?.notebook_path;
+    return typeof target === "string" ? [target] : [];
+  }
+  return [];
+}
+
 try {
   const input = JSON.parse(readFileSync(0, "utf8"));
   if (input.hook_event_name !== "PreToolUse") process.exit(0);
 
-  if (["Edit", "Write", "MultiEdit", "NotebookEdit"].includes(input.tool_name)) {
-    const target = input.tool_input?.file_path ?? input.tool_input?.notebook_path;
-    if (typeof target !== "string") process.exit(0);
+  for (const target of editTargets(input.tool_name, input.tool_input)) {
     const path = projectPath(target);
-    if (path === null) process.exit(0);
+    if (path === null) continue;
     const hit = protectedPaths.find((rule) => rule.test(path));
     if (hit) decide("deny", hit.reason);
   }

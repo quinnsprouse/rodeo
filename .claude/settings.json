@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/pre-tool-guard.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.agents/hooks/pre-tool-guard.mjs\"",
             "timeout": 10
           }
         ]
@@ -19,8 +19,19 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit.mjs\"",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.agents/hooks/post-edit.mjs\"",
             "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.agents/hooks/stop-check.mjs\"",
+            "timeout": 300
           }
         ]
       }

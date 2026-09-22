@@ -32,7 +32,7 @@ export function TerminalDemo({ className }: { className?: string }) {
         <span className="size-2.5 rounded-full bg-white/10" />
         <span className="size-2.5 rounded-full bg-white/10" />
         <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="ml-2 font-mono text-xs text-white/30">my-app — zsh</span>
+        <span className="ml-2 font-mono text-xs text-white/55">my-app — zsh</span>
       </div>
 
       {/* Replay */}
@@ -48,11 +48,11 @@ export function TerminalDemo({ className }: { className?: string }) {
               "flex items-baseline gap-2 whitespace-nowrap",
               line.kind === "cmd" && "text-white/90",
               line.kind === "ok" && "text-white/55",
-              line.kind === "dim" && "text-white/30",
+              line.kind === "dim" && "text-white/55",
               line.kind === "note" && "pt-1 text-brand-soft",
             )}
           >
-            {line.kind === "cmd" && <span className="text-white/30 select-none">$</span>}
+            {line.kind === "cmd" && <span className="text-white/55 select-none">$</span>}
             {line.kind === "ok" && <span className="text-terminal-success select-none">✓</span>}
             {line.kind === "note" && <span className="select-none">→</span>}
             <span>{line.text}</span>

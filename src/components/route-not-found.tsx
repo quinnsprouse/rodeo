@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 
+import { buttonVariants } from "@/components/ui/button";
+
 export function RouteNotFoundComponent() {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
@@ -10,10 +12,7 @@ export function RouteNotFoundComponent() {
           The page you are looking for either moved or does not exist.
         </p>
       </div>
-      <Link
-        to="/"
-        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90"
-      >
+      <Link to="/" search={{}} className={buttonVariants({ size: "lg" })}>
         Back home
       </Link>
     </div>

@@ -1,16 +1,17 @@
 import { fileURLToPath, URL } from "node:url";
 
+import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite-plus";
 
 // Explicit inputs keep Vite Task caching reliable inside restricted agent sandboxes,
 // where automatic file tracing may not be able to create its shared-memory channel.
 const verificationInputs = [
-  ".claude/**",
-  ".codex/hooks/**",
+  ".agents/hooks/**",
+  ".claude/settings.json",
   ".codex/hooks.json",
   ".env*",
   ".github/**",
@@ -37,6 +38,19 @@ const verificationInputs = [
   "vite.config.ts",
   "vitest.config.ts",
 ];
+
+// Nitro adds these headers to every response. The CSP limits framing, plugins, <base>, and form
+// targets. It has no script-src, because TanStack Start's hydration uses inline scripts. Add a
+// script-src with a nonce before the app loads third-party scripts.
+const securityHeaders = {
+  "content-security-policy":
+    "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
+  "cross-origin-opener-policy": "same-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=()",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000",
+  "x-content-type-options": "nosniff",
+};
 
 export default defineConfig({
   resolve: {
@@ -178,13 +192,18 @@ export default defineConfig({
       // Obsolete with the automatic JSX runtime (React 17+)
       "react/react-in-jsx-scope": "off",
 
-      // Inline objects/functions in JSX are idiomatic in React 19 (and required by Motion props)
+      // Inline objects, functions, and JSX in props are normal in React 19. Motion props take
+      // objects, Base UI composes through render={<Link />}, and React Compiler memoizes them.
       "react-perf/jsx-no-new-object-as-prop": "off",
       "react-perf/jsx-no-new-function-as-prop": "off",
       "react-perf/jsx-no-new-array-as-prop": "off",
+      "react-perf/jsx-no-jsx-as-prop": "off",
 
       // Side-effect imports are legitimate for styles and test matchers
-      "import/no-unassigned-import": ["warn", { allow: ["**/*.css", "@testing-library/jest-dom"] }],
+      "import/no-unassigned-import": [
+        "warn",
+        { allow: ["**/*.css", "@testing-library/jest-dom/vitest"] },
+      ],
 
       "no-restricted-imports": [
         "error",
@@ -277,6 +296,8 @@ export default defineConfig({
       "react-hooks-js/set-state-in-render": "error",
       "react-hooks-js/static-components": "error",
       "react-hooks-js/unsupported-syntax": "warn",
+      // React Compiler skips a component it can't compile, and that component loses memoization.
+      "react-hooks-js/todo": "error",
       "react-hooks-js/use-memo": "error",
       "react-hooks-js/void-use-memo": "error",
     },
@@ -300,7 +321,7 @@ export default defineConfig({
       },
       {
         // Tooling files: config default exports, Node scripts that print, and lint fixtures.
-        files: ["*.config.ts", "lint/**", "scripts/**", ".claude/hooks/**", "e2e/**"],
+        files: ["*.config.ts", "lint/**", "scripts/**", ".agents/hooks/**", "e2e/**"],
         rules: {
           "import/no-default-export": "off",
           "no-console": "off",
@@ -402,8 +423,11 @@ export default defineConfig({
 
   plugins: [
     tanstackStart({ importProtection: { behavior: "error" } }),
-    nitro(),
+    nitro({ routeRules: { "/**": { headers: securityHeaders } } }),
     react(),
+    // React Compiler memoizes components and hooks. The react-hooks-js rules above report code it
+    // can't compile. Use useMemo or useCallback only when an API needs a stable identity.
+    babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],
 });

@@ -1,11 +1,13 @@
 import { Link, useRouter } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 
+import { Button, buttonVariants } from "@/components/ui/button";
+
+const productionMessage = "The application hit an unexpected error. You can retry or return home.";
+
 export function RouteErrorComponent({ error }: ErrorComponentProps) {
   const router = useRouter();
-  const message = import.meta.env.DEV
-    ? error.message
-    : "The application hit an unexpected error. You can retry or return home.";
+  const message = import.meta.env.DEV && error instanceof Error ? error.message : productionMessage;
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-6 px-4 text-center">
@@ -15,18 +17,12 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
         <p className="text-pretty text-muted-foreground">{message}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-3">
-        <button
-          type="button"
-          onClick={() => void router.invalidate()}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:opacity-90"
-        >
+        {/* Invalidating reruns the loaders before the error boundary resets. */}
+        <Button type="button" size="lg" onClick={() => void router.invalidate()}>
           Try again
-        </button>
-        <Link
-          to="/"
-          search={{}}
-          className="rounded-md border border-border px-4 py-2 text-sm font-medium shadow-sm hover:bg-muted"
-        >
+        </Button>
+        {/* A link styled with buttonVariants looks like a button and keeps the link role. */}
+        <Link to="/" search={{}} className={buttonVariants({ variant: "outline", size: "lg" })}>
           Back home
         </Link>
       </div>

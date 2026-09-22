@@ -25,7 +25,10 @@ Run verification through the `npm run check*` scripts. The verification adapter 
 
 ## Pitfalls
 
-- Vite+ 0.3 pins a direct `vitest` package and override to the bundled runner version. Keep that exact lockstep; do not install oxlint, oxfmt, or tsdown directly.
+- Vite+ bundles its own Vitest, currently Vitest 5. `vitest`, `@vitest/coverage-v8`, and the `vitest` override must match that exact version. `scripts/check-toolchain.mjs` fails until every pin matches.
+- To update Vite+, run `vp migrate` on a branch. It updates the pins and rewrites imports that moved.
+- Don't install oxlint, oxfmt, `@oxlint/plugins`, or tsdown directly. Import the lint plugin API from `vite-plus/lint/plugins`.
+- The jest-dom matcher types come from `@testing-library/jest-dom/vitest`. The root `@testing-library/jest-dom` entry types Jest instead.
 - `vp dev` runs the Vite dev server, not a `package.json` script. Use `vp run dev` for custom scripts.
 - `vp vitest` / `vp oxlint` don't exist — use `vp test` / `vp lint`.
 - Run coverage through `npm run test:coverage`; the coverage provider is pinned to Vite+'s Vitest version.

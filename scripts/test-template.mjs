@@ -37,7 +37,11 @@ function run(command, args, options = {}) {
   log(`\n$ ${currentCommand}`);
   const cwd = options.cwd ?? appRoot;
   const env = { ...process.env, CI: "1" };
-  if (cwd !== repoRoot) delete env.GIT_INDEX_FILE;
+  if (cwd !== repoRoot) {
+    delete env.GIT_INDEX_FILE;
+    // In an agent session, this points at the source checkout. The hooks must use the temp app.
+    delete env.CLAUDE_PROJECT_DIR;
+  }
   const result = spawnSync(command, args, {
     cwd,
     encoding: "utf8",
@@ -192,10 +196,24 @@ try {
     claudeSettings.hooks.PreToolUse[0].matcher,
     "Edit|Write|MultiEdit|NotebookEdit|Bash",
   );
+  // Codex runs the same hooks through .codex/hooks.json, resolved from the Git root.
+  const codexHooks = JSON.parse(readFileSync(join(appRoot, ".codex/hooks.json"), "utf8"));
+  assert.match(codexHooks.hooks.PreToolUse[0].matcher, /\bapply_patch\b/);
+  assert.match(codexHooks.hooks.PostToolUse[0].matcher, /\bapply_patch\b/);
+  const codexGuard = run("sh", ["-c", codexHooks.hooks.PreToolUse[0].hooks[0].command], {
+    capture: true,
+    input: JSON.stringify({
+      hook_event_name: "PreToolUse",
+      tool_name: "apply_patch",
+      tool_input: { command: "*** Begin Patch\n*** Update File: package-lock.json\n*** End Patch" },
+    }),
+  });
+  assert.match(codexGuard.stdout, /"permissionDecision":"deny"/);
+
   const hookProbe = join(appRoot, ".scratch", "hook-probe.ts");
   mkdirSync(dirname(hookProbe), { recursive: true });
   writeFileSync(hookProbe, "export  const hookProbe={value:'ok'}\n");
-  run(process.execPath, [".claude/hooks/post-edit.mjs"], {
+  run(process.execPath, [".agents/hooks/post-edit.mjs"], {
     capture: true,
     input: JSON.stringify({
       hook_event_name: "PostToolUse",
@@ -212,7 +230,7 @@ try {
     lintProbe,
     'import { useEffect } from "react";\nexport function Probe({ title }: { title: string }) {\n  useEffect(() => { document.title = title; }, []);\n  return null;\n}\n',
   );
-  const lintFeedback = run(process.execPath, [".claude/hooks/post-edit.mjs"], {
+  const lintFeedback = run(process.execPath, [".agents/hooks/post-edit.mjs"], {
     capture: true,
     input: JSON.stringify({
       hook_event_name: "PostToolUse",
@@ -225,7 +243,7 @@ try {
 
   // The Tool Guard must refuse a hook bypass and stay silent for ordinary commands.
   const guardDecision = (command) =>
-    run(process.execPath, [".claude/hooks/pre-tool-guard.mjs"], {
+    run(process.execPath, [".agents/hooks/pre-tool-guard.mjs"], {
       capture: true,
       input: JSON.stringify({
         hook_event_name: "PreToolUse",
@@ -248,6 +266,21 @@ try {
     "chore: establish template baseline",
   ]);
   assert.equal(run("git", ["status", "--porcelain=v1"], { capture: true }).stdout, "");
+
+  // The Stop hook skips a clean tree, sends the agent back for a broken change, and stops
+  // blocking once the agent retries without changing anything.
+  const stopCheck = (stopHookActive) =>
+    run(process.execPath, [".agents/hooks/stop-check.mjs"], {
+      capture: true,
+      input: JSON.stringify({ hook_event_name: "Stop", stop_hook_active: stopHookActive }),
+    }).stdout;
+  assert.equal(stopCheck(false), "");
+  const stopProbe = join(appRoot, "src", "stop-probe.ts");
+  writeFileSync(stopProbe, "export function probe(value: any) {\n  return value;\n}\n");
+  assert.match(stopCheck(false), /"decision":"block".*no-explicit-any/s);
+  assert.match(stopCheck(true), /"systemMessage"/);
+  rmSync(stopProbe);
+  assert.equal(stopCheck(false), "");
 
   const commitMessagePath = join(appRoot, ".git", "COMMIT_EDITMSG");
   writeFileSync(commitMessagePath, "chore: verify template journey\n");

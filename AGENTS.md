@@ -33,3 +33,4 @@ Open these only when relevant:
 - [React Patterns](docs/agents/REACT_PATTERNS.md) — effects, derived state, component design
 - [Lint Rules](docs/agents/LINT_RULES.md) — what the gate bans, the project `rodeo/*` rules, how to add one
 - [Testing](docs/agents/TESTING.md) — feedback loop, test scope policy, pre-commit guardrails
+- [Deploy](docs/agents/DEPLOY.md) — Node, Vercel, and Cloudflare Workers targets

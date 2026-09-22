@@ -4,7 +4,7 @@
 //
 // Rule docs: docs/agents/LINT_RULES.md
 
-import { definePlugin, defineRule } from "@oxlint/plugins";
+import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
 const BROWSER_GLOBALS = new Set([
   "window",
@@ -17,7 +17,7 @@ const BROWSER_GLOBALS = new Set([
 const DISABLE_DIRECTIVE = /^\s*((?:oxlint|eslint)-disable(?:-next-line|-line)?)/;
 const INITIAL_PROP = /^(?:default|initial)[A-Z_]/;
 
-/** @param {import("@oxlint/plugins").ESTree.Node} node */
+/** @param {import("vite-plus/lint/plugins").ESTree.Node} node */
 function isFunction(node) {
   return (
     node.type === "FunctionDeclaration" ||
@@ -26,7 +26,7 @@ function isFunction(node) {
   );
 }
 
-/** @param {import("@oxlint/plugins").ESTree.Node} node */
+/** @param {import("vite-plus/lint/plugins").ESTree.Node} node */
 function enclosingFunction(node) {
   let current = node.parent;
   while (current) {
@@ -36,7 +36,7 @@ function enclosingFunction(node) {
   return null;
 }
 
-/** @param {import("@oxlint/plugins").ESTree.Expression | import("@oxlint/plugins").ESTree.Super} callee */
+/** @param {import("vite-plus/lint/plugins").ESTree.Expression | import("vite-plus/lint/plugins").ESTree.Super} callee */
 function calleeName(callee) {
   if (callee.type === "Identifier") return callee.name;
   if (
@@ -135,7 +135,7 @@ const serverFnRequiresValidator = defineRule({
     },
     messages: {
       missing:
-        "This server function reads `data` without a validator. Add .validator(fn) or .inputValidator(fn) before .handler(); see docs/agents/TANSTACK_START.md",
+        "This server function reads `data` without a validator. Add .validator(schema) with a Zod schema before .handler(); see docs/agents/TANSTACK_START.md",
     },
     schema: [],
   },
@@ -145,6 +145,7 @@ const serverFnRequiresValidator = defineRule({
         if (calleeName(node.callee) !== "handler") return;
         const { root, methods } = chainMethods(node);
         if (root !== "createServerFn") return;
+        // inputValidator is the deprecated name. The no-deprecated rule reports it separately.
         if (methods.includes("validator") || methods.includes("inputValidator")) return;
         const handler = node.arguments[0];
         if (!handler || !isFunction(handler)) return;

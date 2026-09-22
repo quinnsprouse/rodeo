@@ -1,7 +1,7 @@
 import { Calligraph } from "calligraph";
 import { useEffect, useState } from "react";
 
-const words = ["agents.", "humans.", "teams.", "you."];
+const words = ["agents.", "humans.", "teams.", "you."] as const;
 
 export function RotatingWord() {
   const [index, setIndex] = useState(0);
@@ -30,7 +30,7 @@ export function RotatingWord() {
 
   return (
     <Calligraph as="span" className="text-brand" animation="smooth" trend={1}>
-      {words[index]}
+      {words[index] ?? words[0]}
     </Calligraph>
   );
 }

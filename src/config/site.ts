@@ -1,3 +1,5 @@
+import { clientEnv } from "@/config/env";
+
 const siteConfig = {
   name: "Rodeo",
   title: "Rodeo — Wrangle Your AI Agents",
@@ -6,19 +8,7 @@ const siteConfig = {
   ogImagePath: "/og-image.png",
 } as const;
 
-export function normalizeSiteUrl(configuredUrl: string | undefined) {
-  const value = configuredUrl?.trim();
-  if (!value) return undefined;
-
-  const url = new URL(value);
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new Error("VITE_APP_URL must use http or https.");
-  }
-
-  return url.origin;
-}
-
-export function createSiteHead(pathname: string, configuredUrl = import.meta.env.VITE_APP_URL) {
+export function createSiteHead(pathname: string, origin = clientEnv.VITE_APP_URL) {
   const meta: Array<Record<string, string>> = [
     { title: siteConfig.title },
     { name: "description", content: siteConfig.description },
@@ -30,7 +20,6 @@ export function createSiteHead(pathname: string, configuredUrl = import.meta.env
     { name: "twitter:description", content: siteConfig.description },
   ];
   const links: Array<Record<string, string>> = [];
-  const origin = normalizeSiteUrl(configuredUrl);
 
   if (origin) {
     const safePathname = new URL(pathname, "https://placeholder.invalid").pathname;

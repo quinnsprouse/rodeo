@@ -15,12 +15,15 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    include: [
-      "src/**/*.{test,spec}.{ts,tsx}",
-      "lint/**/*.test.ts",
-      ".claude/hooks/*.test.ts",
-      ".codex/hooks/*.test.ts",
+    // `vp test run --changed` follows imports. These tests spawn their subjects as processes
+    // instead, so a change to one of these paths reruns every test.
+    forceRerunTriggers: [
+      "**/package.json/**",
+      "**/{vitest,vite}.config.*/**",
+      "lint/**",
+      ".agents/hooks/**",
     ],
+    include: ["src/**/*.{test,spec}.{ts,tsx}", "lint/**/*.test.ts", ".agents/hooks/*.test.ts"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],

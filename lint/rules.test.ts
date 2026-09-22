@@ -13,7 +13,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 const require = createRequire(import.meta.url);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pluginPath = join(repoRoot, "lint", "rules.js");
-const oxlintBinary = resolve(dirname(require.resolve("oxlint/package.json")), "bin/oxlint");
+// oxlint is a dependency of vite-plus, not of this project, so resolve it from there. That runs
+// the exact binary `vp lint` bundles and doesn't rely on npm hoisting a transitive package.
+const requireFromVitePlus = createRequire(require.resolve("vite-plus/package.json"));
+const oxlintBinary = resolve(
+  dirname(requireFromVitePlus.resolve("oxlint/package.json")),
+  "bin/oxlint",
+);
 
 const ruleNames = [
   "no-disable-directives",
