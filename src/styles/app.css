@@ -5,8 +5,8 @@
 @import "@fontsource-variable/dm-sans/opsz-italic.css";
 @import "@fontsource-variable/jetbrains-mono/index.css";
 
-/* Penflow draws the wordmark from this TTF's glyph outlines, so it stays a TTF (preloaded in
-   __root.tsx). The static fallback reuses the same file. */
+/* Penflow draws the wordmark from this TTF's glyph outlines, so it stays a TTF. The home route
+   preloads it in src/routes/index.tsx. The static fallback reuses the same file. */
 @font-face {
   font-family: "Yellowtail";
   src: url("/fonts/Yellowtail-Regular.ttf") format("truetype");

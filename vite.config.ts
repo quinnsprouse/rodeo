@@ -208,6 +208,11 @@ export default defineConfig({
       "no-restricted-imports": [
         "error",
         {
+          // Search schemas and client env ship in the entry chunk. See docs/adr/0007-schemas-use-zod-mini.md
+          paths: ["zod", "zod/v3", "zod/v4"].map((name) => ({
+            name,
+            message: "Import schemas from zod/mini. Classic Zod adds about 14 KB to every route.",
+          })),
           patterns: [
             {
               group: [
@@ -304,9 +309,14 @@ export default defineConfig({
     // Every lint exception lives here with a reason. Inline disable comments are errors (ADR 0004).
     overrides: [
       {
-        // noImplicitReturns checks control flow correctly for exhaustive union switches.
         files: ["**/*.{ts,tsx}"],
-        rules: { "typescript/consistent-return": "off" },
+        rules: {
+          // noImplicitReturns checks control flow correctly for exhaustive union switches.
+          "typescript/consistent-return": "off",
+          // valid-params matches any .catch() by name, so it rejects z.catch(schema, fallback).
+          // TypeScript reports a real Promise method with the wrong arguments as TS2554.
+          "promise/valid-params": "off",
+        },
       },
       {
         // Plain JavaScript has no types, so the type-aware unsafe-* family only adds noise there.
@@ -423,7 +433,12 @@ export default defineConfig({
 
   plugins: [
     tanstackStart({ importProtection: { behavior: "error" } }),
-    nitro({ routeRules: { "/**": { headers: securityHeaders } } }),
+    nitro({
+      // The Node server sends these build-time .br and .gz files to clients that accept them.
+      // Nitro doesn't compress server-rendered HTML; put a compressing proxy in front of it.
+      compressPublicAssets: { gzip: true, brotli: true },
+      routeRules: { "/**": { headers: securityHeaders } },
+    }),
     react(),
     // React Compiler memoizes components and hooks. The react-hooks-js rules above report code it
     // can't compile. Use useMemo or useCallback only when an API needs a stable identity.

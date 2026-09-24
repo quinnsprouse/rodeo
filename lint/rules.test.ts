@@ -29,6 +29,10 @@ const ruleNames = [
   "no-window-navigation",
 ] as const;
 
+// Each case starts oxlint. Startup can exceed the unit-test timeout while lint/policy.test.ts
+// runs its linters in parallel, or while CI runs coverage and builds.
+const processTimeout = { timeout: 30_000 };
+
 type RuleName = (typeof ruleNames)[number];
 
 function isRuleName(value: string): value is RuleName {
@@ -99,7 +103,7 @@ function rulesHit(source: string, file?: string) {
   return lint(source, file).map((hit) => hit.rule);
 }
 
-describe("no-disable-directives", () => {
+describe("no-disable-directives", processTimeout, () => {
   it("reports every directive at the top of the file so no directive can hide itself", () => {
     const hits = lint(`/* oxlint-disable */
 // oxlint-disable-next-line no-restricted-imports
@@ -121,7 +125,7 @@ export { a, b };`);
   });
 });
 
-describe("server-fn-requires-validator", () => {
+describe("server-fn-requires-validator", processTimeout, () => {
   it("reports handlers that read data without a validator", () => {
     expect(
       rulesHit(`
@@ -143,7 +147,7 @@ export const d = createServerFn({ method: "GET" }).handler(({ context }) => cont
   });
 });
 
-describe("no-state-from-props", () => {
+describe("no-state-from-props", processTimeout, () => {
   it("reports state seeded from a destructured or dotted prop", () => {
     expect(
       rulesHit(`
@@ -167,7 +171,7 @@ export function A({ defaultValue, initialCount }: { defaultValue: number; initia
   });
 });
 
-describe("no-module-scope-browser-globals", () => {
+describe("no-module-scope-browser-globals", processTimeout, () => {
   it("reports browser globals read at module scope", () => {
     expect(
       rulesHit(`
@@ -195,7 +199,7 @@ export { isBrowser };`),
   });
 });
 
-describe("no-window-navigation", () => {
+describe("no-window-navigation", processTimeout, () => {
   it("reports hard navigations", () => {
     expect(
       rulesHit(`

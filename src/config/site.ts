@@ -8,7 +8,9 @@ const siteConfig = {
   ogImagePath: "/og-image.png",
 } as const;
 
-export function createSiteHead(pathname: string, origin = clientEnv.VITE_APP_URL) {
+// Pass the rendered page's pathname for canonical and og:url tags. Pass undefined for a page that
+// has no URL of its own, such as a 404, so it never claims another page's canonical.
+export function createSiteHead(pathname: string | undefined, origin = clientEnv.VITE_APP_URL) {
   const meta: Array<Record<string, string>> = [
     { title: siteConfig.title },
     { name: "description", content: siteConfig.description },
@@ -22,15 +24,15 @@ export function createSiteHead(pathname: string, origin = clientEnv.VITE_APP_URL
   const links: Array<Record<string, string>> = [];
 
   if (origin) {
-    const safePathname = new URL(pathname, "https://placeholder.invalid").pathname;
-    const canonical = new URL(safePathname, `${origin}/`).toString();
     const image = new URL(siteConfig.ogImagePath, `${origin}/`).toString();
-    meta.push(
-      { property: "og:url", content: canonical },
-      { property: "og:image", content: image },
-      { name: "twitter:image", content: image },
-    );
-    links.push({ rel: "canonical", href: canonical });
+    meta.push({ property: "og:image", content: image }, { name: "twitter:image", content: image });
+
+    if (pathname !== undefined) {
+      const safePathname = new URL(pathname, "https://placeholder.invalid").pathname;
+      const canonical = new URL(safePathname, `${origin}/`).toString();
+      meta.push({ property: "og:url", content: canonical });
+      links.push({ rel: "canonical", href: canonical });
+    }
   }
 
   return { links, meta };

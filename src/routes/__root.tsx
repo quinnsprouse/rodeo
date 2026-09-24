@@ -1,43 +1,33 @@
-import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRoute, HeadContent, Scripts, rootRouteId } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import { RouteErrorComponent } from "@/components/route-error";
-import { RouteNotFoundComponent } from "@/components/route-not-found";
 import { createSiteHead } from "@/config/site";
 
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
-  head: () => {
-    const siteHead = createSiteHead("/");
+  head: ({ matches }) => {
+    // The deepest match is the rendered page. A 404 or failed page has no canonical URL. With
+    // notFoundMode "root" (router.tsx), an unknown URL matches only the root route.
+    const page = matches.at(-1);
+    const hasOwnUrl = page?.status === "success" && page.routeId !== rootRouteId;
+    const siteHead = createSiteHead(hasOwnUrl ? page.pathname : undefined);
 
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        // Browser chrome matches --background in each theme (app.css).
-        { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#ffffff" },
-        { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#0a0a0a" },
         ...siteHead.meta,
       ],
       links: [
         ...siteHead.links,
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-        {
-          rel: "preload",
-          href: "/fonts/Yellowtail-Regular.ttf",
-          as: "font",
-          type: "font/ttf",
-          crossOrigin: "anonymous",
-        },
         { rel: "stylesheet", href: appCss },
       ],
     };
   },
   component: RootComponent,
   shellComponent: RootShell,
-  errorComponent: RouteErrorComponent,
-  notFoundComponent: RouteNotFoundComponent,
 });
 
 function RootComponent() {
@@ -49,6 +39,10 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
+        {/* HeadContent keeps one meta tag per name, so the per-theme pair lives here. Browser
+            chrome matches --background in each theme (app.css). */}
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
       </head>
       <body>
         <a

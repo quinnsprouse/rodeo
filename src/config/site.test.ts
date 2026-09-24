@@ -11,6 +11,17 @@ describe("site identity", () => {
     expect(head.meta).not.toContainEqual(expect.objectContaining({ property: "og:image" }));
   });
 
+  it("omits the page URL for a page without a canonical path", () => {
+    const head = createSiteHead(undefined, "https://example.com");
+
+    expect(head.links).not.toContainEqual(expect.objectContaining({ rel: "canonical" }));
+    expect(head.meta).not.toContainEqual(expect.objectContaining({ property: "og:url" }));
+    expect(head.meta).toContainEqual({
+      property: "og:image",
+      content: "https://example.com/og-image.png",
+    });
+  });
+
   it("creates normalized route-aware canonical and social URLs", () => {
     const head = createSiteHead("/docs?ignored=true", "https://example.com");
 

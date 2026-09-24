@@ -1,10 +1,13 @@
-import { m } from "motion/react";
+import { LazyMotion, m } from "motion/react";
 
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 // ease-out-quint — matches the hero entrance easing
 const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+
+// Module scope, because React Compiler can't compile import() inside a component.
+const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.domAnimation);
 
 type LineKind = "cmd" | "ok" | "dim" | "note";
 
@@ -35,30 +38,35 @@ export function TerminalDemo({ className }: { className?: string }) {
         <span className="ml-2 font-mono text-xs text-white/55">my-app — zsh</span>
       </div>
 
-      {/* Replay */}
-      <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:px-5">
-        {lines.map((line, i) => (
-          <m.div
-            key={line.text}
-            initial={reducedMotion ? false : { opacity: 0, y: 6 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.35, delay: i * 0.09, ease: EASE_OUT }}
-            className={cn(
-              "flex items-baseline gap-2 whitespace-nowrap",
-              line.kind === "cmd" && "text-white/90",
-              line.kind === "ok" && "text-white/55",
-              line.kind === "dim" && "text-white/55",
-              line.kind === "note" && "pt-1 text-brand-soft",
-            )}
-          >
-            {line.kind === "cmd" && <span className="text-white/55 select-none">$</span>}
-            {line.kind === "ok" && <span className="text-terminal-success select-none">✓</span>}
-            {line.kind === "note" && <span className="select-none">→</span>}
-            <span>{line.text}</span>
-          </m.div>
-        ))}
-      </div>
+      {/* Replay. strict makes a full `motion` component throw here, because it would load every
+          animation feature up front. */}
+      <LazyMotion features={loadMotionFeatures} strict>
+        <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:px-5">
+          {lines.map((line, i) => (
+            <m.div
+              key={line.text}
+              initial={reducedMotion ? false : { opacity: 0, y: 6 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.35, delay: i * 0.09, ease: EASE_OUT }}
+              className={cn(
+                // Motion renders the hidden initial state on the server. Without JavaScript,
+                // nothing would reveal the lines.
+                "flex items-baseline gap-2 whitespace-nowrap noscript:transform-none! noscript:opacity-100!",
+                line.kind === "cmd" && "text-white/90",
+                line.kind === "ok" && "text-white/55",
+                line.kind === "dim" && "text-white/55",
+                line.kind === "note" && "pt-1 text-brand-soft",
+              )}
+            >
+              {line.kind === "cmd" && <span className="text-white/55 select-none">$</span>}
+              {line.kind === "ok" && <span className="text-terminal-success select-none">✓</span>}
+              {line.kind === "note" && <span className="select-none">→</span>}
+              <span>{line.text}</span>
+            </m.div>
+          ))}
+        </div>
+      </LazyMotion>
     </div>
   );
 }

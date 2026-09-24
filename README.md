@@ -32,7 +32,7 @@ The landing page is a demo. To start from a blank app:
 
 1. Replace `src/routes/index.tsx` with your home route. To keep a server-function example, keep `src/lib/starter-status.ts`. Otherwise, delete it and its test.
 2. Delete `src/components/rotating-word.tsx`, `terminal-demo.tsx`, and `wordmark.tsx`, plus `public/fonts/Yellowtail-Regular.ttf`.
-3. In `src/styles/app.css`, remove the Yellowtail `@font-face`, `--font-script`, the `--color-terminal*` and `--shadow-terminal` tokens, and the shimmer styles. In `src/routes/__root.tsx`, remove the Yellowtail preload.
+3. In `src/styles/app.css`, remove the Yellowtail `@font-face`, `--font-script`, the `--color-terminal*` and `--shadow-terminal` tokens, and the shimmer styles.
 4. Uninstall the demo packages: `npm uninstall penflow calligraph`.
 5. Update `src/config/site.ts`, `public/og-image.png`, and the demo assertions in `e2e/smoke.spec.ts`.
 
