@@ -1,8 +1,7 @@
 import type { IconSvgElement } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { LazyMotion } from "motion/react";
-import { z } from "zod";
+import * as z from "zod/mini";
 
 import {
   AiBookIcon,
@@ -25,7 +24,7 @@ import { cn } from "@/lib/utils";
 
 // Search params are user input too. An unknown ?demo= value falls back to the normal page.
 const demoSearchSchema = z.object({
-  demo: z.enum(["crash", "error"]).optional().catch(undefined),
+  demo: z.catch(z.optional(z.enum(["crash", "error"])), undefined),
 });
 
 const getStarterStatus = createServerFn({ method: "GET" })
@@ -50,6 +49,18 @@ export const Route = createFileRoute("/")({
     if (deps.crash) return await getStarterStatus({ data: { fail: true } });
     return await loadStarterStatus(deps.fail);
   },
+  head: () => ({
+    links: [
+      // Only this page draws the wordmark. Penflow loads the font with fetch(), so the preload
+      // uses as="fetch" to match that request.
+      {
+        rel: "preload",
+        href: "/fonts/Yellowtail-Regular.ttf",
+        as: "fetch",
+        crossOrigin: "anonymous",
+      },
+    ],
+  }),
   component: Home,
 });
 
@@ -153,144 +164,134 @@ function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) 
   );
 }
 
-// Defined at module scope because React Compiler can't compile import() inside a component.
-// LazyMotion also gets the same loader on every render.
-const loadMotionFeatures = () => import("motion/react").then((mod) => mod.domAnimation);
-
 function Home() {
   const starterStatus = Route.useLoaderData();
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
-    <LazyMotion features={loadMotionFeatures}>
-      <div className="bg-background selection:bg-brand/20">
-        {/* Hero — fills viewport */}
-        <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
-          <div className="mx-auto w-full max-w-2xl">
-            {/* Brand */}
-            <Wordmark animate={!prefersReducedMotion} />
+    <div className="bg-background selection:bg-brand/20">
+      {/* Hero — fills viewport */}
+      <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
+        <div className="mx-auto w-full max-w-2xl">
+          {/* Brand */}
+          <Wordmark animate={!prefersReducedMotion} />
 
-            {/* Tagline */}
-            <h1 className="mt-4 text-2xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
-              Built for{" "}
-              {prefersReducedMotion ? (
-                <span className="text-brand">agents.</span>
-              ) : (
-                <RotatingWord />
-              )}
-            </h1>
+          {/* Tagline */}
+          <h1 className="mt-4 text-2xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
+            Built for{" "}
+            {prefersReducedMotion ? <span className="text-brand">agents.</span> : <RotatingWord />}
+          </h1>
 
-            {/* Description */}
-            <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
-              A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
-              routing, server rendering, and agent docs. Free and open source.
-            </p>
+          {/* Description */}
+          <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
+            A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
+            routing, server rendering, and agent docs. Free and open source.
+          </p>
 
-            {/* Actions */}
-            <div className="mt-10">
-              <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
+          {/* Actions */}
+          <div className="mt-10">
+            <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
 
-              <div className="mt-5 flex items-center gap-5">
-                <a
-                  href="https://github.com/quinnsprouse/rodeo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-brand"
-                >
-                  <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
-                  GitHub
-                  <Icon
-                    icon={ArrowRight01Icon}
-                    className="size-3 -translate-x-1 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100"
-                    aria-hidden="true"
-                  />
-                </a>
-                <a
-                  href="https://viteplus.dev/guide/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Docs
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* The feedback loop — terminal replay + how it works behind the scenes */}
-        <section className="border-t border-border/40">
-          <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
-            <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
-            <h2 className="max-w-md text-xl leading-snug font-bold tracking-tight text-foreground">
-              Check changes before they reach main.
-            </h2>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
-              Run focused checks while editing, then build and test the app before pushing.
-            </p>
-
-            <TerminalDemo className="mt-10" />
-
-            <StarterStatusCard starterStatus={starterStatus} />
-
-            <div className="mt-12 space-y-8">
-              {loop.map((step) => (
-                <div key={step.when} className="grid gap-2 sm:grid-cols-[200px_1fr] sm:gap-8">
-                  <p className="font-mono text-sm font-medium text-brand">{step.when}</p>
-                  <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-                    {step.what}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Features — scroll to see */}
-        <section className="border-t border-border/40">
-          <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
-            <p className="mb-12 text-sm text-muted-foreground">What ships out of the box</p>
-
-            <div className="space-y-10">
-              {features.map((f) => (
-                <div key={f.title} className="grid gap-3 sm:grid-cols-[200px_1fr] sm:gap-8">
-                  <div className="flex items-start gap-2.5">
-                    <Icon
-                      icon={f.icon}
-                      className="mt-0.5 size-4 shrink-0 text-brand"
-                      strokeWidth={1.75}
-                      aria-hidden="true"
-                    />
-                    <h2 className="text-base font-semibold tracking-tight text-foreground">
-                      {f.title}
-                    </h2>
-                  </div>
-                  <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-                    {f.desc}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="border-t border-border/40">
-          <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-6 sm:gap-x-5 sm:px-10">
-            {stack.map((s) => (
+            <div className="mt-5 flex items-center gap-5">
               <a
-                key={s.name}
-                href={s.href}
+                href="https://github.com/quinnsprouse/rodeo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-brand"
               >
-                {s.name}
+                <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
+                GitHub
+                <Icon
+                  icon={ArrowRight01Icon}
+                  className="size-3 -translate-x-1 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100"
+                  aria-hidden="true"
+                />
               </a>
+              <a
+                href="https://viteplus.dev/guide/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                Docs
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The feedback loop — terminal replay + how it works behind the scenes */}
+      <section className="border-t border-border/40">
+        <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
+          <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
+          <h2 className="max-w-md text-xl leading-snug font-bold tracking-tight text-foreground">
+            Check changes before they reach main.
+          </h2>
+          <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
+            Run focused checks while editing, then build and test the app before pushing.
+          </p>
+
+          <TerminalDemo className="mt-10" />
+
+          <StarterStatusCard starterStatus={starterStatus} />
+
+          <div className="mt-12 space-y-8">
+            {loop.map((step) => (
+              <div key={step.when} className="grid gap-2 sm:grid-cols-[200px_1fr] sm:gap-8">
+                <p className="font-mono text-sm font-medium text-brand">{step.when}</p>
+                <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
+                  {step.what}
+                </p>
+              </div>
             ))}
           </div>
-        </footer>
-      </div>
-    </LazyMotion>
+        </div>
+      </section>
+
+      {/* Features — scroll to see */}
+      <section className="border-t border-border/40">
+        <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
+          <p className="mb-12 text-sm text-muted-foreground">What ships out of the box</p>
+
+          <div className="space-y-10">
+            {features.map((f) => (
+              <div key={f.title} className="grid gap-3 sm:grid-cols-[200px_1fr] sm:gap-8">
+                <div className="flex items-start gap-2.5">
+                  <Icon
+                    icon={f.icon}
+                    className="mt-0.5 size-4 shrink-0 text-brand"
+                    strokeWidth={1.75}
+                    aria-hidden="true"
+                  />
+                  <h2 className="text-base font-semibold tracking-tight text-foreground">
+                    {f.title}
+                  </h2>
+                </div>
+                <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
+                  {f.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border/40">
+        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-6 sm:gap-x-5 sm:px-10">
+          {stack.map((s) => (
+            <a
+              key={s.name}
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              {s.name}
+            </a>
+          ))}
+        </div>
+      </footer>
+    </div>
   );
 }

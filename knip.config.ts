@@ -9,6 +9,8 @@ export default {
     "e2e/**/*.ts",
     "scripts/**/*.mjs",
     "src/routes/**/*.{ts,tsx}",
+    // TanStack Start loads this by convention.
+    "src/start.ts",
     "src/**/*.test.{ts,tsx}",
   ],
   ignoreDependencies: [

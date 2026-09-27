@@ -18,6 +18,8 @@ Before a production deploy, set `VITE_APP_URL` to the public origin. `src/config
    PORT=8080 npm run start
    ```
 
+The build writes Brotli and gzip copies of hashed assets and `public/` files, and the server sends them to browsers that accept them. The server sends rendered HTML uncompressed. Run it behind a proxy or CDN that compresses responses, such as Caddy, nginx, or Cloudflare.
+
 ## Deploy to Vercel
 
 Import the repository in Vercel. Nitro detects Vercel during the build and selects its preset, so the project needs no configuration. Add `VITE_APP_URL` under **Environment Variables**.

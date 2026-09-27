@@ -17,7 +17,7 @@ The category defaults already enable checks for floating promises, unsafe promis
 
 | Rule                                  | Why                                                            | Do this instead                                   |
 | ------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------- |
-| `no-restricted-imports`               | Icon and animation packages we don't use                       | `@/components/icons`, `motion/react`              |
+| `no-restricted-imports`               | Icon and animation packages we don't use, and classic Zod      | `@/components/icons`, `motion/react`, `zod/mini`  |
 | `import/no-relative-parent-imports`   | `../../lib/x` paths break when files move                      | `@/lib/x`                                         |
 | `import/no-default-export`            | Default exports defeat rename refactors and Knip               | Named exports (config files are exempt)           |
 | `typescript/no-explicit-any`          | `any` turns off the type checker where it matters most         | `unknown` plus narrowing, or a real type          |

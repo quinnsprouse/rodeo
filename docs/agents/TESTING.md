@@ -40,7 +40,9 @@ Lint enforcement is the exception: `lint/rules.test.ts` runs each `rodeo/*` rule
 - `npm run typecheck` includes `e2e/`. Playwright runs TypeScript without checking types.
 - Capture both `pageerror` events and browser `console.error` messages; assert zero errors at test end.
 - Use accessible selectors: `page.getByRole(...)`, `page.getByText(...)`.
-- `e2e/accessibility.spec.ts` runs axe against WCAG 2.2 AA on each page, in the light and the dark theme. It also checks the security headers. Add each new route to it. Fix violations instead of turning off axe rules.
+- `e2e/accessibility.spec.ts` runs axe against WCAG 2.2 AA on each page, in the light and the dark theme. Add each new route to it. Fix violations instead of turning off axe rules.
+- `e2e/security.spec.ts` checks the security headers, and it checks that a server function rejects a cross-site call.
+- `e2e/document.spec.ts` checks that hashed assets ship compressed with a one-year cache, and that the head keeps a `theme-color` for each color scheme.
 
 ## Clean template test
 

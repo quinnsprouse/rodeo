@@ -164,6 +164,17 @@ export function Probe() { return <Snippet text="npm ci" className="bg-brand" />;
       source: `export function Probe() { return <span className="rounded-huge" />; }`,
     },
     {
+      name: "Promise methods called with extra arguments",
+      rule: "typescript(TS2554)",
+      source: `export const settled = Promise.resolve(1).catch(() => 0, () => 1);`,
+    },
+    {
+      name: "classic Zod imports",
+      rule: "eslint(no-restricted-imports)",
+      source: `import { z } from "zod";
+export const schema = z.object({ id: z.string() });`,
+    },
+    {
       name: "inline dependency suppressions",
       rule: "rodeo(no-disable-directives)",
       source: `/* oxlint-disable react-hooks-js/exhaustive-deps */
@@ -183,7 +194,9 @@ export function Probe({ title }: { title: string }) {
     expect,
   }) => {
     const result = await lint(`import { useEffect, useState } from "react";
+import * as z from "zod/mini";
 import { Snippet } from "@/components/ui/snippet";
+export const itemSchema = z.object({ id: z.string(), tab: z.catch(z.enum(["a", "b"]), "a") });
 export function Probe({ delay }: { delay: number }) {
   const [ticks, setTicks] = useState(0);
   useEffect(() => {

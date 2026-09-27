@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod/mini";
 
 function blankToUndefined(value: unknown) {
   return typeof value === "string" && value.trim() === "" ? undefined : value;
@@ -8,12 +8,14 @@ function blankToUndefined(value: unknown) {
 // secret here. Add each new variable to this schema, to src/vite-env.d.ts, and to .env.example.
 const clientEnvSchema = z.object({
   // Public production origin for canonical and social metadata. Optional in local development.
-  VITE_APP_URL: z.preprocess(
-    blankToUndefined,
-    z
-      .url({ protocol: /^https?$/ })
-      .transform((url) => new URL(url).origin)
-      .optional(),
+  VITE_APP_URL: z.pipe(
+    z.transform(blankToUndefined),
+    z.optional(
+      z.pipe(
+        z.url({ protocol: /^https?$/ }),
+        z.transform((url) => new URL(url).origin),
+      ),
+    ),
   ),
 });
 

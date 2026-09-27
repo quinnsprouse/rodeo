@@ -34,13 +34,3 @@ test("not-found and error pages have no WCAG violations", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Something went wrong" })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
 });
-
-test("responses carry the baseline security headers", async ({ request }) => {
-  const response = await request.get("/");
-  const headers = response.headers();
-
-  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
-  expect(headers["x-content-type-options"]).toBe("nosniff");
-  expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
-  expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
-});

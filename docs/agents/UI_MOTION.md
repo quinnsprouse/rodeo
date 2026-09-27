@@ -20,6 +20,8 @@
 ## Motion and layout
 
 - Import animation components from `motion/react`.
+- Render `m` components inside `LazyMotion`, and load the features from `@/lib/motion-features` with `import()`, as `src/components/terminal-demo.tsx` does. The features then download in their own chunk after the page renders. Set `strict` on `LazyMotion`, so a full `motion` component inside it throws. A `motion` component loads every feature up front.
+- Motion renders the `initial` state on the server. If `initial` hides content, add `noscript:opacity-100!` to it, so the content still shows without JavaScript.
 - Prefer animating `transform` and `opacity`; specify transition properties instead of `transition: all`.
 - Respect reduced-motion preferences. The existing `usePrefersReducedMotion` hook handles the browser subscription and server snapshot.
 - Use `tabular-nums` for changing or column-aligned numbers.

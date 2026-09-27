@@ -98,17 +98,28 @@ test.describe("server-rendered introduction", () => {
     await expect(page.getByText("Rodeo", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: /built for/i })).toHaveCSS("opacity", "1");
     await expect(page.getByText(installCommand)).toBeVisible();
+    // Motion hides each terminal line on its wrapper, so check the opacity of every ancestor.
+    const lastLine = page.getByText("checks passed. ready to push.");
+    expect(await lastLine.evaluate((line) => line.checkVisibility({ opacityProperty: true }))).toBe(
+      true,
+    );
   });
 });
 
 test("unknown routes return a real 404 inside the application shell", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
+  const requestedUrls: string[] = [];
+  page.on("request", (request) => {
+    requestedUrls.push(request.url());
+  });
   const response = await page.goto("/definitely-missing");
 
   expect(response?.status()).toBe(404);
   await expect(page).toHaveTitle("Rodeo — Wrangle Your AI Agents");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back home" })).toBeVisible();
+  // Only the home page draws the wordmark, so no other page downloads its font.
+  expect(requestedUrls.filter((url) => url.includes("Yellowtail"))).toEqual([]);
   expect(
     browserErrors.filter(
       (error) => !error.message.includes("server responded with a status of 404"),
