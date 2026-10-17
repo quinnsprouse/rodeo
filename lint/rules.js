@@ -347,11 +347,11 @@ const noComments = defineRule({
     type: "problem",
     docs: {
       description:
-        "Ban code comments. Agents copy comments, so a workaround note spreads; the code itself must say what it does, and a `why:` comment records a cause outside the code.",
+        "Ban code comments. Agents copy comments, so a workaround note spreads. The code must say what it does. A `why:` comment is a last resort for a constraint outside the code.",
     },
     messages: {
       comment:
-        "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test. Delete a comment that restates the code, and fix a workaround instead of explaining it. Only when the code must stay as it is because of something outside it, such as a browser quirk, a spec requirement, or a library bug, start the comment with `why:` and name that cause. See docs/agents/LINT_RULES.md#comments",
+        "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test. Delete a comment that restates the code, and fix a workaround instead of explaining it. A `why:` comment is a last resort: use one only when the code must stay as it is because of a constraint outside your control, such as a browser bug, and name that cause. See docs/agents/LINT_RULES.md#comments",
       reason:
         "A `why:` comment needs a reason of at least {{min}} words that names the cause outside the code. If you cannot name one, delete the comment.",
     },

@@ -35,7 +35,7 @@ const protectedPaths = [
   {
     test: isNewDoc,
     reason:
-      "Project docs live in docs/agents/ and cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. Put a lasting reason next to its code as a why: comment.",
+      "Project docs live in docs/agents/ and cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. To keep a decision, encode it in code, a type, or a lint rule.",
   },
   {
     test: (path) => /^src\/.+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path),

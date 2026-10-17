@@ -8,7 +8,7 @@ Most lint errors name the fix. Read the error, fix the cause, and move on. Warni
 
 Comments are banned. Agents copy them, and one note about a workaround teaches the next agent to write its own workaround instead of fixing the cause. Say it in code: a better name, a smaller function, a type.
 
-Keep a comment only when the code must stay as it is because of something you can't change, and start it with `why:`:
+Almost every comment can go. The rare exception is code that must stay as it is because of something outside your control, such as a browser bug. Only then, start the comment with `why:` and name that cause:
 
 ```ts
 // why: Penflow's font parser reads window at import time, so it loads only inside ClientOnly.

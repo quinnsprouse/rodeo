@@ -11,7 +11,7 @@ Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on Base UI, Tail
 ## Rules
 
 - **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add an exception to `lint.overrides` in `vite.config.ts` with a `why:` comment.
-- **No comments.** Make the code say it. The one exception is a `why:` comment that names a cause outside the code, such as a browser quirk or a library bug.
+- **No comments.** Make the code say it with a clearer name, a smaller function, or a type. A `why:` comment is a last resort, only for a constraint outside the code that you can't fix, such as a browser bug.
 - **No unit tests in app code.** Test behavior end to end with Playwright in `e2e/`.
 - **No new docs.** `docs/agents/` holds the only guides. Plans, notes, PRDs, experiments, and generated output go in `.scratch/`.
 - **Commits** follow Conventional Commits, `type(scope): description`, with no Co-Authored-By trailer.
