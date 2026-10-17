@@ -22,7 +22,6 @@ test("server functions reject cross-site requests", async ({ page, request }) =>
   });
   expect(crossSite.status()).toBe(403);
 
-  // The same request from the app's origin reaches the function, which fails on purpose.
   const sameOrigin = await request.get(call.url(), {
     headers: { ...headers, "sec-fetch-site": "same-origin" },
   });

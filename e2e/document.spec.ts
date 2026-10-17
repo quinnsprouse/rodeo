@@ -29,3 +29,31 @@ test("browser chrome follows each color scheme", async ({ page }) => {
     page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'),
   ).toHaveAttribute("content", "#0a0a0a");
 });
+
+test("each page names its own canonical URL from the configured origin", async ({ page }) => {
+  await page.goto("/?demo=error");
+
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://rodeo.example/",
+  );
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    "content",
+    "https://rodeo.example/",
+  );
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    "https://rodeo.example/og-image.png",
+  );
+});
+
+test("a missing page claims no canonical URL", async ({ page }) => {
+  await page.goto("/definitely-missing");
+
+  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    "content",
+    "https://rodeo.example/og-image.png",
+  );
+});

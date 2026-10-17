@@ -32,6 +32,39 @@ test("home page renders and copy flow works", async ({ page }) => {
   expect(browserErrors).toHaveLength(0);
 });
 
+test("copy explains the manual path when the clipboard API is unavailable", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+  });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Copy to clipboard" }).click();
+  await expect(
+    page.getByText("Couldn't copy. Select and copy the command manually."),
+  ).toBeVisible();
+});
+
+test("copy reports denied clipboard access and succeeds on retry", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator.clipboard, "writeText", {
+      configurable: true,
+      value: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")),
+    });
+  });
+  await page.goto("/");
+  const copyButton = page.getByRole("button", { name: "Copy to clipboard" });
+
+  await copyButton.click();
+  await expect(
+    page.getByText("Couldn't copy. Select and copy the command manually."),
+  ).toBeVisible();
+
+  await page.evaluate(() => Reflect.deleteProperty(navigator.clipboard, "writeText"));
+  await copyButton.click();
+  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(installCommand);
+});
+
 test("full-stack example handles and recovers from server errors", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.goto("/");
@@ -98,7 +131,7 @@ test.describe("server-rendered introduction", () => {
     await expect(page.getByText("Rodeo", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: /built for/i })).toHaveCSS("opacity", "1");
     await expect(page.getByText(installCommand)).toBeVisible();
-    // Motion hides each terminal line on its wrapper, so check the opacity of every ancestor.
+    // why: Motion fades each line through its wrapper's opacity, which toBeVisible ignores.
     const lastLine = page.getByText("checks passed. ready to push.");
     expect(await lastLine.evaluate((line) => line.checkVisibility({ opacityProperty: true }))).toBe(
       true,
@@ -118,7 +151,6 @@ test("unknown routes return a real 404 inside the application shell", async ({ p
   await expect(page).toHaveTitle("Rodeo — Wrangle Your AI Agents");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back home" })).toBeVisible();
-  // Only the home page draws the wordmark, so no other page downloads its font.
   expect(requestedUrls.filter((url) => url.includes("Yellowtail"))).toEqual([]);
   expect(
     browserErrors.filter(

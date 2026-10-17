@@ -24,6 +24,7 @@ playwright-report
 .env
 .env.*
 !.env.example
+!.env.e2e
 .npmrc
 
 # Editor directories and files
@@ -51,3 +52,6 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .vitest/
+
+# Lint policy probes that lint/policy.test.ts writes under src/ and removes
+.policy-probe-*/

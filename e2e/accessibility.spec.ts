@@ -1,8 +1,6 @@
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-// jsx-a11y reads source code. Axe checks the rendered page, including color contrast in both
-// themes, landmarks, and the accessible names in the final DOM.
 const wcagTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function axeViolations(page: Page) {
@@ -16,7 +14,7 @@ async function axeViolations(page: Page) {
 
 for (const colorScheme of ["light", "dark"] as const) {
   test(`home page has no WCAG violations in the ${colorScheme} theme`, async ({ page }) => {
-    // Reduced motion renders the settled page, so axe never samples a half-faded element.
+    // why: Axe samples colors mid-animation, so reduced motion renders the settled page.
     await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.getByText("Route loader and server function are connected.")).toBeVisible();

@@ -1,15 +1,20 @@
-// PreToolUse guard for Claude Code (.claude/settings.json) and Codex (.codex/hooks.json). It blocks
-// the few agent actions that no lint rule can express.
-// It denies edits to generated or tool-owned files, Git hook bypasses, and package managers other
-// than npm and Vite+. It answers "ask" for history rewrites and destructive Git commands, so a human
-// decides. Everything else passes.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-// The hooks live in <root>/.agents/hooks for both agents, whatever the session cwd is.
 const projectRoot =
   process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+
+const docLocations = [".agents/", ".claude/", ".codex/", ".github/", ".scratch/", "docs/agents/"];
+
+function isNewDoc(path) {
+  return (
+    /\.mdx?$/.test(path) &&
+    path !== "CLAUDE.md" &&
+    !docLocations.some((location) => path.startsWith(location)) &&
+    !existsSync(resolve(projectRoot, path))
+  );
+}
 
 const protectedPaths = [
   {
@@ -28,6 +33,16 @@ const protectedPaths = [
       ".vite-hooks/_ is installed by Vite+. Edit the tracked scripts in .vite-hooks/ instead and run `npm run setup`.",
   },
   {
+    test: isNewDoc,
+    reason:
+      "Project docs live in docs/agents/ and cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. Put a lasting reason next to its code as a why: comment.",
+  },
+  {
+    test: (path) => /^src\/.+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path),
+    reason:
+      "App code has no unit tests. Test the behavior end to end in e2e/ with Playwright, through the page or through the server's HTTP endpoints. See docs/agents/TESTING.md.",
+  },
+  {
     test: (path) => path.startsWith(".output/") || path.startsWith("node_modules/"),
     reason:
       "Build output and node_modules are not source. Change the input that produced this file instead.",
@@ -37,16 +52,14 @@ const protectedPaths = [
 const hookBypass =
   "Fix the reported problems instead of skipping the Git hooks, or ask a human to bypass them.";
 
-// Each pattern is matched against the raw command text, so it also sees chained commands.
 const guardedCommands = [
   {
-    // --no-verify, or -n alone or inside a short-flag cluster such as -nm.
     test: /\bgit\b[^\n;&|]*\bcommit\b[^\n;&|]*\s(?:--no-verify\b|-[a-zA-Z]*n[a-zA-Z]*\b)/,
     decision: "deny",
     reason: `Committing with --no-verify skips the pre-commit and commit-msg checks. ${hookBypass}`,
   },
   {
-    // `git push -n` is a dry run, so only the long flag skips pre-push.
+    // why: `git push -n` is a dry run, so only the long flag skips pre-push.
     test: /\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*\s--no-verify\b/,
     decision: "deny",
     reason: `Pushing with --no-verify skips the pre-push gate (npm run check:push). ${hookBypass}`,
@@ -57,8 +70,7 @@ const guardedCommands = [
     reason: `Overriding core.hooksPath or setting HUSKY=0 / VITE_GIT_HOOKS=0 disables the Git hooks. ${hookBypass}`,
   },
   {
-    // --force and -f overwrite the remote unconditionally, as does a +refspec.
-    // --force-with-lease refuses to clobber commits you have not seen, so it passes.
+    // why: --force-with-lease refuses to overwrite commits you have not fetched, so it passes.
     test: /\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*\s(?:--force(?![-\w])|-[a-zA-Z]*f[a-zA-Z]*\b|\+\S)/,
     decision: "ask",
     reason:
@@ -102,7 +114,6 @@ function projectPath(filePath) {
   return path.startsWith("..") ? null : path;
 }
 
-// Codex's apply_patch sends the patch text. A header line in the patch names each file it touches.
 function patchTargets(patch) {
   return [
     ...patch.matchAll(/^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/gm),
@@ -137,6 +148,6 @@ try {
     if (hit) decide(hit.decision, hit.reason);
   }
 } catch {
-  // A guard that cannot parse its input must not block the agent.
+  // why: A guard that cannot parse its input must not block the agent.
 }
 process.exit(0);

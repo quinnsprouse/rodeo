@@ -1,52 +1,29 @@
 # Deploy
 
-Nitro builds the server, so one codebase deploys to Node, Vercel, or Cloudflare Workers. A Nitro preset picks the target at build time. The security headers in `vite.config.ts` apply on every target.
+Nitro picks the target at build time, so one codebase ships to Node, Vercel, or Cloudflare Workers with the same security headers. On every target, set `VITE_APP_URL` to the public origin first. The canonical and social tags use it.
 
-Before a production deploy, set `VITE_APP_URL` to the public origin. `src/config/env.ts` validates it at startup, and the canonical and social tags use it.
+## Node
 
-## Deploy to a Node server
+```bash
+npm run build
+PORT=8080 npm run start
+```
 
-1. Build the app:
+The server listens on `PORT`, default `3000`, and on `HOST`. It serves prebuilt Brotli and gzip copies of assets but sends rendered HTML uncompressed, so put a compressing proxy or CDN in front of it, such as Caddy, nginx, or Cloudflare.
 
-   ```bash
-   npm run build
-   ```
+## Vercel
 
-2. Start the server. It listens on `PORT` (default `3000`) and `HOST`:
+Import the repository in Vercel and add `VITE_APP_URL` under **Environment Variables**. Nitro detects Vercel during the build, so nothing else needs configuring.
 
-   ```bash
-   PORT=8080 npm run start
-   ```
+## Cloudflare Workers
 
-The build writes Brotli and gzip copies of hashed assets and `public/` files, and the server sends them to browsers that accept them. The server sends rendered HTML uncompressed. Run it behind a proxy or CDN that compresses responses, such as Caddy, nginx, or Cloudflare.
+```bash
+NITRO_PRESET=cloudflare_module npm run build
+npx wrangler dev
+npx wrangler login
+npx wrangler deploy
+```
 
-## Deploy to Vercel
+`npx wrangler dev` runs the build in Cloudflare's runtime before you deploy. To deploy on every push instead, connect the repository with Workers Builds, with the same build command and `npx wrangler deploy` as the deploy command.
 
-Import the repository in Vercel. Nitro detects Vercel during the build and selects its preset, so the project needs no configuration. Add `VITE_APP_URL` under **Environment Variables**.
-
-## Deploy to Cloudflare Workers
-
-1. Build with the Workers preset:
-
-   ```bash
-   NITRO_PRESET=cloudflare_module npm run build
-   ```
-
-   The build writes `.output/server/wrangler.json` and a `.output/public/_headers` file that applies the security headers to static assets.
-
-2. To test the Worker locally in Cloudflare's runtime, run:
-
-   ```bash
-   npx wrangler dev
-   ```
-
-3. Log in and deploy:
-
-   ```bash
-   npx wrangler login
-   npx wrangler deploy
-   ```
-
-To deploy on every push instead, connect the repository with Cloudflare Workers Builds. Set the build command to `NITRO_PRESET=cloudflare_module npm run build` and the deploy command to `npx wrangler deploy`.
-
-Server code on Workers runs in `workerd` with Node.js compatibility turned on, not in Node itself. The runtime has no writable file system, and some Node APIs are missing. If server code uses a Node API, run `npx wrangler dev` against a Workers build before you deploy.
+Workers run `workerd` with Node compatibility, not Node. There is no writable file system, and some Node APIs are missing. If server code uses a Node API, test it with `npx wrangler dev` first.

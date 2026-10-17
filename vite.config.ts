@@ -7,8 +7,10 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite-plus";
 
-// Explicit inputs keep Vite Task caching reliable inside restricted agent sandboxes,
-// where automatic file tracing may not be able to create its shared-memory channel.
+import { rodeoRuleExceptions, rodeoRules } from "./lint/rodeo-rules";
+
+// why: Vite Task's automatic file tracing needs a shared-memory channel that restricted agent
+// sandboxes may not allow, so caching depends on these explicit inputs.
 const verificationInputs = [
   ".agents/hooks/**",
   ".claude/settings.json",
@@ -39,9 +41,8 @@ const verificationInputs = [
   "vitest.config.ts",
 ];
 
-// Nitro adds these headers to every response. The CSP limits framing, plugins, <base>, and form
-// targets. It has no script-src, because TanStack Start's hydration uses inline scripts. Add a
-// script-src with a nonce before the app loads third-party scripts.
+// why: TanStack Start hydrates with inline scripts, so the CSP has no script-src. Add one with a
+// nonce before the app loads a third-party script.
 const securityHeaders = {
   "content-security-policy":
     "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'",
@@ -51,6 +52,64 @@ const securityHeaders = {
   "strict-transport-security": "max-age=31536000",
   "x-content-type-options": "nosniff",
 };
+
+type ImportPattern = { group: string[]; message: string };
+
+const restrictedImportPaths = ["zod", "zod/v3", "zod/v4"].map((name) => ({
+  name,
+  message:
+    "Import schemas from zod/mini. Search schemas and client env ship in the entry chunk, and classic Zod adds about 14 KB to every route.",
+}));
+
+const restrictedImportPatterns: ImportPattern[] = [
+  {
+    group: ["lucide-react", "react-icons", "react-icons/*", "@heroicons/*", "@tabler/icons-react"],
+    message: "Icons come from @/components/icons (Hugeicons). See docs/agents/UI_MOTION.md",
+  },
+  {
+    group: ["framer-motion"],
+    message: "Import from motion/react; framer-motion is the legacy package name.",
+  },
+  {
+    group: ["@/routes/*"],
+    message:
+      "Route modules are entry points that only the router imports. Move the shared code into src/components, src/hooks, or src/lib.",
+  },
+];
+
+const testApis: ImportPattern = {
+  group: ["vite-plus/test", "vitest", "vitest/*", "@testing-library/*", "@playwright/test"],
+  message:
+    "App code has no unit tests. Test the behavior end to end in e2e/ with Playwright, through the page or through the server's HTTP endpoints. See docs/agents/TESTING.md",
+};
+
+const nodeBuiltins: ImportPattern = {
+  group: ["node:*"],
+  message:
+    "Node built-ins exist only on the server. Use them in a *.server.ts module, which TanStack Start keeps out of the client bundle, and call that module from a server function.",
+};
+
+type ImportRestriction = [
+  "error",
+  { paths: typeof restrictedImportPaths; patterns: ImportPattern[] },
+];
+
+// why: Oxlint replaces a rule's options in an override instead of merging them, so each layer
+// repeats the shared restrictions.
+function restrictImports(...layerPatterns: ImportPattern[]): ImportRestriction {
+  return [
+    "error",
+    { paths: restrictedImportPaths, patterns: [...restrictedImportPatterns, ...layerPatterns] },
+  ];
+}
+
+const nodeGlobals = ["process", "Buffer", "global", "__dirname", "__filename", "require"].map(
+  (name) => ({
+    name,
+    message:
+      "Node globals exist only on the server. Read them in a *.server.ts module and call it from a server function. Secrets come from process.env there, parsed with a Zod Mini schema. See docs/agents/TANSTACK_START.md",
+  }),
+);
 
 export default defineConfig({
   resolve: {
@@ -73,7 +132,7 @@ export default defineConfig({
         env: ["VITE_*", "NODE_ENV"],
       },
       "verify:build": {
-        command: ["tsc -b", "vp build --logLevel error"],
+        command: ["tsc -b", "vp build --mode e2e --logLevel error"],
         dependsOn: ["verify:fast"],
         input: verificationInputs,
         output: [".output/**"],
@@ -98,22 +157,14 @@ export default defineConfig({
         command: "react-doctor --verbose --blocking warning",
         cache: false,
       },
-      "verify:coverage": {
-        command: ["node scripts/check-toolchain.mjs", "vp test run --coverage --reporter=dot"],
-        dependsOn: ["verify:fast"],
-        input: verificationInputs,
-        output: ["coverage/**"],
-        env: ["VITE_*", "NODE_ENV"],
-      },
       "verify:ci": {
         command: ["vp run verify:doctor", "npm audit --audit-level=high"],
-        dependsOn: ["verify:template", "verify:coverage"],
+        dependsOn: ["verify:template"],
         cache: false,
       },
     },
   },
 
-  // Oxfmt — https://oxc.rs/docs/guide/usage/formatter/config.html
   fmt: {
     tabWidth: 2,
     semi: true,
@@ -138,9 +189,8 @@ export default defineConfig({
     ],
   },
 
-  // Oxlint — https://oxc.rs/docs/guide/usage/linter/config
   lint: {
-    // NOTE: setting `plugins` overwrites oxlint's default set — keep "oxc" and "unicorn" listed
+    // why: Setting plugins replaces Oxlint's default set, so oxc and unicorn must stay listed.
     plugins: [
       "typescript",
       "oxc",
@@ -166,76 +216,41 @@ export default defineConfig({
     options: {
       typeAware: true,
       typeCheck: true,
-      // Warnings block: an agent never sees a yellow line it can ignore.
       denyWarnings: true,
-      // Inline suppression is banned (rodeo/no-disable-directives); these make the ban airtight.
       reportUnusedDisableDirectives: "error",
       respectEslintDisableDirectives: false,
     },
     jsPlugins: [
       { name: "react-hooks-js", specifier: "eslint-plugin-react-hooks" },
-      { name: "testing-library", specifier: "eslint-plugin-testing-library" },
-      { name: "jest-dom", specifier: "eslint-plugin-jest-dom" },
       { name: "playwright", specifier: "eslint-plugin-playwright" },
-      // Design-system rules for Tailwind + shadcn/ui — https://github.com/shadcn-ui/lint
       { name: "shadcn", specifier: "@shadcn/lint" },
       {
         name: "eslint-tanstack-router",
         specifier: "@tanstack/eslint-plugin-router",
       },
-      // Project rules — docs/agents/LINT_RULES.md
       { name: "rodeo", specifier: "./lint/rules.js" },
     ],
     rules: {
       "no-deprecated": "warn",
 
-      // Obsolete with the automatic JSX runtime (React 17+)
+      // why: The automatic JSX runtime (React 17+) does not need React in scope.
       "react/react-in-jsx-scope": "off",
 
-      // Inline objects, functions, and JSX in props are normal in React 19. Motion props take
+      // why: Inline objects, functions, and JSX in props are normal in React 19. Motion props take
       // objects, Base UI composes through render={<Link />}, and React Compiler memoizes them.
       "react-perf/jsx-no-new-object-as-prop": "off",
       "react-perf/jsx-no-new-function-as-prop": "off",
       "react-perf/jsx-no-new-array-as-prop": "off",
       "react-perf/jsx-no-jsx-as-prop": "off",
 
-      // Side-effect imports are legitimate for styles and test matchers
-      "import/no-unassigned-import": [
-        "warn",
-        { allow: ["**/*.css", "@testing-library/jest-dom/vitest"] },
-      ],
+      "import/no-unassigned-import": ["warn", { allow: ["**/*.css"] }],
 
-      "no-restricted-imports": [
-        "error",
-        {
-          // Search schemas and client env ship in the entry chunk. See docs/adr/0007-schemas-use-zod-mini.md
-          paths: ["zod", "zod/v3", "zod/v4"].map((name) => ({
-            name,
-            message: "Import schemas from zod/mini. Classic Zod adds about 14 KB to every route.",
-          })),
-          patterns: [
-            {
-              group: [
-                "lucide-react",
-                "react-icons",
-                "react-icons/*",
-                "@heroicons/*",
-                "@tabler/icons-react",
-              ],
-              message:
-                "Icons come from @/components/icons (Hugeicons). See docs/agents/UI_MOTION.md",
-            },
-            {
-              group: ["framer-motion"],
-              message: "Import from motion/react; framer-motion is the legacy package name.",
-            },
-          ],
-        },
-      ],
+      "no-restricted-imports": restrictImports(),
       "import/no-relative-parent-imports": "error",
       "import/no-default-export": "error",
+      "import/no-cycle": "error",
+      "unicorn/prefer-node-protocol": "error",
 
-      // Type-safety escape hatches agents reach for under pressure
       "typescript/no-explicit-any": "error",
       "typescript/no-non-null-assertion": "error",
       "typescript/ban-ts-comment": [
@@ -244,7 +259,10 @@ export default defineConfig({
       ],
       "typescript/no-misused-promises": "error",
       "typescript/prefer-promise-reject-errors": "error",
-      // A new union member must be handled explicitly, even when a switch has a default.
+      "typescript/only-throw-error": "error",
+      "typescript/use-unknown-in-catch-callback-variable": "error",
+      "typescript/require-await": "error",
+      "typescript/return-await": ["error", "error-handling-correctness-only"],
       "typescript/switch-exhaustiveness-check": [
         "error",
         { considerDefaultExhaustiveForUnions: false },
@@ -256,25 +274,26 @@ export default defineConfig({
       "typescript/no-unsafe-return": "error",
       "typescript/no-unsafe-type-assertion": "error",
 
-      // Runtime footguns
       eqeqeq: ["error", "always", { null: "ignore" }],
       "no-empty": "error",
+      "no-alert": "error",
+      "no-warning-comments": [
+        "error",
+        { terms: ["todo", "fixme", "xxx", "hack"], location: "anywhere" },
+      ],
+      complexity: ["error", 20],
+      "max-depth": ["error", 4],
       "react/button-has-type": "error",
       "react/checked-requires-onchange-or-readonly": "error",
       "react/no-danger": "error",
       "no-console": ["error", { allow: ["warn", "error"] }],
       "unicorn/no-array-for-each": "error",
       "unicorn/no-abusive-eslint-disable": "error",
+      "vitest/no-conditional-in-test": "error",
+      "vitest/no-identical-title": "error",
 
-      // Project rules — docs/agents/LINT_RULES.md
-      "rodeo/no-disable-directives": "error",
-      "rodeo/server-fn-requires-validator": "error",
-      "rodeo/no-state-from-props": "error",
-      "rodeo/no-module-scope-browser-globals": "error",
-      "rodeo/no-window-navigation": "error",
+      ...rodeoRules,
 
-      // Design system (@shadcn/lint) — errors name the token, size, or variant to use instead.
-      // Components and theme are discovered from components.json and src/styles/app.css.
       "shadcn/no-restyle": ["error", { allow: ["layout"] }],
       "shadcn/no-raw-colors": "error",
       "shadcn/no-arbitrary-values": ["error", { allow: ["layout"] }],
@@ -282,10 +301,8 @@ export default defineConfig({
       "shadcn/no-unknown-classes": "error",
       "shadcn/require-static-classes": "error",
 
-      // TanStack Router
       "eslint-tanstack-router/create-route-property-order": "warn",
 
-      // React hooks (React Compiler compatible rules)
       "react-hooks-js/rules-of-hooks": "error",
       "react-hooks-js/exhaustive-deps": "error",
       "react-hooks-js/config": "error",
@@ -301,25 +318,23 @@ export default defineConfig({
       "react-hooks-js/set-state-in-render": "error",
       "react-hooks-js/static-components": "error",
       "react-hooks-js/unsupported-syntax": "warn",
-      // React Compiler skips a component it can't compile, and that component loses memoization.
       "react-hooks-js/todo": "error",
       "react-hooks-js/use-memo": "error",
       "react-hooks-js/void-use-memo": "error",
     },
-    // Every lint exception lives here with a reason. Inline disable comments are errors (ADR 0004).
     overrides: [
       {
         files: ["**/*.{ts,tsx}"],
         rules: {
-          // noImplicitReturns checks control flow correctly for exhaustive union switches.
+          // why: noImplicitReturns checks control flow correctly for exhaustive union switches.
           "typescript/consistent-return": "off",
-          // valid-params matches any .catch() by name, so it rejects z.catch(schema, fallback).
+          // why: valid-params matches any .catch() by name, so it rejects z.catch(schema, fallback).
           // TypeScript reports a real Promise method with the wrong arguments as TS2554.
           "promise/valid-params": "off",
         },
       },
       {
-        // Plain JavaScript has no types, so the type-aware unsafe-* family only adds noise there.
+        // why: Plain JavaScript has no types, so the type-aware unsafe-* rules only add noise.
         files: ["**/*.{js,mjs,cjs}"],
         rules: {
           "typescript/no-unsafe-argument": "off",
@@ -330,7 +345,7 @@ export default defineConfig({
         },
       },
       {
-        // Tooling files: config default exports, Node scripts that print, and lint fixtures.
+        // why: Config files must default-export, and Node scripts and hooks print to the terminal.
         files: ["*.config.ts", "lint/**", "scripts/**", ".agents/hooks/**", "e2e/**"],
         rules: {
           "import/no-default-export": "off",
@@ -339,56 +354,61 @@ export default defineConfig({
         },
       },
       {
-        // The shadcn kit owns its appearance and may need structural values such as ring-[3px].
-        // no-raw-colors and no-inline-styles stay on inside it.
-        files: ["src/components/ui/**"],
+        files: ["src/**"],
         rules: {
-          "shadcn/no-restyle": "off",
-          "shadcn/no-arbitrary-values": "off",
-          "shadcn/require-static-classes": "off",
+          "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
+          "no-restricted-imports": restrictImports(testApis, nodeBuiltins),
+          "no-restricted-globals": ["error", ...nodeGlobals],
         },
       },
       {
-        files: ["src/**/*.{test,spec}.{ts,tsx}"],
+        files: ["src/lib/**", "src/config/**"],
         rules: {
-          // React Testing Library
-          "testing-library/await-async-events": "error",
-          "testing-library/await-async-queries": "error",
-          "testing-library/await-async-utils": "error",
-          "testing-library/no-await-sync-events": "error",
-          "testing-library/no-await-sync-queries": "error",
-          "testing-library/no-container": "error",
-          "testing-library/no-debugging-utils": "error",
-          "testing-library/no-dom-import": "error",
-          "testing-library/no-global-regexp-flag-in-query": "error",
-          "testing-library/no-manual-cleanup": "error",
-          "testing-library/no-node-access": "error",
-          "testing-library/no-promise-in-fire-event": "error",
-          "testing-library/no-render-in-lifecycle": "error",
-          "testing-library/no-unnecessary-act": "error",
-          "testing-library/no-wait-for-multiple-assertions": "error",
-          "testing-library/no-wait-for-side-effects": "error",
-          "testing-library/no-wait-for-snapshot": "error",
-          "testing-library/prefer-find-by": "warn",
-          "testing-library/prefer-presence-queries": "warn",
-          "testing-library/prefer-query-by-disappearance": "warn",
-          "testing-library/prefer-screen-queries": "error",
-          "testing-library/render-result-naming-convention": "error",
-
-          // jest-dom
-          "jest-dom/prefer-checked": "error",
-          "jest-dom/prefer-empty": "error",
-          "jest-dom/prefer-enabled-disabled": "error",
-          "jest-dom/prefer-focus": "error",
-          "jest-dom/prefer-in-document": "error",
-          "jest-dom/prefer-required": "error",
-          "jest-dom/prefer-to-have-attribute": "error",
-          "jest-dom/prefer-to-have-class": "error",
-          "jest-dom/prefer-to-have-style": "error",
-          "jest-dom/prefer-to-have-text-content": "error",
-          "jest-dom/prefer-to-have-value": "error",
+          "no-restricted-imports": restrictImports(testApis, nodeBuiltins, {
+            group: ["@/components/*", "@/hooks/*"],
+            message:
+              "src/lib and src/config sit below components and hooks and cannot import them. Move the shared code into src/lib, or pass it in as an argument.",
+          }),
         },
       },
+      {
+        files: ["src/hooks/**"],
+        rules: {
+          "no-restricted-imports": restrictImports(testApis, nodeBuiltins, {
+            group: ["@/components/*"],
+            message:
+              "Hooks sit below components and cannot import them. Move the shared code into src/hooks or src/lib.",
+          }),
+        },
+      },
+      {
+        files: ["src/components/ui/**"],
+        rules: {
+          // why: The shadcn kit owns its appearance and may need structural values such as
+          // ring-[3px]. no-raw-colors and no-inline-styles stay on inside it.
+          "shadcn/no-restyle": "off",
+          "shadcn/no-arbitrary-values": "off",
+          "shadcn/require-static-classes": "off",
+          "no-restricted-imports": restrictImports(testApis, nodeBuiltins, {
+            group: ["@/components/*", "!@/components/ui/*", "!@/components/icons"],
+            message:
+              "The UI kit cannot depend on app components. Pass app content in through props or children.",
+          }),
+        },
+      },
+      {
+        // why: TanStack Start keeps *.server.ts modules out of the client bundle, so they may use
+        // Node built-ins and globals.
+        files: ["src/**/*.server.ts"],
+        rules: {
+          "no-restricted-imports": restrictImports(testApis),
+          "no-restricted-globals": "off",
+        },
+      },
+      ...rodeoRuleExceptions.map(({ files, rules }) => ({
+        files,
+        rules: Object.fromEntries(rules.map((rule) => [rule, "off" as const])),
+      })),
       {
         files: ["e2e/**/*.{ts,tsx}"],
         rules: {
@@ -434,14 +454,10 @@ export default defineConfig({
   plugins: [
     tanstackStart({ importProtection: { behavior: "error" } }),
     nitro({
-      // The Node server sends these build-time .br and .gz files to clients that accept them.
-      // Nitro doesn't compress server-rendered HTML; put a compressing proxy in front of it.
       compressPublicAssets: { gzip: true, brotli: true },
       routeRules: { "/**": { headers: securityHeaders } },
     }),
     react(),
-    // React Compiler memoizes components and hooks. The react-hooks-js rules above report code it
-    // can't compile. Use useMemo or useCallback only when an API needs a stable identity.
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],

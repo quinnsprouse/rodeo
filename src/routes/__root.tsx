@@ -7,8 +7,8 @@ import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
   head: ({ matches }) => {
-    // The deepest match is the rendered page. A 404 or failed page has no canonical URL. With
-    // notFoundMode "root" (router.tsx), an unknown URL matches only the root route.
+    // why: With notFoundMode "root", an unknown URL matches only the root route, so a page whose
+    // deepest match is the root is a 404.
     const page = matches.at(-1);
     const hasOwnUrl = page?.status === "success" && page.routeId !== rootRouteId;
     const siteHead = createSiteHead(hasOwnUrl ? page.pathname : undefined);
@@ -39,8 +39,7 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en">
       <head>
         <HeadContent />
-        {/* HeadContent keeps one meta tag per name, so the per-theme pair lives here. Browser
-            chrome matches --background in each theme (app.css). */}
+        {/* why: HeadContent keeps one meta tag per name, so the per-theme pair is written here. */}
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
         <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
       </head>

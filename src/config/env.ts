@@ -4,10 +4,8 @@ function blankToUndefined(value: unknown) {
   return typeof value === "string" && value.trim() === "" ? undefined : value;
 }
 
-// Every VITE_* variable the app reads. Vite inlines these into the client bundle, so never put a
-// secret here. Add each new variable to this schema, to src/vite-env.d.ts, and to .env.example.
+// why: Vite inlines VITE_* values into the client bundle, so a secret here becomes public.
 const clientEnvSchema = z.object({
-  // Public production origin for canonical and social metadata. Optional in local development.
   VITE_APP_URL: z.pipe(
     z.transform(blankToUndefined),
     z.optional(
@@ -19,7 +17,7 @@ const clientEnvSchema = z.object({
   ),
 });
 
-export function parseClientEnv(env: Record<string, unknown>) {
+function parseClientEnv(env: Record<string, unknown>) {
   const result = clientEnvSchema.safeParse(env);
   if (!result.success) {
     throw new Error(`Invalid environment variables:\n${z.prettifyError(result.error)}`);
@@ -27,5 +25,4 @@ export function parseClientEnv(env: Record<string, unknown>) {
   return result.data;
 }
 
-// Parsed once at startup, so a bad value fails with its name instead of breaking a page later.
 export const clientEnv = parseClientEnv(import.meta.env);
