@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
 
-import { ArrowDown01Icon, Icon, PauseIcon, PlayIcon } from "@/components/icons";
+import { ArrowDown01Icon, Icon } from "@/components/icons";
 import { OpinionsSection } from "@/components/opinions-section";
 import { PageSection } from "@/components/page-section";
 import { PyramidSection, pyramidSectionId } from "@/components/pyramid-section";
@@ -10,10 +9,8 @@ import { BullSticker, TerminalSticker } from "@/components/stickers/hero";
 import { SwapSentence } from "@/components/swap-sentence";
 import { TerminalDemo } from "@/components/terminal-demo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { buttonVariants } from "@/components/ui/button";
 import { Snippet } from "@/components/ui/snippet";
 import { fonts, preloadFont } from "@/config/fonts";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +64,7 @@ function SiteNav() {
   );
 }
 
-function Hero({ paused }: { paused: boolean }) {
+function Hero() {
   return (
     <section className="flex flex-1 flex-col items-center justify-center px-m py-xl sm:px-xl">
       <h1 className="flex items-center gap-xxs font-brand text-logo font-heavy tracking-xs text-foreground">
@@ -76,7 +73,7 @@ function Hero({ paused }: { paused: boolean }) {
       </h1>
 
       <div className="mt-l sm:mt-xl">
-        <SwapSentence paused={paused} />
+        <SwapSentence />
       </div>
 
       <Snippet
@@ -113,26 +110,10 @@ function ScrollHint() {
 }
 
 function Intro() {
-  const [paused, setPaused] = useState(false);
-  const reducedMotion = usePrefersReducedMotion();
-
   return (
-    <div className="relative flex min-h-svh flex-col pt-13 sm:pt-16">
-      <Hero paused={paused} />
+    <div className="flex min-h-svh flex-col pt-13 sm:pt-16">
+      <Hero />
       <ScrollHint />
-      {reducedMotion ? null : (
-        <button
-          type="button"
-          onClick={() => setPaused((current) => !current)}
-          aria-label={paused ? "Play the example sentence" : "Pause the example sentence"}
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "icon" }),
-            "absolute right-s bottom-m size-10 text-muted-foreground hover:text-foreground sm:right-l",
-          )}
-        >
-          <Icon icon={paused ? PlayIcon : PauseIcon} className="size-4" aria-hidden="true" />
-        </button>
-      )}
     </div>
   );
 }

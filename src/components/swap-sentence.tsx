@@ -94,13 +94,13 @@ function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
   );
 }
 
-export function SwapSentence({ paused = false }: { paused?: boolean }) {
+export function SwapSentence() {
   const [state, setState] = useState<SwapState>({ picks: [0, 0, 0], next: 0, moved: false });
   const [held, setHeld] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const visible = usePageVisible();
   const hintId = useId();
-  const autoplay = !reducedMotion && visible && !held && !paused;
+  const autoplay = !reducedMotion && visible && !held;
 
   useEffect(() => {
     if (!autoplay) return;

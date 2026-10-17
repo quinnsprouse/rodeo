@@ -4,8 +4,6 @@ import {
   ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
-  PauseIcon,
-  PlayIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type HugeiconsIconProps, type IconSvgElement } from "@hugeicons/react";
@@ -27,7 +25,5 @@ export {
   ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
-  PauseIcon,
-  PlayIcon,
   Tick02Icon,
 };
