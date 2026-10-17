@@ -1,18 +1,40 @@
-import { useEffect, useRef, useState } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon, Tick02Icon, Copy01Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface SnippetProps {
+const snippetVariants = cva("group relative flex items-center", {
+  variants: {
+    size: {
+      default: "rounded-m bg-card ring ring-border",
+      lg: "gap-xs rounded-l bg-muted pl-s text-install",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+});
+
+interface SnippetProps extends VariantProps<typeof snippetVariants> {
   text: string | string[];
   prompt?: boolean;
+  leading?: ReactNode;
   shimmer?: boolean;
   className?: string;
   onCopy?: () => void;
 }
 
-export function Snippet({ text, prompt = true, shimmer = false, className, onCopy }: SnippetProps) {
+export function Snippet({
+  text,
+  prompt = true,
+  leading,
+  shimmer = false,
+  size,
+  className,
+  onCopy,
+}: SnippetProps) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
   const copied = status === "copied";
   const timeoutRef = useRef<number | null>(null);
@@ -51,19 +73,17 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
   };
 
   return (
-    <div
-      className={cn(
-        "group relative flex items-center rounded-m bg-card ring ring-border",
-        className,
-      )}
-    >
-      <div className="flex-1 overflow-x-auto px-m py-s">
+    <div className={cn(snippetVariants({ size }), className)}>
+      {leading}
+      <div className={cn("min-w-0 flex-1 py-s", leading ? "pr-m" : "px-m")}>
         {lines.map((line) => (
           <code
             key={line}
             className={cn(
-              "block font-data text-s whitespace-nowrap text-foreground",
+              "block font-data whitespace-pre-wrap text-foreground",
+              size !== "lg" && "text-s",
               prompt &&
+                !leading &&
                 "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
             )}
           >
@@ -86,7 +106,11 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
         className="mr-xs"
         aria-label={copied ? "Copied" : "Copy to clipboard"}
       >
-        <Icon icon={copied ? Tick02Icon : Copy01Icon} className="size-5" aria-hidden="true" />
+        <Icon
+          icon={copied ? Tick02Icon : Copy01Icon}
+          className={size === "lg" ? "size-[calc(var(--text-install)*1.1)]" : "size-5"}
+          aria-hidden="true"
+        />
       </Button>
       <output
         className={

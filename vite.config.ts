@@ -4,6 +4,7 @@ import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import { cn as cnTables } from "cn/vite";
 import { nitro } from "nitro/vite";
 import { defineConfig } from "vite-plus";
 
@@ -182,6 +183,7 @@ export default defineConfig({
     ignorePatterns: [
       "package-lock.json",
       "routeTree.gen.ts",
+      "cn-tables.ts",
       ".output",
       "dist",
       ".tanstack/",
@@ -415,6 +417,14 @@ export default defineConfig({
           "no-restricted-globals": "off",
         },
       },
+      {
+        // why: Stickers are fixed artwork, like an image, so their colors stay the same in light
+        // and dark mode instead of following the theme tokens.
+        files: ["src/components/stickers/**"],
+        rules: {
+          "shadcn/no-raw-colors": "off",
+        },
+      },
       ...rodeoRuleExceptions.map(({ files, rules }) => ({
         files,
         rules: Object.fromEntries(rules.map((rule) => [rule, "off" as const])),
@@ -458,7 +468,7 @@ export default defineConfig({
         },
       },
     ],
-    ignorePatterns: ["dist", ".output", "routeTree.gen.ts"],
+    ignorePatterns: ["dist", ".output", "routeTree.gen.ts", "cn-tables.ts"],
   },
 
   plugins: [
@@ -470,5 +480,10 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
+    cnTables({
+      content: ["src/**/*.{ts,tsx}"],
+      out: "src/lib/cn-tables.ts",
+      css: "src/styles/app.css",
+    }),
   ],
 });

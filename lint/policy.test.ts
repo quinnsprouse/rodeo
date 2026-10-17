@@ -116,6 +116,12 @@ return <Panel />;
     source: `export function Probe() { return <span className="bg-emerald-500" />; }`,
   },
   {
+    name: "hex colors in app components",
+    rule: "shadcn(no-raw-colors)",
+    layer: "src/components",
+    source: `export function Probe() { return <svg aria-hidden="true"><path fill="#863bff" d="M0 0h4v4z" /></svg>; }`,
+  },
+  {
     name: "arbitrary appearance values",
     rule: "shadcn(no-arbitrary-values)",
     source: `export function Probe() { return <p className="text-[13px]">Ready</p>; }`,
@@ -361,6 +367,11 @@ export function Themed() {
     source: `import { env } from "node:process";
 export const apiKey = env.API_KEY;
 export const region = process.env.REGION;`,
+  },
+  {
+    name: "fixed colors in sticker artwork",
+    layer: "src/components/stickers",
+    source: `export function Probe() { return <svg aria-hidden="true"><path fill="#863bff" d="M0 0h4v4z" /></svg>; }`,
   },
   {
     name: "kit imports inside the kit",

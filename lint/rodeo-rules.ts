@@ -20,4 +20,9 @@ export const rodeoRuleExceptions = [
     files: ["src/config/env.ts"],
     rules: ["rodeo/no-import-meta-env"],
   },
+  {
+    // why: cn build regenerates this module on every build, and its header comments come from cn.
+    files: ["src/lib/cn-tables.ts"],
+    rules: ["rodeo/no-comments"],
+  },
 ];

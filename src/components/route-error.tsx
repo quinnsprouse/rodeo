@@ -10,7 +10,10 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
   const message = import.meta.env.DEV && error instanceof Error ? error.message : productionMessage;
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-l px-m text-center">
+    <main
+      id="main"
+      className="flex min-h-svh flex-col items-center justify-center gap-l px-m text-center"
+    >
       <div className="space-y-xs">
         <p className="text-s font-medium text-muted-foreground">Error</p>
         <h1 className="font-brand text-xl font-heavy text-balance">Something went wrong</h1>
@@ -24,6 +27,6 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
           Back home
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

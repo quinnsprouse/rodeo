@@ -1,113 +1,35 @@
-import type { IconSvgElement } from "@hugeicons/react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import * as z from "zod/mini";
+import { useState } from "react";
 
-import {
-  AiBookIcon,
-  ArrowRight01Icon,
-  Bug01Icon,
-  CancelCircleIcon,
-  Github01Icon,
-  Icon,
-  MagicWand01Icon,
-  Shield01Icon,
-  Target01Icon,
-} from "@/components/icons";
-import { RotatingWord } from "@/components/rotating-word";
+import { ArrowDown01Icon, Icon, PauseIcon, PlayIcon } from "@/components/icons";
+import { OpinionsSection } from "@/components/opinions-section";
+import { PageSection } from "@/components/page-section";
+import { PyramidSection, pyramidSectionId } from "@/components/pyramid-section";
+import { StartCta } from "@/components/start-cta";
+import { BullSticker, TerminalSticker } from "@/components/stickers/hero";
+import { SwapSentence } from "@/components/swap-sentence";
 import { TerminalDemo } from "@/components/terminal-demo";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { buttonVariants } from "@/components/ui/button";
 import { Snippet } from "@/components/ui/snippet";
-import { Wordmark } from "@/components/wordmark";
+import { fonts, preloadFont } from "@/config/fonts";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { resolveStarterStatus, starterStatusInputSchema } from "@/lib/starter-status";
+import { useScrolledPast } from "@/hooks/use-scrolled-past";
 import { cn } from "@/lib/utils";
 
-const demoSearchSchema = z.object({
-  demo: z.catch(z.optional(z.enum(["crash", "error"])), undefined),
-});
-
-const getStarterStatus = createServerFn({ method: "GET" })
-  .validator(starterStatusInputSchema)
-  .handler(({ data }) => resolveStarterStatus(data));
-
-async function loadStarterStatus(fail: boolean) {
-  try {
-    return await getStarterStatus({ data: { fail } });
-  } catch (error) {
-    return {
-      state: "error" as const,
-      message: error instanceof Error ? error.message : "The starter server function failed.",
-    };
-  }
-}
-
 export const Route = createFileRoute("/")({
-  validateSearch: demoSearchSchema,
-  loaderDeps: ({ search }) => ({ crash: search.demo === "crash", fail: search.demo === "error" }),
-  loader: async ({ deps }) => {
-    if (deps.crash) return await getStarterStatus({ data: { fail: true } });
-    return await loadStarterStatus(deps.fail);
-  },
-  head: () => ({
-    links: [
-      // why: Penflow loads the font with fetch(), so the preload uses as="fetch" to match it.
-      {
-        rel: "preload",
-        href: "/fonts/Yellowtail-Regular.ttf",
-        as: "fetch",
-        crossOrigin: "anonymous",
-      },
-    ],
-  }),
+  head: () => ({ links: [preloadFont(fonts.bold), preloadFont(fonts.mono)] }),
   component: Home,
 });
 
-const features: { icon: IconSvgElement; title: string; desc: string }[] = [
-  {
-    icon: CancelCircleIcon,
-    title: "React checks",
-    desc: "React lint rules catch missing dependencies, conditional hooks, and state derived through effects. Agent docs explain when to use effects, event handlers, and route loaders.",
-  },
-  {
-    icon: AiBookIcon,
-    title: "Progressive agent docs",
-    desc: "AGENTS.md links to focused guides for routing, React, testing, and the toolchain. Agents can read the guide that applies to the change.",
-  },
-  {
-    icon: Shield01Icon,
-    title: "Three-layer quality gate",
-    desc: "Pre-commit checks staged files. Pre-push runs the cached check, build, dead-code, and Playwright graph. CI verifies the clean template journey too.",
-  },
-  {
-    icon: Bug01Icon,
-    title: "Zero-config linting",
-    desc: "oxlint with ten plugins — react, jsx-a11y, unicorn, node, and more — plus React Doctor health scans. Type-aware, no setup needed.",
-  },
-  {
-    icon: MagicWand01Icon,
-    title: "Feedback on every edit",
-    desc: "Portable Edit Feedback formats, lints, and typechecks each file the moment it is written, and a Tool Guard refuses hook bypasses and edits to generated files before they happen. Import and Tailwind class sorting happen automatically.",
-  },
-  {
-    icon: Target01Icon,
-    title: "Dead code detection",
-    desc: "Knip catches unused exports, dependencies, and files. One command to keep the codebase lean as it grows.",
-  },
-];
+const installCommand = "npx degit quinnsprouse/rodeo my-app";
 
-const loop: { when: string; what: string }[] = [
-  {
-    when: "on write",
-    what: "Project-owned hooks for Claude Code and Codex format, lint, and typecheck every edited file. Mistakes surface in seconds, not at code review.",
-  },
-  {
-    when: "on commit",
-    what: "Staged files are formatted and checked for lint and type errors. React Doctor adds advisory feedback before the commit.",
-  },
-  {
-    when: "on push",
-    what: "The checks run formatting, lint, types, guardrail tests, a production build, dead-code analysis, and Playwright browser tests. A failing check blocks the push.",
-  },
+const checkpoints: { when: string; what: string }[] = [
+  { when: "on edit", what: "Format, lint, and typecheck the file the agent just wrote." },
+  { when: "end of turn", what: "Check every changed file and the tests that reach it." },
+  { when: "on commit", what: "Check the staged files and the commit message." },
+  { when: "on push", what: "Build the app, look for dead code, and run every browser test." },
+  { when: "in CI", what: "Install the starter from scratch and run it all again." },
 ];
 
 const stack = [
@@ -119,151 +41,142 @@ const stack = [
   { name: "Nitro", href: "https://nitro.build" },
 ];
 
-type StarterStatus = Awaited<ReturnType<typeof loadStarterStatus>>;
+const heading = "font-brand text-l font-heavy text-foreground";
+const lead = "mt-s max-w-[480px] text-muted-foreground";
+const navLink =
+  "inline-flex h-10 items-center rounded-s px-s text-s font-medium text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground";
 
-function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) {
-  const failed = starterStatus.state === "error";
+function SiteNav() {
+  return (
+    <div className="px-l pt-s sm:px-xl sm:pt-l">
+      <nav aria-label="Site" className="flex items-center justify-end">
+        <Link to="/rationale" className={navLink}>
+          Philosophy
+        </Link>
+        <a
+          href="https://github.com/quinnsprouse/rodeo"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={navLink}
+        >
+          GitHub
+        </a>
+        <ThemeToggle className="ml-xxs" />
+      </nav>
+    </div>
+  );
+}
+
+function Hero({ paused }: { paused: boolean }) {
+  return (
+    <section className="flex flex-1 flex-col items-center justify-center px-m py-xl sm:px-xl">
+      <h1 className="flex items-center gap-xxs font-brand text-logo font-heavy tracking-xs text-foreground">
+        <BullSticker className="size-[1.4em]" />
+        rodeo
+      </h1>
+
+      <div className="mt-l sm:mt-xl">
+        <SwapSentence paused={paused} />
+      </div>
+
+      <Snippet
+        text={installCommand}
+        size="lg"
+        leading={<TerminalSticker className="size-[2em]" />}
+        shimmer
+        className="mt-xl max-w-full sm:mt-xxl"
+      />
+    </section>
+  );
+}
+
+function ScrollHint() {
+  const scrolled = useScrolledPast(24);
 
   return (
-    <div
-      className="mt-xl grid gap-l rounded-l bg-card p-l ring ring-border sm:grid-cols-[1fr_auto] sm:items-center"
-      role={failed ? "alert" : "status"}
+    <a
+      href={`#${pyramidSectionId}`}
+      aria-label="Scroll to how Rodeo works"
+      className={cn(
+        "mx-auto mb-m flex flex-col items-center gap-xxs px-m py-xs text-s text-muted-foreground transition duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
+        scrolled && "invisible opacity-0",
+      )}
     >
-      <div>
-        <div className="flex items-center gap-xs">
-          <span
-            className={cn("size-2 rounded-full", failed ? "bg-warning" : "bg-success")}
-            aria-hidden="true"
-          />
-          <h3 className="text-s font-medium text-foreground">
-            {failed ? "Handled server error" : "Live full-stack example"}
-          </h3>
-        </div>
-        <p className="mt-xs text-s text-muted-foreground">{starterStatus.message}</p>
-        <p className="mt-xs font-data text-xs text-muted-foreground">
-          route loader → server function → rendered result
-        </p>
-      </div>
-      <Link
-        to="/"
-        search={failed ? {} : { demo: "error" }}
-        className="group inline-flex items-center gap-xs text-s font-medium text-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-primary"
-      >
-        {failed ? "Return to ready state" : "Preview the error path"}
-        <Icon
-          icon={ArrowRight01Icon}
-          className="size-3 transition-transform duration-(--motion-duration) ease-(--motion-easing) group-hover:translate-x-xxs"
-          aria-hidden="true"
-        />
-      </Link>
+      Scroll
+      <Icon
+        icon={ArrowDown01Icon}
+        className="size-4 motion-safe:animate-nudge"
+        aria-hidden="true"
+      />
+    </a>
+  );
+}
+
+function Intro() {
+  const [paused, setPaused] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+
+  return (
+    <div className="relative flex min-h-svh flex-col pt-13 sm:pt-16">
+      <Hero paused={paused} />
+      <ScrollHint />
+      {reducedMotion ? null : (
+        <button
+          type="button"
+          onClick={() => setPaused((current) => !current)}
+          aria-label={paused ? "Play the example sentence" : "Pause the example sentence"}
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "icon" }),
+            "absolute right-s bottom-m size-10 text-muted-foreground hover:text-foreground sm:right-l",
+          )}
+        >
+          <Icon icon={paused ? PlayIcon : PauseIcon} className="size-4" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }
 
 function Home() {
-  const starterStatus = Route.useLoaderData();
-  const prefersReducedMotion = usePrefersReducedMotion();
-
   return (
-    <div className="bg-background selection:bg-primary-transparent">
-      <section className="flex min-h-dvh flex-col justify-center px-l sm:px-xl">
-        <div className="mx-auto w-full max-w-2xl">
-          <Wordmark animate={!prefersReducedMotion} />
+    <div className="relative bg-background selection:bg-primary-transparent">
+      <header className="absolute inset-x-0 top-0 z-10">
+        <SiteNav />
+      </header>
 
-          <h1 className="mt-m font-brand text-l font-heavy text-foreground sm:text-xl">
-            Built for{" "}
-            {prefersReducedMotion ? (
-              <span className="text-primary">agents.</span>
-            ) : (
-              <RotatingWord />
-            )}
-          </h1>
+      <main id="main">
+        <Intro />
 
-          <p className="mt-s max-w-md text-muted-foreground">
-            A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
-            routing, server rendering, and agent docs. Free and open source.
-          </p>
+        <PyramidSection />
 
-          <div className="mt-xl">
-            <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
+        <OpinionsSection />
 
-            <div className="mt-l flex items-center gap-l">
-              <a
-                href="https://github.com/quinnsprouse/rodeo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center gap-xs text-s font-medium text-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-primary"
-              >
-                <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
-                GitHub
-                <Icon
-                  icon={ArrowRight01Icon}
-                  className="size-3 -translate-x-xxs opacity-0 transition duration-(--motion-duration) ease-(--motion-easing) group-hover:translate-x-0 group-hover:opacity-100"
-                  aria-hidden="true"
-                />
-              </a>
-              <a
-                href="https://viteplus.dev/guide/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-s text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground"
-              >
-                Docs
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="divider-t">
-        <div className="mx-auto w-full max-w-2xl px-l py-xxl sm:px-xl">
-          <p className="mb-s text-s text-muted-foreground">The feedback loop</p>
-          <h2 className="max-w-md font-brand text-l font-heavy text-foreground">
-            Check changes before they reach main.
-          </h2>
-          <p className="mt-s max-w-md text-muted-foreground">
-            Run focused checks while editing, then build and test the app before pushing.
+        <PageSection>
+          <h2 className={heading}>Checks run where the mistake happens.</h2>
+          <p className={lead}>
+            Fast checks run while the agent works. The full suite runs before anything leaves your
+            machine.
           </p>
 
           <TerminalDemo className="mt-xl" />
 
-          <StarterStatusCard starterStatus={starterStatus} />
-
-          <div className="mt-xxl space-y-xl">
-            {loop.map((step) => (
-              <div key={step.when} className="grid gap-xs sm:grid-cols-[200px_1fr] sm:gap-xl">
-                <p className="font-data text-s font-medium text-primary">{step.when}</p>
-                <p className="text-s text-muted-foreground">{step.what}</p>
+          <dl className="mt-xl space-y-s">
+            {checkpoints.map((step) => (
+              <div key={step.when} className="grid gap-xxs sm:grid-cols-[160px_1fr] sm:gap-0">
+                <dt className="font-data text-s text-foreground">{step.when}</dt>
+                <dd className="text-muted-foreground">{step.what}</dd>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
+          </dl>
+        </PageSection>
 
-      <section className="divider-t">
-        <div className="mx-auto w-full max-w-2xl px-l py-xxl sm:px-xl">
-          <p className="mb-xxl text-s text-muted-foreground">What ships out of the box</p>
+        <PageSection>
+          <StartCta installCommand={installCommand} />
+        </PageSection>
+      </main>
 
-          <div className="space-y-xl">
-            {features.map((f) => (
-              <div key={f.title} className="grid gap-s sm:grid-cols-[200px_1fr] sm:gap-xl">
-                <div className="flex items-start gap-xs">
-                  <Icon
-                    icon={f.icon}
-                    className="mt-xxs size-4 shrink-0 text-primary"
-                    aria-hidden="true"
-                  />
-                  <h2 className="font-medium text-foreground">{f.title}</h2>
-                </div>
-                <p className="text-s text-muted-foreground">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <footer className="divider-t">
-        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-m gap-y-xxs p-l sm:gap-x-l sm:px-xl">
+      <footer className="px-l divider-t sm:px-xl">
+        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-m gap-y-xxs py-l sm:gap-x-l">
           {stack.map((s) => (
             <a
               key={s.name}

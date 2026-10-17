@@ -1,0 +1,68 @@
+import type { ComponentType } from "react";
+
+import { ArrowUpRight01Icon, Icon } from "@/components/icons";
+import { PageSection } from "@/components/page-section";
+import { PyramidSlices } from "@/components/pyramid-slices";
+import type { StickerProps } from "@/components/stickers/frame";
+import {
+  CodebaseSticker,
+  HumanReviewSticker,
+  ProseSticker,
+  StaticAnalysisSticker,
+} from "@/components/stickers/topics";
+
+const layers: { name: string; detail: string; Sticker: ComponentType<StickerProps> }[] = [
+  { name: "Codebase", detail: "Layers, tokens, server-only files.", Sticker: CodebaseSticker },
+  { name: "Static analysis", detail: "Every error names its fix.", Sticker: StaticAnalysisSticker },
+  { name: "Prose", detail: "Short guides, read when needed.", Sticker: ProseSticker },
+  {
+    name: "Human review",
+    detail: "Only the exceptions, each marked.",
+    Sticker: HumanReviewSticker,
+  },
+];
+
+export const pyramidSectionId = "how-it-works";
+
+export function PyramidSection() {
+  return (
+    <PageSection id={pyramidSectionId}>
+      <h2 className="font-brand text-l font-heavy text-foreground">
+        Fix it in the codebase, not the prompt.
+      </h2>
+      <p className="mt-s max-w-[520px] text-muted-foreground">
+        A note in a prompt fixes one session. A rule in the codebase fixes every session after it.
+        Rodeo does most of its work at the top, so agents write good code out of the box.
+      </p>
+
+      <div className="mt-xl flex flex-col gap-xl sm:flex-row sm:items-start sm:gap-xl">
+        <PyramidSlices className="w-full max-w-[320px]" />
+
+        <ol className="flex flex-col gap-m sm:gap-m">
+          {layers.map(({ name, detail, Sticker }) => (
+            <li key={name} className="flex items-center gap-s sm:h-[51px]">
+              <Sticker className="size-9" />
+              <div>
+                <p className="font-medium text-foreground">{name}</p>
+                <p className="text-s text-muted-foreground">{detail}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      <p className="mt-xl text-s text-muted-foreground">
+        Adapted from{" "}
+        <a
+          href="https://x.com/poteto/status/2111133080526495985"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-xxs text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground"
+        >
+          poteto's post on X
+          <Icon icon={ArrowUpRight01Icon} className="size-3" aria-hidden="true" />
+        </a>
+      </p>
+    </PageSection>
+  );
+}
