@@ -40,6 +40,10 @@ const stack = [
 
 const heading = "font-brand text-l font-heavy text-foreground";
 const lead = "mt-s max-w-[480px] text-muted-foreground";
+const footerLink =
+  "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground";
+const inlineLink =
+  "underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground hover:decoration-foreground";
 const navLink =
   "inline-flex h-10 items-center rounded-s px-s text-s font-medium text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground";
 
@@ -66,13 +70,13 @@ function SiteNav() {
 
 function Hero() {
   return (
-    <section className="flex flex-1 flex-col items-center justify-center px-m py-xl sm:px-xl">
+    <section className="@container flex flex-1 flex-col items-center justify-center px-m py-xl sm:px-xl">
       <h1 className="flex items-center gap-xxs font-brand text-logo font-heavy tracking-xs text-foreground">
         <BullSticker className="size-[1.4em]" />
         rodeo
       </h1>
 
-      <div className="mt-l sm:mt-xl">
+      <div className="mt-l w-full sm:mt-xl">
         <SwapSentence />
       </div>
 
@@ -83,6 +87,10 @@ function Hero() {
         shimmer
         className="mt-xl max-w-full sm:mt-xxl"
       />
+
+      <p className="mt-m text-center text-s text-muted-foreground sm:text-m">
+        A free React starter for Claude Code and Codex.
+      </p>
     </section>
   );
 }
@@ -157,18 +165,54 @@ function Home() {
       </main>
 
       <footer className="px-l divider-t sm:px-xl">
-        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-m gap-y-xxs py-l sm:gap-x-l">
-          {stack.map((s) => (
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-m py-xl">
+          <div className="flex flex-wrap items-center justify-between gap-m">
+            <p className="flex items-center gap-xxs font-brand text-l font-heavy tracking-xs text-foreground">
+              <BullSticker className="size-10" />
+              rodeo
+            </p>
+            <nav aria-label="Footer" className="flex items-center gap-l text-s font-medium">
+              <Link to="/rationale" className={footerLink}>
+                Philosophy
+              </Link>
+              <Link to="/example" className={footerLink}>
+                Example
+              </Link>
+              <a
+                href="https://github.com/quinnsprouse/rodeo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={footerLink}
+              >
+                GitHub
+              </a>
+            </nav>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Made by{" "}
             <a
-              key={s.name}
-              href={s.href}
+              href="https://github.com/quinnsprouse"
               target="_blank"
               rel="noopener noreferrer"
-              className="py-xs text-xs text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground"
+              className={inlineLink}
             >
-              {s.name}
+              Quinn Sprouse
             </a>
-          ))}
+            . Built on{" "}
+            {stack.map((tool, index) => (
+              <span key={tool.name}>
+                <a
+                  href={tool.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={inlineLink}
+                >
+                  {tool.name}
+                </a>
+                {index < stack.length - 1 ? ", " : "."}
+              </span>
+            ))}
+          </p>
         </div>
       </footer>
     </div>

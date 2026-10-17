@@ -31,9 +31,30 @@ test("home page renders and copy flow works", async ({ page }) => {
   expect(browserErrors).toHaveLength(0);
 });
 
-test("copy explains the manual path when the clipboard API is unavailable", async ({ page }) => {
+function recordCopiedText(page: Page) {
+  return page.addInitScript(() => {
+    document.addEventListener("copy", () => {
+      document.documentElement.dataset.copied = String(window.getSelection());
+    });
+  });
+}
+
+test("copy falls back to the selection when the clipboard API is unavailable", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+  });
+  await recordCopiedText(page);
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
+  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("data-copied", installCommand);
+});
+
+test("copy explains the manual path when no copy method works", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    Object.defineProperty(document, "execCommand", { configurable: true, value: () => false });
   });
   await page.goto("/");
 
@@ -41,27 +62,22 @@ test("copy explains the manual path when the clipboard API is unavailable", asyn
   await expect(
     page.getByText("Couldn't copy. Select and copy the command manually."),
   ).toBeVisible();
+  expect(await page.evaluate(() => String(window.getSelection()))).toBe(installCommand);
 });
 
-test("copy reports denied clipboard access and succeeds on retry", async ({ page }) => {
+test("copy falls back when clipboard access is denied", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator.clipboard, "writeText", {
       configurable: true,
       value: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")),
     });
   });
+  await recordCopiedText(page);
   await page.goto("/");
-  const copyButton = page.getByRole("button", { name: "Copy to clipboard" }).first();
 
-  await copyButton.click();
-  await expect(
-    page.getByText("Couldn't copy. Select and copy the command manually."),
-  ).toBeVisible();
-
-  await page.evaluate(() => Reflect.deleteProperty(navigator.clipboard, "writeText"));
-  await copyButton.click();
+  await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
   await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(installCommand);
+  await expect(page.locator("html")).toHaveAttribute("data-copied", installCommand);
 });
 
 async function swapChip(page: Page, current: string, next: string) {
@@ -140,7 +156,7 @@ test("philosophy contents follow the reader to the last section", async ({ page 
   const browserErrors = trackBrowserErrors(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  await page.getByRole("link", { name: "Philosophy", exact: true }).click();
+  await page.getByRole("link", { name: "Philosophy", exact: true }).first().click();
   const contents = page.getByRole("navigation", { name: "Contents" });
 
   await expect(

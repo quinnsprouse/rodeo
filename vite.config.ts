@@ -425,6 +425,14 @@ export default defineConfig({
           "shadcn/no-raw-colors": "off",
         },
       },
+      {
+        // why: Safari exposes navigator.clipboard only on HTTPS pages, so the copy button falls back
+        // to document.execCommand, the only copy API left on plain-HTTP previews.
+        files: ["src/components/ui/snippet.tsx"],
+        rules: {
+          "typescript/no-deprecated": "off",
+        },
+      },
       ...rodeoRuleExceptions.map(({ files, rules }) => ({
         files,
         rules: Object.fromEntries(rules.map((rule) => [rule, "off" as const])),

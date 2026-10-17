@@ -10,11 +10,11 @@ const link =
 
 export function StartCta({ installCommand }: { installCommand: string }) {
   return (
-    <div className="relative rounded-l bg-primary p-l text-primary-foreground sm:p-xl">
+    <div className="group/cta relative rounded-l bg-primary p-l text-primary-foreground sm:p-xl">
       <div className="pointer-events-none" aria-hidden="true">
-        <EditSticker className="absolute -top-0.5 right-18 size-12 sm:top-1 sm:right-27 sm:size-16" />
-        <StaticAnalysisSticker className="absolute -top-5.5 right-8 size-13 sm:-top-6 sm:right-12 sm:size-17" />
-        <PushSticker className="absolute top-1.5 -right-0.5 size-14.5 sm:top-4.5 sm:-right-2 sm:size-20" />
+        <EditSticker className="absolute -top-0.5 right-18 size-12 transition-transform duration-(--motion-large-duration) ease-(--motion-large-easing) motion-safe:group-hover/cta:-rotate-12 sm:top-1 sm:right-27 sm:size-16" />
+        <StaticAnalysisSticker className="absolute -top-5.5 right-8 size-13 transition-transform duration-(--motion-large-duration) ease-(--motion-large-easing) motion-safe:group-hover/cta:-translate-y-1 motion-safe:group-hover/cta:rotate-6 sm:-top-6 sm:right-12 sm:size-17" />
+        <PushSticker className="absolute top-1.5 -right-0.5 size-14.5 transition-transform duration-(--motion-large-duration) ease-(--motion-large-easing) motion-safe:group-hover/cta:translate-x-1 motion-safe:group-hover/cta:-translate-y-2 sm:top-4.5 sm:-right-2 sm:size-20" />
       </div>
 
       <h2 className="max-w-[240px] font-brand text-l font-heavy tracking-xs sm:max-w-[440px] sm:text-xl">

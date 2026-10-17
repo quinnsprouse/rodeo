@@ -14,6 +14,7 @@ export function getRouter() {
     defaultNotFoundComponent: RouteNotFoundComponent,
     notFoundMode: "root",
     scrollRestoration: true,
+    defaultViewTransition: true,
   });
 
   return router;
