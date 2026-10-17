@@ -186,6 +186,11 @@ export default defineConfig({
       "dist",
       ".tanstack/",
       ".tanstack-start/",
+      // why: The Graphical registry installs these files, and keeping them byte-identical to the
+      // downloaded revision makes a reinstall diff show only real changes.
+      "GUI.md",
+      "gui/",
+      ".agents/skills/graphical-*/",
     ],
   },
 

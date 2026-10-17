@@ -21,7 +21,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 
 ## Hooks that check your work
 
-- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a destructive Git command. It matches raw command text, so even a heredoc that mentions `--no-verify` is blocked. Write that content with a file tool.
+- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/` and `gui/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a destructive Git command. It matches raw command text, so even a heredoc that mentions `--no-verify` is blocked. Write that content with a file tool.
 - `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it.
 - `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail.
 - Vite+ installs the Git hooks from `.vite-hooks/`. Pre-push runs `npm run check:push`. Don't add Husky.

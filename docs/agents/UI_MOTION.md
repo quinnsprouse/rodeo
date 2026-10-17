@@ -1,5 +1,7 @@
 # UI and motion
 
+For UI work, follow `GUI.md` and the `graphical-ui` skill. This guide covers how the starter wires components, tokens, fonts, and motion.
+
 - **Check `src/components/ui/` before you build a component.** Add a missing one with `npx shadcn@latest add <component>`. It installs on Base UI in the `base-mira` style.
 - **Actions are `Button`, navigation is `<Link>`.** To make a link look like a button, style it with `buttonVariants({ variant, size })`, so assistive technology still announces a link.
 - **Icons come from `@/components/icons`** through its `Icon` wrapper. Give an icon-only button an accessible name.

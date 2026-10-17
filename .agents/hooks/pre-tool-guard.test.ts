@@ -89,6 +89,7 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
       [write("src/lib/README.md"), "deny"],
       [patch("*** Add File: docs/prd/checkout.md"), "deny"],
       [write("docs/agents/DATA.md"), "allow"],
+      [write("gui/themes/midnight.md"), "allow"],
       [write(".scratch/plan.md"), "allow"],
       [write("CLAUDE.md"), "allow"],
       [edit("README.md"), "allow"],
