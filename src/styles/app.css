@@ -1,29 +1,32 @@
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
-@import "@fontsource/open-runde/latin-400.css";
-@import "@fontsource/open-runde/latin-500.css";
-@import "@fontsource/open-runde/latin-700.css";
 @import "@fontsource-variable/geist-mono/index.css";
 
-/* Penflow draws the wordmark from this TTF's glyph outlines, so it stays a TTF. */
 @font-face {
-  font-family: "Yellowtail";
-  src: url("/fonts/Yellowtail-Regular.ttf") format("truetype");
-  font-display: block;
+  font-family: "Open Runde";
   font-style: normal;
+  font-display: swap;
   font-weight: 400;
+  src: url("../assets/fonts/open-runde-400.woff2") format("woff2");
 }
 
-@custom-variant dark {
-  &:where(.dark, .dark *) {
-    @slot;
-  }
-  @media (prefers-color-scheme: dark) {
-    &:where(:root:not(.light), :root:not(.light) *) {
-      @slot;
-    }
-  }
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("../assets/fonts/open-runde-500.woff2") format("woff2");
 }
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("../assets/fonts/open-runde-700.woff2") format("woff2");
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Untitled theme. Values come from gui/themes/untitled.md. color-1 is the brand purple, and
    Open Runde replaces GT Standard M. Each color is light-dark(light, dark). The block repeats on
@@ -167,7 +170,7 @@
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 }
 
 .light {
@@ -195,7 +198,6 @@
   --font-brand: "Open Runde", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-editorial: "Open Runde", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-data: "Geist Mono Variable", monospace;
-  --font-script: "Yellowtail", cursive;
   --default-font-family: var(--font-ui);
   --default-mono-font-family: var(--font-data);
 
@@ -217,8 +219,28 @@
   --shadow-m: 0px 8px 24px 0px #00000000;
   --shadow-l: 0px 12px 30px 0px #00000000;
 
-  --text-wordmark: 8rem;
-  --text-wordmark--line-height: 1;
+  --text-logo: clamp(3rem, min(9vw, 11vh), 6rem);
+  --text-logo--line-height: 1.125;
+  --text-display: clamp(1.125rem, 6.3cqi, 3rem);
+  --text-display--line-height: 1.6;
+  --text-display-wide: clamp(2rem, min(4.6vw, 7.5vh), 4rem);
+  --text-display-wide--line-height: 1.45;
+  --text-install: clamp(0.875rem, min(1.55vw, 2.6vh), 1.375rem);
+  --text-install--line-height: 1.5;
+
+  --breakpoint-xs: 28rem;
+
+  --animate-nudge: nudge 1.8s ease-in-out infinite;
+
+  @keyframes nudge {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+  }
 }
 
 @theme inline {
@@ -292,6 +314,7 @@
   }
   html {
     text-wrap: pretty;
+    -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply bg-background font-ui text-m font-regular text-foreground;
@@ -300,6 +323,23 @@
   :focus-visible {
     outline: var(--focus-ring-outline);
     outline-offset: 2px;
+  }
+}
+
+@utility reveal-on-scroll {
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      animation: reveal-on-scroll linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 30%;
+    }
+  }
+}
+
+@keyframes reveal-on-scroll {
+  from {
+    filter: blur(4px);
+    translate: 0 6px;
   }
 }
 
@@ -347,4 +387,23 @@
   .shimmer-text::after {
     content: none;
   }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 300ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+html.theme-snap *,
+html.theme-snap *::before,
+html.theme-snap *::after {
+  transition: none !important;
 }

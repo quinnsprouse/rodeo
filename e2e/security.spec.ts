@@ -11,7 +11,7 @@ test("responses carry the baseline security headers", async ({ request }) => {
 });
 
 test("server functions reject cross-site requests", async ({ page, request }) => {
-  await page.goto("/");
+  await page.goto("/example");
   const serverFnCall = page.waitForRequest((call) => call.url().includes("/_serverFn/"));
   await page.getByRole("link", { name: "Preview the error path" }).click();
   const call = await serverFnCall;

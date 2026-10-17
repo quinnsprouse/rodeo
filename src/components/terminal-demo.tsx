@@ -1,34 +1,26 @@
-import { LazyMotion, m } from "motion/react";
-
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
-const largeMotion: { duration: number; ease: [number, number, number, number] } = {
-  duration: 0.3,
-  ease: [0.16, 1, 0.3, 1],
-};
+type LineKind = "edit" | "error" | "hint" | "pass";
 
-const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.domAnimation);
-
-type LineKind = "cmd" | "ok" | "dim" | "note";
-
-const lines: { kind: LineKind; text: string }[] = [
-  { kind: "cmd", text: 'git commit -m "feat: add billing page"' },
-  { kind: "dim", text: "vp staged" },
-  { kind: "ok", text: "formatted 4 files — imports and Tailwind classes sorted" },
-  { kind: "ok", text: "0 lint errors, 0 type errors" },
-  { kind: "ok", text: "react-doctor — no regressions on staged files" },
-  { kind: "dim", text: "[main 1f2a9c3] feat: add billing page" },
-  { kind: "cmd", text: "git push" },
-  { kind: "ok", text: "check — fmt · lint · types · guardrail tests" },
-  { kind: "ok", text: "build + knip — production-ready, no dead code" },
-  { kind: "ok", text: "playwright — 4 e2e passed (7.2s)" },
-  { kind: "note", text: "checks passed. ready to push." },
+const lines: { id: string; kind: LineKind; text: string; detail?: string }[] = [
+  { id: "first-edit", kind: "edit", text: "Edit src/routes/pricing.tsx" },
+  { id: "error", kind: "error", text: "rodeo/no-comments", detail: "line 14" },
+  {
+    id: "hint",
+    kind: "hint",
+    text: "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test.",
+  },
+  { id: "second-edit", kind: "edit", text: "Edit src/routes/pricing.tsx" },
+  { id: "pass", kind: "pass", text: "Format, lint, and types pass" },
 ];
 
-export function TerminalDemo({ className }: { className?: string }) {
-  const reducedMotion = usePrefersReducedMotion();
+const markers: Partial<Record<LineKind, { glyph: string; className: string }>> = {
+  edit: { glyph: "●", className: "text-primary" },
+  error: { glyph: "✗", className: "text-destructive" },
+  pass: { glyph: "✓", className: "text-success" },
+};
 
+export function TerminalDemo({ className }: { className?: string }) {
   return (
     <div
       className={cn(
@@ -40,36 +32,33 @@ export function TerminalDemo({ className }: { className?: string }) {
         <span className="size-2.5 rounded-full bg-neutral-4" />
         <span className="size-2.5 rounded-full bg-neutral-4" />
         <span className="size-2.5 rounded-full bg-neutral-4" />
-        <span className="ml-xs font-data text-xs text-muted-foreground">my-app — zsh</span>
+        <span className="ml-xs font-data text-xs text-muted-foreground">my-app — claude</span>
       </div>
 
-      <LazyMotion features={loadMotionFeatures} strict>
-        <div className="space-y-xs overflow-x-auto p-m font-data text-xs sm:px-l">
-          {lines.map((line, i) => (
-            <m.div
-              key={line.text}
-              initial={reducedMotion ? false : { opacity: 0, y: 6 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ ...largeMotion, delay: i * 0.09 }}
+      <div className="space-y-xxs p-m font-data text-xs sm:px-l">
+        {lines.map((line) => {
+          const marker = markers[line.kind];
+          return (
+            <div
+              key={line.id}
               className={cn(
-                // why: Motion renders the hidden initial state on the server, and without
-                // JavaScript nothing would reveal the lines.
-                "flex items-baseline gap-xs whitespace-nowrap noscript:transform-none! noscript:opacity-100!",
-                line.kind === "cmd" && "text-foreground",
-                line.kind === "ok" && "text-muted-foreground",
-                line.kind === "dim" && "text-muted-foreground",
-                line.kind === "note" && "pt-xxs text-primary",
+                "flex reveal-on-scroll items-baseline gap-xs",
+                line.kind === "edit" && "text-foreground",
+                line.id === "second-edit" && "pt-s",
+                line.kind === "error" && "pl-l text-foreground",
+                line.kind === "hint" && "pl-xxl text-muted-foreground",
+                line.kind === "pass" && "pl-l text-muted-foreground",
               )}
             >
-              {line.kind === "cmd" && <span className="text-muted-foreground select-none">$</span>}
-              {line.kind === "ok" && <span className="text-success select-none">✓</span>}
-              {line.kind === "note" && <span className="select-none">→</span>}
+              {marker && (
+                <span className={cn("select-none", marker.className)}>{marker.glyph}</span>
+              )}
               <span>{line.text}</span>
-            </m.div>
-          ))}
-        </div>
-      </LazyMotion>
+              {line.detail && <span className="text-muted-foreground">{line.detail}</span>}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -12,23 +12,30 @@ async function axeViolations(page: Page) {
   }));
 }
 
-for (const colorScheme of ["light", "dark"] as const) {
-  test(`home page has no WCAG violations in the ${colorScheme} theme`, async ({ page }) => {
+for (const theme of ["light", "dark"] as const) {
+  test(`home page has no WCAG violations in the ${theme} theme`, async ({ page }) => {
+    await page.addInitScript((stored) => localStorage.setItem("rodeo-theme", stored), theme);
     // why: Axe samples colors mid-animation, so reduced motion renders the settled page.
-    await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    await expect(page.getByText("Route loader and server function are connected.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
 
     expect(await axeViolations(page)).toEqual([]);
   });
 }
+
+test("philosophy page has no WCAG violations", async ({ page }) => {
+  await page.goto("/rationale");
+  await expect(page.getByRole("heading", { name: "Rodeo Philosophy" })).toBeVisible();
+  expect(await axeViolations(page)).toEqual([]);
+});
 
 test("not-found and error pages have no WCAG violations", async ({ page }) => {
   await page.goto("/definitely-missing");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
 
-  await page.goto("/?demo=crash");
+  await page.goto("/example?demo=crash");
   await expect(page.getByRole("heading", { name: "Something went wrong" })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
 });

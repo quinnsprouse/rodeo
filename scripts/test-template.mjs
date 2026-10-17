@@ -114,7 +114,7 @@ async function smokeProductionServer() {
   productionServer.stdout.on("data", (chunk) => appendFileSync(serverLog, chunk));
   productionServer.stderr.on("data", (chunk) => appendFileSync(serverLog, chunk));
 
-  await waitForHealthyServer(`http://127.0.0.1:${port}/`, Date.now() + 20_000);
+  await waitForHealthyServer(`http://127.0.0.1:${port}/example`, Date.now() + 20_000);
 }
 
 async function waitForHealthyServer(url, deadline) {

@@ -11,4 +11,4 @@ Load data in route loaders, validate everything that reaches the server, and kee
 - **A third-party script needs a CSP change first.** The CSP in `vite.config.ts` has no `script-src`, because hydration uses inline scripts. Add one with a nonce.
 - **Leave `verbatimModuleSyntax` off and import protection at `error`.** Both keep server code out of the client bundle.
 
-`src/routes/index.tsx` is the full example. It puts URL state in `loaderDeps`, calls a server function from `src/lib/starter-status.ts` in its loader, and turns a failure into a typed result. Copy its shape.
+`src/routes/example.tsx` is the full example. It puts URL state in `loaderDeps`, calls a server function from `src/lib/starter-status.ts` in its loader, and turns a failure into a typed result. Copy its shape.

@@ -30,11 +30,11 @@ Add UI components with the configured shadcn CLI. See [UI and motion](docs/agent
 
 The landing page is a demo. To start from a blank app:
 
-1. Replace `src/routes/index.tsx` with your home route. To keep a server-function example, keep `src/lib/starter-status.ts`. Otherwise, delete it and its tests in `e2e/smoke.spec.ts`.
-2. Delete `src/components/rotating-word.tsx`, `terminal-demo.tsx`, and `wordmark.tsx`, plus `public/fonts/Yellowtail-Regular.ttf`.
-3. In `src/styles/app.css`, remove the Yellowtail `@font-face`, `--font-script`, `--text-wordmark`, and the shimmer styles.
-4. Uninstall the demo packages: `npm uninstall penflow calligraph`.
-5. Update `src/config/site.ts`, `public/og-image.png`, and the demo assertions in `e2e/smoke.spec.ts`.
+1. Replace `src/routes/index.tsx` with your home route. `src/routes/example.tsx` and `src/lib/starter-status.ts` are the server-function example. Keep them to copy from, or delete them and their tests in `e2e/`.
+2. Delete `src/routes/rationale.tsx`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
+3. In `src/styles/app.css`, remove `--text-logo` and the shimmer styles.
+4. Uninstall the demo package: `npm uninstall calligraph`.
+5. Update `src/config/site.ts`, `public/og-home.png` and `public/og-rationale.png`, and the demo assertions in `e2e/smoke.spec.ts`.
 
 Then run `npm run check:push`. Knip reports any file, export, or package that only the demo used.
 

@@ -1,13 +1,9 @@
 import {
-  AiBookIcon,
+  ArrowDown01Icon,
   ArrowRight01Icon,
-  Bug01Icon,
-  CancelCircleIcon,
+  ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
-  MagicWand01Icon,
-  Shield01Icon,
-  Target01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type HugeiconsIconProps, type IconSvgElement } from "@hugeicons/react";
@@ -24,14 +20,10 @@ export function Icon({ icon, className, size = 16, ...props }: IconProps) {
 }
 
 export {
-  AiBookIcon,
+  ArrowDown01Icon,
   ArrowRight01Icon,
-  Bug01Icon,
-  CancelCircleIcon,
+  ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
-  MagicWand01Icon,
-  Shield01Icon,
-  Target01Icon,
   Tick02Icon,
 };
