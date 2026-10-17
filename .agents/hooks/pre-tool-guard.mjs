@@ -5,12 +5,21 @@ import { fileURLToPath } from "node:url";
 const projectRoot =
   process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-const docLocations = [".agents/", ".claude/", ".codex/", ".github/", ".scratch/", "docs/agents/"];
+const docLocations = [
+  ".agents/",
+  ".claude/",
+  ".codex/",
+  ".github/",
+  ".scratch/",
+  "docs/agents/",
+  "gui/",
+];
 
 function isNewDoc(path) {
   return (
     /\.mdx?$/.test(path) &&
     path !== "CLAUDE.md" &&
+    path !== "GUI.md" &&
     !docLocations.some((location) => path.startsWith(location)) &&
     !existsSync(resolve(projectRoot, path))
   );
@@ -35,7 +44,7 @@ const protectedPaths = [
   {
     test: isNewDoc,
     reason:
-      "Project docs live in docs/agents/ and cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. To keep a decision, encode it in code, a type, or a lint rule.",
+      "Project docs live in docs/agents/, theme guidance in GUI.md and gui/. Docs cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. To keep a decision, encode it in code, a type, or a lint rule.",
   },
   {
     test: (path) => /^src\/.+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path),

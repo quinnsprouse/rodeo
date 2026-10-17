@@ -121,10 +121,21 @@ return <Panel />;
     source: `export function Probe() { return <p className="text-[13px]">Ready</p>; }`,
   },
   {
+    name: "padding on a kit component, even from the theme scale",
+    rule: "shadcn(no-restyle)",
+    source: `import { Snippet } from "@/components/ui/snippet";
+export function Probe() { return <Snippet text="npm ci" className="px-l" />; }`,
+  },
+  {
     name: "restyling a kit component",
     rule: "shadcn(no-restyle)",
     source: `import { Snippet } from "@/components/ui/snippet";
 export function Probe() { return <Snippet text="npm ci" className="bg-brand" />; }`,
+  },
+  {
+    name: "Tailwind default scales the theme replaced",
+    rule: "shadcn(no-unknown-classes)",
+    source: `export function Probe() { return <p className="text-sm font-bold">Ready</p>; }`,
   },
   {
     name: "classes Tailwind cannot generate",
@@ -337,8 +348,8 @@ export function Editable() {
 export function Themed() {
   return (
     <>
-      <Snippet text="npm ci" className="mt-4 w-full" />
-      <p className="text-sm leading-relaxed text-success">Ready</p>
+      <Snippet text="npm ci" className="mt-m w-full" />
+      <p className="text-s font-medium text-success">Ready</p>
     </>
   );
 }`,

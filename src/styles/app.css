@@ -1,12 +1,11 @@
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
-/* Self-hosted variable fonts. The browser downloads only the unicode ranges a page uses. */
-@import "@fontsource-variable/dm-sans/opsz.css";
-@import "@fontsource-variable/dm-sans/opsz-italic.css";
-@import "@fontsource-variable/jetbrains-mono/index.css";
+@import "@fontsource/open-runde/latin-400.css";
+@import "@fontsource/open-runde/latin-500.css";
+@import "@fontsource/open-runde/latin-700.css";
+@import "@fontsource-variable/geist-mono/index.css";
 
-/* Penflow draws the wordmark from this TTF's glyph outlines, so it stays a TTF. The home route
-   preloads it in src/routes/index.tsx. The static fallback reuses the same file. */
+/* Penflow draws the wordmark from this TTF's glyph outlines, so it stays a TTF. */
 @font-face {
   font-family: "Yellowtail";
   src: url("/fonts/Yellowtail-Regular.ttf") format("truetype");
@@ -15,7 +14,6 @@
   font-weight: 400;
 }
 
-/* The dark variant applies under .dark, or when the system prefers dark and .light is absent. */
 @custom-variant dark {
   &:where(.dark, .dark *) {
     @slot;
@@ -27,96 +25,149 @@
   }
 }
 
-@theme inline {
-  /* Brand accent. Use text-brand, bg-brand, or border-brand, never an arbitrary hex in className.
-     Dark mode lightens it so brand text keeps WCAG AA contrast on the dark background. */
-  --color-brand: light-dark(#863bff, #b794ff);
-  --color-brand-soft: #b794ff;
-  /* Status colors. Use text-success / bg-warning; values flip with the theme below. */
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --font-script: "Yellowtail", cursive;
-  /* The terminal demo is a fixed dark surface, so its palette does not follow the theme. */
-  --color-terminal: oklch(0.17 0.005 285);
-  --color-terminal-success: oklch(76.5% 0.177 163.223);
-  --shadow-terminal: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 16px 40px -16px rgba(134, 59, 255, 0.25);
-  --font-sans: "DM Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+/* Untitled theme. Values come from gui/themes/untitled.md. color-1 is the brand purple, and
+   Open Runde replaces GT Standard M. Each color is light-dark(light, dark). The block repeats on
+   .light and .dark because Chrome resolves light-dark() where a custom property is declared, so a
+   .dark element inside a light page needs its own declarations. */
+:root,
+.light,
+.dark {
+  --color-none: transparent;
+  --color-1: light-dark(#863bff, #b794ff);
+  --color-1-transparent: light-dark(#863bff33, #b794ff33);
+  --color-2: light-dark(#707070, #b1b1b1);
+  --color-2-transparent: light-dark(#70707033, #b1b1b133);
+  --color-3: light-dark(#b6b6b6, #777777);
+  --color-3-transparent: light-dark(#b6b6b633, #77777733);
+  --color-4: light-dark(#e8e8e8, #424242);
+  --color-4-transparent: light-dark(#e8e8e833, #42424233);
+  --neutral-1: light-dark(#ffffff, #000000);
+  --neutral-1-transparent: light-dark(#ffffff33, #00000033);
+  --neutral-2: light-dark(#fafafa, #202020);
+  --neutral-2-transparent: light-dark(#fafafa33, #20202033);
+  --neutral-3: light-dark(#f0f0f0, #2b2b2b);
+  --neutral-3-transparent: light-dark(#f0f0f033, #2b2b2b33);
+  --neutral-4: light-dark(#dedede, #383838);
+  --neutral-4-transparent: light-dark(#dedede33, #38383833);
+  --neutral-5: light-dark(#c5c5c5, #505050);
+  --neutral-5-transparent: light-dark(#c5c5c533, #50505033);
+  --neutral-6: light-dark(#969696, #777777);
+  --neutral-6-transparent: light-dark(#96969633, #77777733);
+  --neutral-7: light-dark(#6c6c6c, #a3a3a3);
+  --neutral-7-transparent: light-dark(#6c6c6c33, #a3a3a333);
+  --neutral-8: light-dark(#454545, #c6c6c6);
+  --neutral-8-transparent: light-dark(#45454533, #c6c6c633);
+  --neutral-9: light-dark(#252525, #e5e5e5);
+  --neutral-9-transparent: light-dark(#25252533, #e5e5e533);
+  --neutral-10: light-dark(#000000, #ffffff);
+  --neutral-10-transparent: light-dark(#00000033, #ffffff33);
+  --success: #76ef6b;
+  --success-transparent: #76ef6b33;
+  --warning: #ffa344;
+  --warning-transparent: #ffa34433;
+  --error: #ff5263;
+  --error-transparent: #ff526333;
+
+  --space-zero: 0px;
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-s: 12px;
+  --space-m: 16px;
+  --space-l: 24px;
+  --space-xl: 32px;
+  --space-xxl: 48px;
+
+  --size-xxs: 10px;
+  --line-xxs: 14px;
+  --letter-spacing-xxs: var(--tracking-xl);
+  --size-xs: 12px;
+  --line-xs: 16px;
+  --letter-spacing-xs: var(--tracking-l);
+  --size-s: 14px;
+  --line-s: 20px;
+  --letter-spacing-s: var(--tracking-l);
+  --size-m: 16px;
+  --line-m: 24px;
+  --letter-spacing-m: var(--tracking-m);
+  --size-l: 24px;
+  --line-l: 32px;
+  --letter-spacing-l: var(--tracking-s);
+  --size-xl: 36px;
+  --line-xl: 40px;
+  --letter-spacing-xl: var(--tracking-s);
+  --size-xxl: 48px;
+  --line-xxl: 52px;
+  --letter-spacing-xxl: var(--tracking-xs);
+
+  --weight-ui-regular: 400;
+  --weight-ui-medium: 500;
+  --weight-ui-heavy: 700;
+  --weight-brand-regular: 400;
+  --weight-brand-medium: 500;
+  --weight-brand-heavy: 700;
+  --weight-editorial-regular: 400;
+  --weight-editorial-medium: 500;
+  --weight-editorial-heavy: 700;
+  --weight-data-regular: 400;
+  --weight-data-medium: 500;
+  --weight-data-heavy: 700;
+
+  --border-none: 0px;
+  --border-s: 1px;
+  --border-m: 1px;
+  --border-l: 2px;
+  --border-default-color: rgb(0 0 0 / 0.1);
+  --border-shadow-none: 0 0 0 0 transparent;
+  --border-shadow-s: 0 0 0 var(--border-s) var(--border-default-color);
+  --border-shadow-m: 0 0 0 var(--border-m) var(--border-default-color);
+  --border-shadow-l: 0 0 0 var(--border-l) var(--border-default-color);
+  --focus-ring-outline: 2px solid
+    light-dark(
+      color-mix(in srgb, #000000 50%, transparent),
+      color-mix(in srgb, #ffffff 50%, transparent)
+    );
+  --icon-stroke-width: 2;
+
+  --motion-duration: 150ms;
+  --motion-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --motion-large-duration: 300ms;
+  --motion-large-easing: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-popup-scale: 0.96;
+  --motion-press-distance: 1px;
+
+  --cte-canvas: var(--neutral-1);
+  --cte-surface: var(--neutral-2);
+  --cte-surface-muted: var(--neutral-3);
+  --cte-text: var(--neutral-10);
+  --cte-text-muted: var(--neutral-7);
+  --cte-border: var(--border-default-color);
+  --cte-accent: var(--color-1);
+  --cte-accent-text: var(--neutral-2);
+  --cte-danger: var(--error);
+  --cte-focus: var(--color-1);
+
+  --background: var(--neutral-1);
+  --foreground: var(--neutral-10);
+  --card: var(--neutral-2);
+  --card-foreground: var(--neutral-10);
+  --popover: var(--neutral-1);
+  --popover-foreground: var(--neutral-10);
+  --primary: var(--color-1);
+  --primary-foreground: var(--neutral-1);
+  --secondary: var(--neutral-3);
+  --secondary-foreground: var(--neutral-10);
+  --muted: var(--neutral-3);
+  --muted-foreground: var(--neutral-7);
+  --accent: var(--neutral-3);
+  --accent-foreground: var(--neutral-10);
+  --destructive: var(--error);
+  --border: var(--border-default-color);
+  --input: var(--neutral-4);
+  --ring: var(--color-1);
 }
 
 :root {
-  /* Follows the operating system. Put .light or .dark on <html> to force one theme.
-     Each color is light-dark(light, dark), so a token is declared once for both themes. */
   color-scheme: light dark;
-  --radius: 0.625rem;
-  --success: light-dark(oklch(59.6% 0.145 163.225), oklch(76.5% 0.177 163.223));
-  --warning: light-dark(oklch(76.9% 0.188 70.08), oklch(82.8% 0.189 84.429));
-  --background: light-dark(oklch(1 0 0), oklch(0.145 0 0));
-  --foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --card: light-dark(oklch(1 0 0), oklch(0.205 0 0));
-  --card-foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --popover: light-dark(oklch(1 0 0), oklch(0.205 0 0));
-  --popover-foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --primary: light-dark(oklch(0.205 0 0), oklch(0.922 0 0));
-  --primary-foreground: light-dark(oklch(0.985 0 0), oklch(0.205 0 0));
-  --secondary: light-dark(oklch(0.97 0 0), oklch(0.269 0 0));
-  --secondary-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
-  --muted: light-dark(oklch(0.97 0 0), oklch(0.269 0 0));
-  --muted-foreground: light-dark(oklch(0.556 0 0), oklch(0.708 0 0));
-  --accent: light-dark(oklch(0.97 0 0), oklch(0.269 0 0));
-  --accent-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
-  --destructive: light-dark(oklch(0.577 0.245 27.325), oklch(0.704 0.191 22.216));
-  --border: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 10%));
-  --input: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 15%));
-  --ring: light-dark(oklch(0.708 0 0), oklch(0.556 0 0));
-  --chart-1: light-dark(oklch(0.646 0.222 41.116), oklch(0.488 0.243 264.376));
-  --chart-2: light-dark(oklch(0.6 0.118 184.704), oklch(0.696 0.17 162.48));
-  --chart-3: light-dark(oklch(0.398 0.07 227.392), oklch(0.769 0.188 70.08));
-  --chart-4: light-dark(oklch(0.828 0.189 84.429), oklch(0.627 0.265 303.9));
-  --chart-5: light-dark(oklch(0.769 0.188 70.08), oklch(0.645 0.246 16.439));
-  --sidebar: light-dark(oklch(0.985 0 0), oklch(0.205 0 0));
-  --sidebar-foreground: light-dark(oklch(0.145 0 0), oklch(0.985 0 0));
-  --sidebar-primary: light-dark(oklch(0.205 0 0), oklch(0.488 0.243 264.376));
-  --sidebar-primary-foreground: light-dark(oklch(0.985 0 0), oklch(0.985 0 0));
-  --sidebar-accent: light-dark(oklch(0.97 0 0), oklch(0.269 0 0));
-  --sidebar-accent-foreground: light-dark(oklch(0.205 0 0), oklch(0.985 0 0));
-  --sidebar-border: light-dark(oklch(0.922 0 0), oklch(1 0 0 / 10%));
-  --sidebar-ring: light-dark(oklch(0.708 0 0), oklch(0.556 0 0));
 }
 
 .light {
@@ -127,19 +178,143 @@
   color-scheme: dark;
 }
 
+@theme static {
+  --color-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --tracking-*: initial;
+  --font-*: initial;
+  --font-weight-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --inset-shadow-*: initial;
+  --drop-shadow-*: initial;
+  --text-shadow-*: initial;
+
+  --font-ui: "Open Runde", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-brand: "Open Runde", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-editorial: "Open Runde", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-data: "Geist Mono Variable", monospace;
+  --font-script: "Yellowtail", cursive;
+  --default-font-family: var(--font-ui);
+  --default-mono-font-family: var(--font-data);
+
+  --tracking-xs: -0.02em;
+  --tracking-s: -0.01em;
+  --tracking-m: 0em;
+  --tracking-l: 0.01em;
+  --tracking-xl: 0.02em;
+
+  --radius-zero: 0px;
+  --radius-xs: 3px;
+  --radius-s: 6px;
+  --radius-m: 9px;
+  --radius-l: 17px;
+  --radius-xl: 26px;
+  --radius-full: 9999px;
+
+  --shadow-s: 0px 1px 2px 0px #00000000;
+  --shadow-m: 0px 8px 24px 0px #00000000;
+  --shadow-l: 0px 12px 30px 0px #00000000;
+
+  --text-wordmark: 8rem;
+  --text-wordmark--line-height: 1;
+}
+
+@theme inline {
+  --text-xxs: var(--size-xxs);
+  --text-xxs--line-height: var(--line-xxs);
+  --text-xxs--letter-spacing: var(--letter-spacing-xxs);
+  --text-xs: var(--size-xs);
+  --text-xs--line-height: var(--line-xs);
+  --text-xs--letter-spacing: var(--letter-spacing-xs);
+  --text-s: var(--size-s);
+  --text-s--line-height: var(--line-s);
+  --text-s--letter-spacing: var(--letter-spacing-s);
+  --text-m: var(--size-m);
+  --text-m--line-height: var(--line-m);
+  --text-m--letter-spacing: var(--letter-spacing-m);
+  --text-l: var(--size-l);
+  --text-l--line-height: var(--line-l);
+  --text-l--letter-spacing: var(--letter-spacing-l);
+  --text-xl: var(--size-xl);
+  --text-xl--line-height: var(--line-xl);
+  --text-xl--letter-spacing: var(--letter-spacing-xl);
+  --text-xxl: var(--size-xxl);
+  --text-xxl--line-height: var(--line-xxl);
+  --text-xxl--letter-spacing: var(--letter-spacing-xxl);
+
+  --font-weight-regular: var(--weight-ui-regular);
+  --font-weight-medium: var(--weight-ui-medium);
+  --font-weight-heavy: var(--weight-ui-heavy);
+
+  --spacing-zero: var(--space-zero);
+  --spacing-xxs: var(--space-xxs);
+  --spacing-xs: var(--space-xs);
+  --spacing-s: var(--space-s);
+  --spacing-m: var(--space-m);
+  --spacing-l: var(--space-l);
+  --spacing-xl: var(--space-xl);
+  --spacing-xxl: var(--space-xxl);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-transparent: var(--color-1-transparent);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-transparent: var(--error-transparent);
+  --color-destructive-foreground: var(--neutral-1);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-neutral-3-transparent: var(--neutral-3-transparent);
+  --color-neutral-4: var(--neutral-4);
+  --color-neutral-4-transparent: var(--neutral-4-transparent);
+  --color-neutral-6: var(--neutral-6);
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+  html {
+    text-wrap: pretty;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-ui text-m font-regular text-foreground;
     -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: var(--focus-ring-outline);
+    outline-offset: 2px;
   }
 }
 
-/* Text shimmer — a highlight sweeps through the text via a gradient-clipped
-   pseudo-element overlay (duplicate text from data-text), so the base text
-   stays fully readable underneath. */
+@utility divider-t {
+  box-shadow: inset 0 var(--border-s) 0 0 var(--border-default-color);
+}
+
+@utility divider-b {
+  box-shadow: inset 0 calc(var(--border-s) * -1) 0 0 var(--border-default-color);
+}
+
+[data-slot="icon"] * {
+  stroke-width: var(--icon-stroke-width);
+}
+
 @keyframes shimmer-sweep {
   0% {
     background-position: 100% 0;
@@ -160,12 +335,7 @@
   inset: 0;
   pointer-events: none;
   color: transparent;
-  background-image: linear-gradient(
-    90deg,
-    transparent 40%,
-    var(--shimmer-highlight, #863bff) 50%,
-    transparent 60%
-  );
+  background-image: linear-gradient(90deg, transparent 40%, var(--color-1) 50%, transparent 60%);
   background-size: 400% 100%;
   background-repeat: no-repeat;
   -webkit-background-clip: text;

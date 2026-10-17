@@ -29,7 +29,7 @@ export function RotatingWord() {
   }, []);
 
   return (
-    <Calligraph as="span" className="text-brand" animation="smooth" trend={1}>
+    <Calligraph as="span" className="text-primary" animation="smooth" trend={1}>
       {words[index] ?? words[0]}
     </Calligraph>
   );

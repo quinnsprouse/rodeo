@@ -186,6 +186,11 @@ export default defineConfig({
       "dist",
       ".tanstack/",
       ".tanstack-start/",
+      // why: The Graphical registry installs these files, and keeping them byte-identical to the
+      // downloaded revision makes a reinstall diff show only real changes.
+      "GUI.md",
+      "gui/",
+      ".agents/skills/graphical-*/",
     ],
   },
 
@@ -294,7 +299,12 @@ export default defineConfig({
 
       ...rodeoRules,
 
-      "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+      // why: @shadcn/lint's class grammar doesn't parse the theme's named spacing keys, so it
+      // reads a placement margin such as mt-m as a restyle.
+      "shadcn/no-restyle": [
+        "error",
+        { allow: ["layout", "m-*", "mx-*", "my-*", "mt-*", "mr-*", "mb-*", "ml-*"] },
+      ],
       "shadcn/no-raw-colors": "error",
       "shadcn/no-arbitrary-values": ["error", { allow: ["layout"] }],
       "shadcn/no-inline-styles": "error",
