@@ -110,7 +110,10 @@ export { a, b };`);
 
   it("ignores ordinary comments that mention linting", () => {
     expect(
-      rulesHit(`// why: Disabled features are listed in the docs.\nexport const a = 1;`),
+      rulesHit(
+        `// why: Disabled features are listed in the docs.\nexport const a = 1;`,
+        "scripts/probe.ts",
+      ),
     ).toEqual([]);
   });
 });
@@ -241,20 +244,59 @@ export function Probe() { return <div>{/* Hero */}</div>; }`);
     ]);
   });
 
-  it("requires a reason of at least three words after why:", () => {
-    const hits = lint(`// why: hack\nexport const a = 1;`);
+  it("requires a reason of at least three words after why: in tooling", () => {
+    const hits = lint(`// why: hack\nexport const a = 1;`, "scripts/probe.ts");
 
     expect(hits.map((hit) => hit.message)).toEqual([expect.stringContaining("at least 3 words")]);
   });
 
-  it("allows why: comments across continued lines, blocks, and JSX", () => {
+  it("allows why: comments in tooling across continued lines, blocks, and JSX", () => {
     expect(
-      rulesHit(`// why: Safari drops the first frame
+      rulesHit(
+        `// why: Safari drops the first frame
 // when the element starts hidden.
 export const a = 1;
 /* why: The spec requires a trailing slash here. */
-export function Probe() { return <div>{/* why: Screen readers skip this decoration. */}</div>; }`),
+export function Probe() { return <div>{/* why: Screen readers skip this decoration. */}</div>; }`,
+        "scripts/probe.tsx",
+      ),
     ).toEqual([]);
+  });
+
+  it("requires app code why: comments to name a dependency, browser, or spec", () => {
+    const hits = lint(
+      `// why: The layout breaks when this value changes later.\nexport const a = 1;`,
+    );
+
+    expect(hits.map((hit) => hit.message)).toEqual([expect.stringContaining("names no cause")]);
+  });
+
+  it("keeps app code why: comments between 6 and 30 words", () => {
+    const long = Array.from({ length: 31 }, () => "Safari").join(" ");
+    const hits = [
+      ...lint(`// why: Safari needs this.\nexport const a = 1;`),
+      ...lint(`// why: ${long}\nexport const a = 1;`, "e2e/probe.spec.ts"),
+    ];
+
+    expect(hits.map((hit) => hit.message)).toEqual([
+      expect.stringContaining("6 to 30 words"),
+      expect.stringContaining("6 to 30 words"),
+    ]);
+  });
+
+  it("accepts short app code why: comments that name their cause", () => {
+    expect([
+      ...rulesHit(`// why: Safari drops the first frame
+// when the element starts hidden.
+export const a = 1;`),
+      ...rulesHit(
+        `// why: Playwright's toBeVisible ignores opacity, so this reads visibility directly.\nexport const a = 1;`,
+        "e2e/probe.spec.ts",
+      ),
+      ...rulesHit(
+        `// why: LazyMotion loads this module with import(), so the features get their own chunk.\nexport const a = 1;`,
+      ),
+    ]).toEqual([]);
   });
 
   it("leaves TypeScript directives and lint directives to their own rules", () => {

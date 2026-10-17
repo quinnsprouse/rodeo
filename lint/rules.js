@@ -1,4 +1,49 @@
+import { readFileSync } from "node:fs";
+import { relative } from "node:path";
+
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
+
+const PLATFORM_CAUSES = [
+  "browser",
+  "chrome",
+  "chromium",
+  "safari",
+  "webkit",
+  "firefox",
+  "ios",
+  "android",
+  "macos",
+  "windows",
+  "linux",
+  "node",
+  "http",
+  "html",
+  "css",
+  "spec",
+  "rfc",
+  "wcag",
+  "aria",
+  "csp",
+  "cors",
+  "unicode",
+  "vercel",
+  "cloudflare",
+  "workerd",
+];
+const GENERIC_PACKAGE_WORDS = new Set(["api", "cli", "config", "core", "kit", "plugin", "start"]);
+
+function dependencyCauses() {
+  const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
+  const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies });
+  return names
+    .flatMap((name) => name.replace(/^@/, "").split(/[/-]/))
+    .filter((word) => word.length >= 3 && !GENERIC_PACKAGE_WORDS.has(word));
+}
+
+const outsideCauses = [...new Set([...dependencyCauses(), ...PLATFORM_CAUSES])]
+  .map((word) => word.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  .join("|");
+const OUTSIDE_CAUSE = new RegExp(`\\b(?:${outsideCauses})|(?:${outsideCauses})\\b`, "i");
 
 const BROWSER_GLOBALS = new Set([
   "window",
@@ -12,6 +57,8 @@ const DISABLE_DIRECTIVE = /^\s*((?:oxlint|eslint)-disable(?:-next-line|-line)?)/
 const INITIAL_PROP = /^(?:default|initial)[A-Z_]/;
 const WHY_MARKER = /^why:/;
 const MIN_REASON_WORDS = 3;
+const APP_CODE = /^(?:src|e2e)\//;
+const APP_REASON_WORDS = { min: 6, max: 30 };
 const VITE_BUILT_IN_ENV = new Set(["BASE_URL", "DEV", "MODE", "PROD", "SSR"]);
 
 function isFunction(node) {
@@ -347,17 +394,22 @@ const noComments = defineRule({
     type: "problem",
     docs: {
       description:
-        "Ban code comments. Agents copy comments, so a workaround note spreads. The code must say what it does. A `why:` comment is a last resort for a constraint outside the code.",
+        "Ban code comments. Agents copy comments, so a workaround note spreads. The code must say what it does. A `why:` comment is a last resort for a cause outside the code that already tripped an agent.",
     },
     messages: {
       comment:
-        "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test. Delete a comment that restates the code, and fix a workaround instead of explaining it. A `why:` comment is a last resort: use one only when the code must stay as it is because of a constraint outside your control, such as a browser bug, and name that cause. See docs/agents/LINT_RULES.md#comments",
+        "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test. Delete a comment that restates the code, and fix a workaround instead of explaining it. If a test fails when someone undoes the code, the test already explains it. A `why:` comment is a last resort for code an agent already got wrong because of a library, browser, or spec. See docs/agents/LINT_RULES.md#comments",
       reason:
         "A `why:` comment needs a reason of at least {{min}} words that names the cause outside the code. If you cannot name one, delete the comment.",
+      length:
+        "A `why:` comment in src/ and e2e/ is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
+      cause:
+        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as Motion or Safari. If the cause is in this repo, fix the code instead and delete the comment.",
     },
     schema: [],
   },
   create(context) {
+    const appCode = APP_CODE.test(relative(context.cwd, context.filename).replaceAll("\\", "/"));
     return {
       Program() {
         for (const group of commentGroups(context.sourceCode.getAllComments())) {
@@ -368,9 +420,19 @@ const noComments = defineRule({
             context.report({ loc, messageId: "comment" });
             continue;
           }
-          const reasonWords = text.replace(WHY_MARKER, "").split(/\s+/).filter(Boolean).length;
-          if (reasonWords < MIN_REASON_WORDS) {
-            context.report({ loc, messageId: "reason", data: { min: String(MIN_REASON_WORDS) } });
+          const reason = text.replace(WHY_MARKER, "").trim();
+          const words = reason.split(/\s+/).length;
+          if (!appCode) {
+            if (words < MIN_REASON_WORDS) {
+              context.report({ loc, messageId: "reason", data: { min: String(MIN_REASON_WORDS) } });
+            }
+            continue;
+          }
+          if (words < APP_REASON_WORDS.min || words > APP_REASON_WORDS.max) {
+            const data = { min: String(APP_REASON_WORDS.min), max: String(APP_REASON_WORDS.max) };
+            context.report({ loc, messageId: "length", data });
+          } else if (!OUTSIDE_CAUSE.test(reason)) {
+            context.report({ loc, messageId: "cause" });
           }
         }
       },
