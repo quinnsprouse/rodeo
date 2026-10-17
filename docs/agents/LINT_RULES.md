@@ -31,7 +31,7 @@ Nothing imports a route module. Server-only code lives in `*.server.ts`, the onl
 - **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body. Move that code to module scope.
 - **`no-warning-comments`.** Finish the work. Rewording the TODO doesn't count.
 - **`complexity`, `max-depth`, `max-lines`.** Split by responsibility. Return early, or move one concern into its own module.
-- **`shadcn/no-arbitrary-values` on a font size.** Declare a size token such as `--text-2xs`. Tailwind reads any other `text-<name>` as a color.
+- **`shadcn/no-unknown-classes` on `text-sm`, `rounded-md`, or `font-bold`.** The Untitled theme replaced Tailwind's default scales. Use its names, such as `text-s`, `rounded-s`, and `font-heavy`.
 
 ## Add a rule
 

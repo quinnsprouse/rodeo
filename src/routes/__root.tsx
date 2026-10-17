@@ -41,12 +41,12 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
         {/* why: HeadContent keeps one meta tag per name, so the per-theme pair is written here. */}
         <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000" />
       </head>
       <body>
         <a
           href="#main"
-          className="fixed top-0 left-0 z-50 -translate-y-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-transform focus:translate-y-0"
+          className="fixed top-0 left-0 z-50 -translate-y-full bg-foreground px-m py-xs text-s font-medium text-background transition-transform duration-(--motion-duration) ease-(--motion-easing) focus:translate-y-0"
         >
           Skip to content
         </a>

@@ -126,35 +126,33 @@ function StarterStatusCard({ starterStatus }: { starterStatus: StarterStatus }) 
 
   return (
     <div
-      className="mt-8 grid gap-5 rounded-xl border border-border bg-muted/30 p-5 sm:grid-cols-[1fr_auto] sm:items-center"
+      className="mt-xl grid gap-l rounded-l bg-card p-l ring ring-border sm:grid-cols-[1fr_auto] sm:items-center"
       role={failed ? "alert" : "status"}
     >
       <div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-xs">
           <span
             className={cn("size-2 rounded-full", failed ? "bg-warning" : "bg-success")}
             aria-hidden="true"
           />
-          <h3 className="text-sm font-semibold tracking-tight text-foreground">
+          <h3 className="text-s font-medium text-foreground">
             {failed ? "Handled server error" : "Live full-stack example"}
           </h3>
         </div>
-        <p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
-          {starterStatus.message}
-        </p>
-        <p className="mt-2 font-mono text-xs text-muted-foreground">
+        <p className="mt-xs text-s text-muted-foreground">{starterStatus.message}</p>
+        <p className="mt-xs font-data text-xs text-muted-foreground">
           route loader → server function → rendered result
         </p>
       </div>
       <Link
         to="/"
         search={failed ? {} : { demo: "error" }}
-        className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-brand"
+        className="group inline-flex items-center gap-xs text-s font-medium text-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-primary"
       >
         {failed ? "Return to ready state" : "Preview the error path"}
         <Icon
           icon={ArrowRight01Icon}
-          className="size-3 transition-transform duration-150 group-hover:translate-x-0.5"
+          className="size-3 transition-transform duration-(--motion-duration) ease-(--motion-easing) group-hover:translate-x-xxs"
           aria-hidden="true"
         />
       </Link>
@@ -167,36 +165,40 @@ function Home() {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   return (
-    <div className="bg-background selection:bg-brand/20">
-      <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
+    <div className="bg-background selection:bg-primary-transparent">
+      <section className="flex min-h-dvh flex-col justify-center px-l sm:px-xl">
         <div className="mx-auto w-full max-w-2xl">
           <Wordmark animate={!prefersReducedMotion} />
 
-          <h1 className="mt-4 text-2xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
+          <h1 className="mt-m font-brand text-l font-heavy text-foreground sm:text-xl">
             Built for{" "}
-            {prefersReducedMotion ? <span className="text-brand">agents.</span> : <RotatingWord />}
+            {prefersReducedMotion ? (
+              <span className="text-primary">agents.</span>
+            ) : (
+              <RotatingWord />
+            )}
           </h1>
 
-          <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
+          <p className="mt-s max-w-md text-muted-foreground">
             A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
             routing, server rendering, and agent docs. Free and open source.
           </p>
 
-          <div className="mt-10">
+          <div className="mt-xl">
             <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
 
-            <div className="mt-5 flex items-center gap-5">
+            <div className="mt-l flex items-center gap-l">
               <a
                 href="https://github.com/quinnsprouse/rodeo"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group inline-flex items-center gap-1.5 text-sm font-medium text-foreground transition-colors hover:text-brand"
+                className="group inline-flex items-center gap-xs text-s font-medium text-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-primary"
               >
                 <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
                 GitHub
                 <Icon
                   icon={ArrowRight01Icon}
-                  className="size-3 -translate-x-1 opacity-0 transition duration-150 group-hover:translate-x-0 group-hover:opacity-100"
+                  className="size-3 -translate-x-xxs opacity-0 transition duration-(--motion-duration) ease-(--motion-easing) group-hover:translate-x-0 group-hover:opacity-100"
                   aria-hidden="true"
                 />
               </a>
@@ -204,7 +206,7 @@ function Home() {
                 href="https://viteplus.dev/guide/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-s text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground"
               >
                 Docs
               </a>
@@ -213,69 +215,62 @@ function Home() {
         </div>
       </section>
 
-      <section className="border-t border-border/40">
-        <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
-          <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
-          <h2 className="max-w-md text-xl leading-snug font-bold tracking-tight text-foreground">
+      <section className="divider-t">
+        <div className="mx-auto w-full max-w-2xl px-l py-xxl sm:px-xl">
+          <p className="mb-s text-s text-muted-foreground">The feedback loop</p>
+          <h2 className="max-w-md font-brand text-l font-heavy text-foreground">
             Check changes before they reach main.
           </h2>
-          <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
+          <p className="mt-s max-w-md text-muted-foreground">
             Run focused checks while editing, then build and test the app before pushing.
           </p>
 
-          <TerminalDemo className="mt-10" />
+          <TerminalDemo className="mt-xl" />
 
           <StarterStatusCard starterStatus={starterStatus} />
 
-          <div className="mt-12 space-y-8">
+          <div className="mt-xxl space-y-xl">
             {loop.map((step) => (
-              <div key={step.when} className="grid gap-2 sm:grid-cols-[200px_1fr] sm:gap-8">
-                <p className="font-mono text-sm font-medium text-brand">{step.when}</p>
-                <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-                  {step.what}
-                </p>
+              <div key={step.when} className="grid gap-xs sm:grid-cols-[200px_1fr] sm:gap-xl">
+                <p className="font-data text-s font-medium text-primary">{step.when}</p>
+                <p className="text-s text-muted-foreground">{step.what}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="border-t border-border/40">
-        <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
-          <p className="mb-12 text-sm text-muted-foreground">What ships out of the box</p>
+      <section className="divider-t">
+        <div className="mx-auto w-full max-w-2xl px-l py-xxl sm:px-xl">
+          <p className="mb-xxl text-s text-muted-foreground">What ships out of the box</p>
 
-          <div className="space-y-10">
+          <div className="space-y-xl">
             {features.map((f) => (
-              <div key={f.title} className="grid gap-3 sm:grid-cols-[200px_1fr] sm:gap-8">
-                <div className="flex items-start gap-2.5">
+              <div key={f.title} className="grid gap-s sm:grid-cols-[200px_1fr] sm:gap-xl">
+                <div className="flex items-start gap-xs">
                   <Icon
                     icon={f.icon}
-                    className="mt-0.5 size-4 shrink-0 text-brand"
-                    strokeWidth={1.75}
+                    className="mt-xxs size-4 shrink-0 text-primary"
                     aria-hidden="true"
                   />
-                  <h2 className="text-base font-semibold tracking-tight text-foreground">
-                    {f.title}
-                  </h2>
+                  <h2 className="font-medium text-foreground">{f.title}</h2>
                 </div>
-                <p className="text-sm leading-relaxed text-pretty text-muted-foreground">
-                  {f.desc}
-                </p>
+                <p className="text-s text-muted-foreground">{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="border-t border-border/40">
-        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-6 sm:gap-x-5 sm:px-10">
+      <footer className="divider-t">
+        <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-m gap-y-xxs p-l sm:gap-x-l sm:px-xl">
           {stack.map((s) => (
             <a
               key={s.name}
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              className="py-xs text-xs text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground"
             >
               {s.name}
             </a>

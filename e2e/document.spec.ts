@@ -27,7 +27,7 @@ test("browser chrome follows each color scheme", async ({ page }) => {
   ).toHaveAttribute("content", "#ffffff");
   await expect(
     page.locator('meta[name="theme-color"][media="(prefers-color-scheme: dark)"]'),
-  ).toHaveAttribute("content", "#0a0a0a");
+  ).toHaveAttribute("content", "#000000");
 });
 
 test("each page names its own canonical URL from the configured origin", async ({ page }) => {

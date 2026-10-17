@@ -299,7 +299,12 @@ export default defineConfig({
 
       ...rodeoRules,
 
-      "shadcn/no-restyle": ["error", { allow: ["layout"] }],
+      // why: @shadcn/lint's class grammar doesn't parse the theme's named spacing keys, so it
+      // reads a placement margin such as mt-m as a restyle.
+      "shadcn/no-restyle": [
+        "error",
+        { allow: ["layout", "m-*", "mx-*", "my-*", "mt-*", "mr-*", "mb-*", "ml-*"] },
+      ],
       "shadcn/no-raw-colors": "error",
       "shadcn/no-arbitrary-values": ["error", { allow: ["layout"] }],
       "shadcn/no-inline-styles": "error",

@@ -3,7 +3,10 @@ import { LazyMotion, m } from "motion/react";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
-const EASE_OUT_QUINT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+const largeMotion: { duration: number; ease: [number, number, number, number] } = {
+  duration: 0.3,
+  ease: [0.16, 1, 0.3, 1],
+};
 
 const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.domAnimation);
 
@@ -27,35 +30,40 @@ export function TerminalDemo({ className }: { className?: string }) {
   const reducedMotion = usePrefersReducedMotion();
 
   return (
-    <div className={cn("overflow-hidden rounded-xl bg-terminal shadow-terminal", className)}>
-      <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="size-2.5 rounded-full bg-white/10" />
-        <span className="ml-2 font-mono text-xs text-white/55">my-app — zsh</span>
+    <div
+      className={cn(
+        "dark overflow-hidden rounded-l bg-card text-card-foreground ring ring-border",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-xs px-m py-s divider-b">
+        <span className="size-2.5 rounded-full bg-neutral-4" />
+        <span className="size-2.5 rounded-full bg-neutral-4" />
+        <span className="size-2.5 rounded-full bg-neutral-4" />
+        <span className="ml-xs font-data text-xs text-muted-foreground">my-app — zsh</span>
       </div>
 
       <LazyMotion features={loadMotionFeatures} strict>
-        <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:px-5">
+        <div className="space-y-xs overflow-x-auto p-m font-data text-xs sm:px-l">
           {lines.map((line, i) => (
             <m.div
               key={line.text}
               initial={reducedMotion ? false : { opacity: 0, y: 6 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.35, delay: i * 0.09, ease: EASE_OUT_QUINT }}
+              transition={{ ...largeMotion, delay: i * 0.09 }}
               className={cn(
                 // why: Motion renders the hidden initial state on the server, and without
                 // JavaScript nothing would reveal the lines.
-                "flex items-baseline gap-2 whitespace-nowrap noscript:transform-none! noscript:opacity-100!",
-                line.kind === "cmd" && "text-white/90",
-                line.kind === "ok" && "text-white/55",
-                line.kind === "dim" && "text-white/55",
-                line.kind === "note" && "pt-1 text-brand-soft",
+                "flex items-baseline gap-xs whitespace-nowrap noscript:transform-none! noscript:opacity-100!",
+                line.kind === "cmd" && "text-foreground",
+                line.kind === "ok" && "text-muted-foreground",
+                line.kind === "dim" && "text-muted-foreground",
+                line.kind === "note" && "pt-xxs text-primary",
               )}
             >
-              {line.kind === "cmd" && <span className="text-white/55 select-none">$</span>}
-              {line.kind === "ok" && <span className="text-terminal-success select-none">✓</span>}
+              {line.kind === "cmd" && <span className="text-muted-foreground select-none">$</span>}
+              {line.kind === "ok" && <span className="text-success select-none">✓</span>}
               {line.kind === "note" && <span className="select-none">→</span>}
               <span>{line.text}</span>
             </m.div>

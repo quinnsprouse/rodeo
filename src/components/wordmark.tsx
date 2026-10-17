@@ -10,12 +10,12 @@ const Penflow = lazy(() =>
 );
 
 function StaticWordmark() {
-  return <div className="pt-3 pl-12 font-script text-9xl leading-none text-brand">Rodeo</div>;
+  return <div className="pt-s pl-xxl font-script text-wordmark text-primary">Rodeo</div>;
 }
 
 export function Wordmark({ animate }: { animate: boolean }) {
   return (
-    <div className="-ml-12 h-[172px]">
+    <div className="-ml-xxl h-[172px]">
       <ClientOnly>
         <Suspense fallback={null}>
           <Penflow

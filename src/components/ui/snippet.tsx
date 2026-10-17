@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Icon, Tick02Icon, Copy01Icon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface SnippetProps {
@@ -52,18 +53,18 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
   return (
     <div
       className={cn(
-        "group relative flex items-center rounded-lg border border-border bg-muted/50 dark:bg-muted/30",
+        "group relative flex items-center rounded-m bg-card ring ring-border",
         className,
       )}
     >
-      <div className="flex-1 overflow-x-auto px-4 py-3">
+      <div className="flex-1 overflow-x-auto px-m py-s">
         {lines.map((line) => (
           <code
             key={line}
             className={cn(
-              "block font-mono text-sm whitespace-nowrap text-foreground/90",
+              "block font-data text-s whitespace-nowrap text-foreground",
               prompt &&
-                "before:mr-2.5 before:text-muted-foreground/50 before:content-['$'] before:select-none",
+                "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
             )}
           >
             {shimmer ? (
@@ -77,21 +78,21 @@ export function Snippet({ text, prompt = true, shimmer = false, className, onCop
         ))}
       </div>
 
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => void handleCopy()}
-        className="relative flex-none rounded-md p-3 text-muted-foreground transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand/50 focus-visible:outline-none"
+        className="mr-xs"
         aria-label={copied ? "Copied" : "Copy to clipboard"}
       >
-        <Icon
-          icon={copied ? Tick02Icon : Copy01Icon}
-          className={cn("size-5", copied && "text-success")}
-          aria-hidden="true"
-        />
-      </button>
+        <Icon icon={copied ? Tick02Icon : Copy01Icon} className="size-5" aria-hidden="true" />
+      </Button>
       <output
         className={
-          status === "failed" ? "absolute top-full left-0 mt-1 text-xs text-destructive" : "sr-only"
+          status === "failed"
+            ? "absolute top-full left-0 mt-xxs text-xs text-foreground"
+            : "sr-only"
         }
       >
         {status === "failed"
