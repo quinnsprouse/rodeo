@@ -30,7 +30,7 @@ Add UI components with the configured shadcn CLI. See [UI and motion](docs/agent
 
 The landing page is a demo. To start from a blank app:
 
-1. Replace `src/routes/index.tsx` with your home route. To keep a server-function example, keep `src/lib/starter-status.ts`. Otherwise, delete it and its test.
+1. Replace `src/routes/index.tsx` with your home route. To keep a server-function example, keep `src/lib/starter-status.ts`. Otherwise, delete it and its tests in `e2e/smoke.spec.ts`.
 2. Delete `src/components/rotating-word.tsx`, `terminal-demo.tsx`, and `wordmark.tsx`, plus `public/fonts/Yellowtail-Regular.ttf`.
 3. In `src/styles/app.css`, remove the Yellowtail `@font-face`, `--font-script`, the `--color-terminal*` and `--shadow-terminal` tokens, and the shimmer styles.
 4. Uninstall the demo packages: `npm uninstall penflow calligraph`.
@@ -40,16 +40,16 @@ Then run `npm run check:push`. Knip reports any file, export, or package that on
 
 ## Commands
 
-| Command              | Purpose                                                                     |
-| -------------------- | --------------------------------------------------------------------------- |
-| `npm run dev`        | Development server on port 3000                                             |
-| `npm run check`      | Toolchain alignment, formatting, lint, types, and unit tests                |
-| `npm run check:push` | Check, production build, dead code, and browser tests                       |
-| `npm run check:ci`   | Push checks, coverage, clean template installation, React Doctor, and audit |
-| `npm run fmt`        | Format files                                                                |
-| `npm run test:watch` | Unit tests in watch mode                                                    |
-| `npm run build`      | Production build                                                            |
-| `npm run start`      | Run the built Nitro server                                                  |
+| Command              | Purpose                                                           |
+| -------------------- | ----------------------------------------------------------------- |
+| `npm run dev`        | Development server on port 3000                                   |
+| `npm run check`      | Toolchain alignment, formatting, lint, types, and guardrail tests |
+| `npm run check:push` | Check, production build, dead code, and browser tests             |
+| `npm run check:ci`   | Push checks, clean template installation, React Doctor, and audit |
+| `npm run fmt`        | Format files                                                      |
+| `npm run test:watch` | Guardrail tests in watch mode                                     |
+| `npm run build`      | Production build                                                  |
+| `npm run start`      | Run the built Nitro server                                        |
 
 To ship the app to Node, Vercel, or Cloudflare Workers, follow [Deploy](docs/agents/DEPLOY.md).
 
@@ -70,7 +70,6 @@ Optional skills are listed in `skills-lock.json`; restore them with `npm run set
 - `src/hooks/`, `src/lib/`, `src/styles/`: hooks, shared logic, and theme
 - `lint/`, `e2e/`: custom rules and verification tests
 - `docs/agents/`: implementation guides
-- `docs/adr/`: architecture decisions
 - `scripts/`: setup and verification scripts
 - `.scratch/`: ignored experiments
 

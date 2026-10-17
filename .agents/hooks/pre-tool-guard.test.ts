@@ -58,8 +58,6 @@ const patch = (...headers: string[]): ToolCall => ({
   toolInput: { command: ["*** Begin Patch", ...headers, "*** End Patch"].join("\n") },
 });
 
-// Each call starts the guard as a process. Resolving them together keeps the suite fast enough
-// for the Stop hook, and pairing each input with its decision names the input that failed.
 async function decisions(cases: [ToolCall, Decision][]) {
   const actual = await Promise.all(cases.map(([call]) => decide(call)));
   return {
@@ -69,6 +67,35 @@ async function decisions(cases: [ToolCall, Decision][]) {
 }
 
 describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
+  it("denies unit tests in app code", async ({ expect }) => {
+    const { actual, expected } = await decisions([
+      [edit("src/lib/format.test.ts"), "deny"],
+      [edit("src/components/ui/snippet.spec.tsx"), "deny"],
+      [patch("*** Add File: src/routes/index.test.tsx"), "deny"],
+      [edit("e2e/checkout.spec.ts"), "allow"],
+      [edit("lint/rules.test.ts"), "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
+  it("denies new Markdown docs outside docs/agents and agent config", async ({ expect }) => {
+    const write = (file: string): ToolCall => ({
+      toolName: "Write",
+      toolInput: { file_path: join(repoRoot, file) },
+    });
+    const { actual, expected } = await decisions([
+      [write("docs/adr/0011-use-redis.md"), "deny"],
+      [write("PLAN.md"), "deny"],
+      [write("src/lib/README.md"), "deny"],
+      [patch("*** Add File: docs/prd/checkout.md"), "deny"],
+      [write("docs/agents/DATA.md"), "allow"],
+      [write(".scratch/plan.md"), "allow"],
+      [write("CLAUDE.md"), "allow"],
+      [edit("README.md"), "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
   it("denies edits to generated and tool-owned files", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [edit("src/routeTree.gen.ts"), "deny"],

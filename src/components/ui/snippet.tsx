@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 interface SnippetProps {
   text: string | string[];
   prompt?: boolean;
-  /** Sweep a highlight through the command text to draw the eye */
   shimmer?: boolean;
   className?: string;
   onCopy?: () => void;

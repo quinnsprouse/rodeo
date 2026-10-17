@@ -39,7 +39,8 @@ function run(command, args, options = {}) {
   const env = { ...process.env, CI: "1" };
   if (cwd !== repoRoot) {
     delete env.GIT_INDEX_FILE;
-    // In an agent session, this points at the source checkout. The hooks must use the temp app.
+    // why: In an agent session this points at the source checkout, and the hooks must use the
+    // temporary app.
     delete env.CLAUDE_PROJECT_DIR;
   }
   const result = spawnSync(command, args, {
@@ -162,7 +163,7 @@ function collectFailureEvidence(error) {
 }
 
 try {
-  // checkout-index is the degit-shaped artifact: tracked content and symlinks, no .git directory.
+  // why: Users install with degit, which copies tracked files and symlinks without .git.
   run("git", ["checkout-index", "--all", "--force", `--prefix=${appRoot}/`], {
     cwd: repoRoot,
   });
@@ -185,7 +186,6 @@ try {
   assert.equal(existsSync(join(appRoot, ".vite-hooks", "_", "h")), true);
   assert.equal(existsSync(join(appRoot, ".husky")), false);
 
-  // Setup is a public recovery command and must remain idempotent.
   runNpm(["run", "setup"]);
   run("git", ["hook", "run", "pre-commit"]);
   assertTree(distributedTree, "pre-commit feedback");
@@ -196,7 +196,6 @@ try {
     claudeSettings.hooks.PreToolUse[0].matcher,
     "Edit|Write|MultiEdit|NotebookEdit|Bash",
   );
-  // Codex runs the same hooks through .codex/hooks.json, resolved from the Git root.
   const codexHooks = JSON.parse(readFileSync(join(appRoot, ".codex/hooks.json"), "utf8"));
   assert.match(codexHooks.hooks.PreToolUse[0].matcher, /\bapply_patch\b/);
   assert.match(codexHooks.hooks.PostToolUse[0].matcher, /\bapply_patch\b/);
@@ -224,7 +223,6 @@ try {
   assert.equal(readFileSync(hookProbe, "utf8"), 'export const hookProbe = { value: "ok" };\n');
   rmSync(hookProbe);
 
-  // Edit Feedback must surface the banned pattern on write, not at commit.
   const lintProbe = join(appRoot, "src", "lint-probe.tsx");
   writeFileSync(
     lintProbe,
@@ -241,7 +239,6 @@ try {
   assert.match(lintFeedback.stdout, /react-hooks-js\(exhaustive-deps\)/);
   rmSync(lintProbe);
 
-  // The Tool Guard must refuse a hook bypass and stay silent for ordinary commands.
   const guardDecision = (command) =>
     run(process.execPath, [".agents/hooks/pre-tool-guard.mjs"], {
       capture: true,
@@ -267,8 +264,6 @@ try {
   ]);
   assert.equal(run("git", ["status", "--porcelain=v1"], { capture: true }).stdout, "");
 
-  // The Stop hook skips a clean tree, sends the agent back for a broken change, and stops
-  // blocking once the agent retries without changing anything.
   const stopCheck = (stopHookActive) =>
     run(process.execPath, [".agents/hooks/stop-check.mjs"], {
       capture: true,
@@ -301,10 +296,8 @@ try {
     run("git", ["check-ignore", "--no-index", "--quiet", "--", ignoredPath]);
   }
 
-  // Browser setup is part of the public Starter Journey, not an outer-CI assumption.
   runNpm(["run", "test:e2e:install"]);
 
-  // This exercises the real hook and therefore the same cached verification profile developers use.
   run("git", ["hook", "run", "pre-push"]);
   assert.equal(existsSync(join(appRoot, ".output", "server", "index.mjs")), true);
   await smokeProductionServer();

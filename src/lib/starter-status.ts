@@ -1,7 +1,5 @@
 import * as z from "zod/mini";
 
-// Server functions receive untrusted input. TanStack Start runs this schema before the handler and
-// infers the handler's `data` type from the schema's output.
 export const starterStatusInputSchema = z.object({
   fail: z.boolean(),
 });

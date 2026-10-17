@@ -1,36 +1,36 @@
-Agent-ready starter kit: Vite+ + TanStack Start + React 19, with shadcn/ui (Base UI), Tailwind v4, and Nitro.
+Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on Base UI, Tailwind v4, and Nitro.
 
-- Toolchain: `vp` (Vite+ CLI) — wraps Vite 8, oxlint, oxfmt, vitest, Rolldown
-- Quality gate: `npm run check` (fmt + lint + typecheck + tests)
-- Push gate: `npm run check:push` (check + build + dead code + Playwright e2e)
-- CI gate: `npm run check:ci` (push + clean template journey + React Doctor + audit)
-- React health: `npm run doctor` (react-doctor scan — security, performance, correctness, architecture; also runs on staged files at commit and in CI)
-- React policy: use effects for external synchronization with complete dependencies and cleanup; derive values during render and handle user actions in handlers. Standard React lint rules enforce this where static analysis can.
-- Lint policy: warnings fail, inline `oxlint-disable` / `eslint-disable` comments are errors; exceptions go in `lint.overrides` in `vite.config.ts` with a reason
-- Fix the cause of a diagnostic; demonstrate a false positive with a minimal example before changing a rule or adding an exception. Prefer built-in rules and compiler checks over custom lint code.
-- Dev: `npm run dev` (localhost:3000)
-- Build: `npm run build`
-- Hook recovery: `npm run setup` (after `git init`)
+## Commands
 
-## Workflow
+- `npm run dev` starts the dev server on localhost:3000.
+- `npm run check` runs format, lint, types, and guardrail tests. Run it while you work.
+- `npm run check:push` adds the build, dead-code check, and Playwright. The pre-push hook runs it.
+- `npm run check:ci` adds a clean template install, React Doctor, and `npm audit`.
+- `npm run setup` reinstalls the Git hooks after `git init`.
 
-1. Plan — 2. Execute — 3. Test — 4. Commit
+## Rules
 
-Put disposable experiments and generated inspection output in `.scratch/` or the OS temp directory, never the repository root.
+- **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add an exception to `lint.overrides` in `vite.config.ts` with a `why:` comment.
+- **No comments.** Make the code say it with a clearer name, a smaller function, or a type. A `why:` comment is a last resort, only for a constraint outside the code that you can't fix, such as a browser bug.
+- **No unit tests in app code.** Test behavior end to end with Playwright in `e2e/`.
+- **No new docs.** `docs/agents/` holds the only guides. Plans, notes, PRDs, experiments, and generated output go in `.scratch/`.
+- **Commits** follow Conventional Commits, `type(scope): description`, with no Co-Authored-By trailer.
 
-## Commits
+## What you need from me
 
-Conventional Commits enforced by commitlint. `type(scope): description`. No Co-Authored-By trailers.
+- End every turn where you're blocked on me, or where the next step needs me, with a short "**What I need from you**" section. Number the items, one concrete action each: exactly what to do, where (which site, app, file, or person), and what to send back. For example, "In Vercel, add `VITE_APP_URL` under **Environment Variables**, redeploy, and send me the deployment URL", not "I need the production config".
+- If there are several, put the quickest or most blocking one first, and say what you'll get on with in the meantime.
+- If you don't need anything from me, say "Nothing needed from you right now" so I don't have to ask.
+- Never bury a request for me in the middle of a long update.
 
-## Progressive Disclosure
+## Guides
 
-Open these only when relevant:
+Open one when the task touches it:
 
-- [Architecture decisions](docs/adr/README.md) — load-bearing decisions and the concise ADR format
-- [Vite+ Toolchain](docs/agents/VITE_PLUS.md) — `vp` commands, common pitfalls, import conventions
-- [TanStack Start Patterns](docs/agents/TANSTACK_START.md) — routing, server functions, and the full-stack example
-- [UI and Motion](docs/agents/UI_MOTION.md) — Tailwind tokens, Motion library, icon imports
-- [React Patterns](docs/agents/REACT_PATTERNS.md) — effects, derived state, component design
-- [Lint Rules](docs/agents/LINT_RULES.md) — what the gate bans, the project `rodeo/*` rules, how to add one
-- [Testing](docs/agents/TESTING.md) — feedback loop, test scope policy, pre-commit guardrails
-- [Deploy](docs/agents/DEPLOY.md) — Node, Vercel, and Cloudflare Workers targets
+- [TanStack Start](docs/agents/TANSTACK_START.md): loaders, server functions, secrets, and the document head.
+- [React](docs/agents/REACT_PATTERNS.md): effects, state, and components.
+- [UI and motion](docs/agents/UI_MOTION.md): components, color tokens, icons, and animation.
+- [Testing](docs/agents/TESTING.md): which test to write, and the hooks that check your work.
+- [Lint rules](docs/agents/LINT_RULES.md): comments, where code goes, and errors that need more context.
+- [Vite+](docs/agents/VITE_PLUS.md): the `vp` toolchain and its traps.
+- [Deploy](docs/agents/DEPLOY.md): Node, Vercel, and Cloudflare Workers.

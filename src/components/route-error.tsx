@@ -17,11 +17,9 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
         <p className="text-pretty text-muted-foreground">{message}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-3">
-        {/* Invalidating reruns the loaders before the error boundary resets. */}
         <Button type="button" size="lg" onClick={() => void router.invalidate()}>
           Try again
         </Button>
-        {/* A link styled with buttonVariants looks like a button and keeps the link role. */}
         <Link to="/" search={{}} className={buttonVariants({ variant: "outline", size: "lg" })}>
           Back home
         </Link>

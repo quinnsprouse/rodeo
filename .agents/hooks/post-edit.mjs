@@ -58,7 +58,6 @@ function report(message) {
   );
 }
 
-// Codex's apply_patch sends the patch text. A header line in the patch names each file it touches.
 function editedFiles(toolName, toolInput) {
   if (toolName === "apply_patch" && typeof toolInput?.command === "string") {
     return [
@@ -114,7 +113,6 @@ try {
     }
 
     if (lintExtensions.has(extname(target).toLowerCase())) {
-      // Lint the edited file alone so the banned patterns surface on write, not at commit.
       const lint = run(vp, ["lint", target]);
       if (lint.status !== 0) {
         feedback.push(`Lint found an issue in ${projectPath}.\n${lint.stdout || lint.stderr}`);
@@ -122,7 +120,6 @@ try {
     }
   }
 
-  // One project typecheck covers every edited TypeScript file.
   const typeScriptFile = files.find(({ target }) =>
     typeScriptExtensions.has(extname(target).toLowerCase()),
   );

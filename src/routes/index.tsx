@@ -22,7 +22,6 @@ import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { resolveStarterStatus, starterStatusInputSchema } from "@/lib/starter-status";
 import { cn } from "@/lib/utils";
 
-// Search params are user input too. An unknown ?demo= value falls back to the normal page.
 const demoSearchSchema = z.object({
   demo: z.catch(z.optional(z.enum(["crash", "error"])), undefined),
 });
@@ -51,8 +50,7 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     links: [
-      // Only this page draws the wordmark. Penflow loads the font with fetch(), so the preload
-      // uses as="fetch" to match that request.
+      // why: Penflow loads the font with fetch(), so the preload uses as="fetch" to match it.
       {
         rel: "preload",
         href: "/fonts/Yellowtail-Regular.ttf",
@@ -108,7 +106,7 @@ const loop: { when: string; what: string }[] = [
   },
   {
     when: "on push",
-    what: "The checks run formatting, lint, types, unit tests, a production build, dead-code analysis, and Playwright browser tests. A failing check blocks the push.",
+    what: "The checks run formatting, lint, types, guardrail tests, a production build, dead-code analysis, and Playwright browser tests. A failing check blocks the push.",
   },
 ];
 
@@ -170,25 +168,20 @@ function Home() {
 
   return (
     <div className="bg-background selection:bg-brand/20">
-      {/* Hero — fills viewport */}
       <section className="flex min-h-dvh flex-col justify-center px-6 sm:px-10">
         <div className="mx-auto w-full max-w-2xl">
-          {/* Brand */}
           <Wordmark animate={!prefersReducedMotion} />
 
-          {/* Tagline */}
           <h1 className="mt-4 text-2xl leading-tight font-bold tracking-tight text-foreground sm:text-4xl">
             Built for{" "}
             {prefersReducedMotion ? <span className="text-brand">agents.</span> : <RotatingWord />}
           </h1>
 
-          {/* Description */}
           <p className="mt-3 max-w-md text-base leading-relaxed text-pretty text-muted-foreground">
             A React starter with formatting, lint checks, and tests wired into Git hooks. Includes
             routing, server rendering, and agent docs. Free and open source.
           </p>
 
-          {/* Actions */}
           <div className="mt-10">
             <Snippet text="npx degit quinnsprouse/rodeo my-app" shimmer className="w-full" />
 
@@ -220,7 +213,6 @@ function Home() {
         </div>
       </section>
 
-      {/* The feedback loop — terminal replay + how it works behind the scenes */}
       <section className="border-t border-border/40">
         <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
           <p className="mb-3 text-sm text-muted-foreground">The feedback loop</p>
@@ -248,7 +240,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Features — scroll to see */}
       <section className="border-t border-border/40">
         <div className="mx-auto w-full max-w-2xl px-6 pt-20 pb-24 sm:px-10">
           <p className="mb-12 text-sm text-muted-foreground">What ships out of the box</p>
@@ -276,7 +267,6 @@ function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="border-t border-border/40">
         <div className="mx-auto flex w-full max-w-2xl flex-wrap items-center gap-x-4 gap-y-1 px-6 py-6 sm:gap-x-5 sm:px-10">
           {stack.map((s) => (

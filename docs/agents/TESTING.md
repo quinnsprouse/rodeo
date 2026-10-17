@@ -1,81 +1,29 @@
 # Testing
 
-## Checks
+Test what a user can observe, end to end. App code has no unit tests. A unit test pins the shape a function has today, so it breaks on every refactor and costs tokens to rewrite.
 
-Use the smallest check that proves the change:
+**Pick the test:**
 
-| Profile | Command              | Checks                                                           |
-| ------- | -------------------- | ---------------------------------------------------------------- |
-| Fast    | `npm run check`      | toolchain, format, lint, types, unit tests                       |
-| Push    | `npm run check:push` | Fast, production build, dead code, Playwright                    |
-| CI      | `npm run check:ci`   | Push, coverage, clean template installation, React Doctor, audit |
+- For a page or a user journey, write a Playwright test in `e2e/` with the `page` fixture.
+- For a server function or HTTP behavior such as a status code, a header, or CSRF, use the `request` fixture. It calls the built server without a browser, as `e2e/security.spec.ts` does.
+- For a lint rule, the lint config, or a hook, write a guardrail test in `lint/` or `.agents/hooks/` that runs the real binary.
 
-The checks live in the Vite Task graph in `vite.config.ts`. Cached tasks use explicit inputs so verification also works in restricted agent sandboxes.
+**Write browser tests this way:**
 
-## Test Scope
+- Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, which loads `.env.e2e`, then tests the built server.
+- Select elements by role or text. Assert that the page threw nothing, with `trackBrowserErrors` from `e2e/smoke.spec.ts`.
+- To reach an error that a browser API controls, stub the API with `page.addInitScript`, as the clipboard tests do.
+- Add each new route to `e2e/accessibility.spec.ts`. Fix an axe violation instead of turning the rule off.
 
-Don't test what static analysis catches. Oxlint + TypeScript own type errors, unused vars, hook deps, formatting. Tests own **runtime behavior through public interfaces**.
+**Keep guardrail tests fast.** The Stop hook reruns all of them whenever `lint/` or `.agents/hooks/` changes. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run.
 
-Lint enforcement is the exception: `lint/rules.test.ts` runs each `rodeo/*` rule through the real Oxlint binary, and `lint/policy.test.ts` tests the actual project's configuration with valid and invalid React, TypeScript, and browser code. `.agents/hooks/pre-tool-guard.test.ts` checks every guard decision. These run in `npm run check`.
+**The check:** change the internals without changing what a user sees. If the test fails, it tested the implementation.
 
-## Test Design
+## Hooks that check your work
 
-- Test observable outcomes: rendered UI, returned values, side effects at boundaries.
-- Avoid implementation coupling: no internal call counts, no private helper tests, no brittle mocks.
-- Use role-based selectors (`getByRole`) over test IDs.
-- One assertion focus per test. Separate happy path from edge cases.
+- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a destructive Git command. It matches raw command text, so even a heredoc that mentions `--no-verify` is blocked. Write that content with a file tool.
+- `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it.
+- `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail.
+- Vite+ installs the Git hooks from `.vite-hooks/`. Pre-push runs `npm run check:push`. Don't add Husky.
 
-## Unit Tests
-
-- Vitest via `npm run test` with jsdom + Testing Library + user-event.
-- Import test helpers from `vite-plus/test`.
-- Setup in `src/test/setup.ts` runs `cleanup()` after each test.
-- Coverage: `npm run test:coverage` (v8, excludes generated files). Vite+ and the coverage provider stay pinned to the same Vitest version.
-
-## E2E Tests
-
-- Playwright with Chromium. Tests in `e2e/`.
-- Run `npm run test:e2e:install` once before the first browser test or push.
-- All browser tests exercise the built Nitro server. `npm run test:e2e` builds first; Push and CI reuse the build from the task graph.
-- `npm run typecheck` includes `e2e/`. Playwright runs TypeScript without checking types.
-- Capture both `pageerror` events and browser `console.error` messages; assert zero errors at test end.
-- Use accessible selectors: `page.getByRole(...)`, `page.getByText(...)`.
-- `e2e/accessibility.spec.ts` runs axe against WCAG 2.2 AA on each page, in the light and the dark theme. Add each new route to it. Fix violations instead of turning off axe rules.
-- `e2e/security.spec.ts` checks the security headers, and it checks that a server function rejects a cross-site call.
-- `e2e/document.spec.ts` checks that hashed assets ship compressed with a one-year cache, and that the head keeps a `theme-color` for each color scheme.
-
-## Clean template test
-
-`npm run test:template` tests the staged files in a clean temporary directory. It performs `npm ci`, checks that installation and hooks leave those files unchanged, exercises post-edit formatting and lint, checks tool-call restrictions, installs Chromium, executes the actual pre-push hook, and boots the production Nitro server.
-
-Stage intended starter changes before running it. Failures preserve the temporary app automatically and write diagnostics to `test-results/starter-journey/`; `KEEP_TEMPLATE_TEST=1` also preserves successful runs.
-
-## Agent Hooks
-
-Claude Code (`.claude/settings.json`) and Codex (`.codex/hooks.json`) run the same scripts from `.agents/hooks/`. Codex loads project hooks only after you trust the project.
-
-- **Before a tool call**: `pre-tool-guard.mjs` denies edits to generated files, and it checks every file in a Codex `apply_patch`. It denies non-npm package managers and Git hook bypasses: `--no-verify` on commit or push, a `core.hooksPath` override, `HUSKY=0`, and `VITE_GIT_HOOKS=0`. It asks a human before a force push or a destructive Git command. `--force-with-lease` passes.
-- The guard matches raw command text, so it also blocks a shell heredoc that only mentions a banned flag. Write that content with the file tools instead.
-- **After a write**: `post-edit.mjs` formats each edited file, lints it, and typechecks TypeScript. Lint errors appear in the hook output immediately.
-- Edits made through shell commands skip the post-edit hook. The Stop hook and the commit hook still check them.
-- **Before the agent ends its turn**: `stop-check.mjs` checks the files changed since the last commit. It runs `vp check` on those files, an incremental `tsc -b`, and `vp test run --changed` in parallel, then sends the agent back with the errors if one fails.
-
-The Stop hook's cost follows the size of the change, not the size of the project:
-
-- If the working tree matches the last state that passed, the hook exits after a few `git` calls. A turn that only answers a question costs about 0.2 seconds.
-- `vp test run --changed` runs only the tests whose imports reach a changed file. Changes to `package.json`, the Vite configs, `lint/`, or `.agents/hooks/` run every test, because those tests start their subjects as processes instead of importing them (`forceRerunTriggers` in `vitest.config.ts`).
-- The production build and the Playwright tests stay in the pre-push gate.
-- If the agent retries without changing anything, the hook lets the turn end and tells the user the check still fails, instead of looping.
-
-Keep new tests fast enough for this loop. A test that starts a process per case should run its cases with `it.concurrent`, as `lint/policy.test.ts` does.
-
-## Git Hooks
-
-- Vite+ owns `.vite-hooks`; do not add a second hook installer.
-- **Pre-commit**: `vp staged` plus advisory React Doctor feedback.
-- **Commit-msg**: commitlint enforces Conventional Commits.
-- **Pre-push**: `npm run check:push`.
-
-## Dead Code
-
-- `npm run knip` detects unused exports, dependencies, and files; it runs in `npm run check:push`.
+`npm run test:template` runs the whole starter from a clean copy of the staged files. CI runs it. Stage your changes before you run it locally.

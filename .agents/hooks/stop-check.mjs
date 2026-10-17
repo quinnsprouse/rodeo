@@ -1,12 +1,3 @@
-// Stop hook for Claude Code (.claude/settings.json) and Codex (.codex/hooks.json). Before an agent
-// ends its turn, it checks the files the agent changed. Failures send the agent back to fix them.
-//
-// Cost scales with the change, not the project:
-// - If the working tree matches the last state that passed, the hook exits after a few git calls.
-// - `vp check` formats, lints, and type-checks only the changed files.
-// - `tsc -b` is incremental and catches a change that breaks an unchanged caller.
-// - `vp test run --changed` runs only the tests whose import graph reaches a changed file.
-// The three checks run in parallel. The build and browser tests stay in the pre-push gate.
 import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
@@ -52,15 +43,13 @@ function lines(output) {
   return output.split("\n").filter(Boolean);
 }
 
-// Git's well-known empty tree. A repository with no commits yet compares against it.
-const emptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+const gitEmptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 
 function baseRevision() {
   const head = spawnSync("git", ["rev-parse", "--verify", "--quiet", "HEAD"], { cwd: projectRoot });
-  return head.status === 0 ? "HEAD" : emptyTree;
+  return head.status === 0 ? "HEAD" : gitEmptyTree;
 }
 
-// Tracked changes against the base plus untracked files that are not ignored.
 function changedFiles(base) {
   const paths = [
     ...lines(git(["diff", "--name-only", base])),
@@ -69,7 +58,6 @@ function changedFiles(base) {
   return [...new Set(paths)].filter((path) => existsSync(join(projectRoot, path)));
 }
 
-// Identifies the exact working-tree state, so an unchanged tree skips the checks.
 function fingerprint(base, files) {
   const hash = createHash("sha256");
   hash.update(git(["diff", base, "--binary"]));
@@ -118,7 +106,6 @@ function run(label, binary, args) {
   });
 }
 
-// Agents read this output as plain text: drop color codes and the vp note about npm scripts.
 function clean(text) {
   return stripVTControlCharacters(text)
     .split("\n")
@@ -151,8 +138,8 @@ try {
   const current = fingerprint(base, files);
   if (state.passed === current) process.exit(0);
 
-  // The agent was already sent back once and changed nothing since. Stop instead of looping.
-  if (input.stop_hook_active === true && state.failed === current) {
+  const retriedWithoutChanges = input.stop_hook_active === true && state.failed === current;
+  if (retriedWithoutChanges) {
     respond({
       systemMessage:
         "The stop check still fails on the current changes. Run `npm run check` to see the errors.",
@@ -194,7 +181,6 @@ try {
     ].join("\n\n"),
   });
 } catch (error) {
-  // A broken check must not trap the agent. Report it and let the turn end.
   respond({
     systemMessage: `The stop check could not run: ${error instanceof Error ? error.message : String(error)}`,
   });

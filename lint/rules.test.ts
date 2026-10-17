@@ -7,45 +7,33 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
-// Each rule is exercised through the real oxlint binary in an isolated directory, so the tests
-// prove what an agent will see from `vp lint`, not what a mocked AST visitor would do.
+import { rodeoRuleNames, type RodeoRuleName } from "./rodeo-rules";
 
 const require = createRequire(import.meta.url);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const pluginPath = join(repoRoot, "lint", "rules.js");
-// oxlint is a dependency of vite-plus, not of this project, so resolve it from there. That runs
-// the exact binary `vp lint` bundles and doesn't rely on npm hoisting a transitive package.
+// why: oxlint is a dependency of vite-plus, not of this project, so it resolves from there instead
+// of relying on npm hoisting a transitive package.
 const requireFromVitePlus = createRequire(require.resolve("vite-plus/package.json"));
 const oxlintBinary = resolve(
   dirname(requireFromVitePlus.resolve("oxlint/package.json")),
   "bin/oxlint",
 );
 
-const ruleNames = [
-  "no-disable-directives",
-  "server-fn-requires-validator",
-  "no-state-from-props",
-  "no-module-scope-browser-globals",
-  "no-window-navigation",
-] as const;
-
-// Each case starts oxlint. Startup can exceed the unit-test timeout while lint/policy.test.ts
-// runs its linters in parallel, or while CI runs coverage and builds.
+// why: Each case starts oxlint, and startup can exceed the default timeout while CI builds in
+// parallel.
 const processTimeout = { timeout: 30_000 };
 
-type RuleName = (typeof ruleNames)[number];
-
-function isRuleName(value: string): value is RuleName {
-  return (ruleNames as readonly string[]).includes(value);
+function isRuleName(value: string): value is RodeoRuleName {
+  return (rodeoRuleNames as readonly string[]).includes(value);
 }
 
-type Diagnostic = { rule: RuleName; line: number; message: string };
+type Diagnostic = { rule: RodeoRuleName; line: number; message: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-/** Narrow oxlint's `--format json` output without trusting it. */
 function parseDiagnostics(json: string): Diagnostic[] {
   const parsed: unknown = JSON.parse(json);
   if (!isRecord(parsed) || !Array.isArray(parsed.diagnostics)) {
@@ -74,7 +62,7 @@ beforeAll(() => {
     JSON.stringify({
       jsPlugins: [{ name: "rodeo", specifier: pluginPath }],
       categories: { correctness: "off" },
-      rules: Object.fromEntries(ruleNames.map((name) => [`rodeo/${name}`, "error"])),
+      rules: Object.fromEntries(rodeoRuleNames.map((name) => [`rodeo/${name}`, "error"])),
     }),
   );
 });
@@ -87,7 +75,7 @@ function lint(source: string, file = "src/probe.tsx"): Diagnostic[] {
   const target = join(sandbox, file);
   mkdirSync(dirname(target), { recursive: true });
   writeFileSync(target, source);
-  // -c is explicit because oxlint's config discovery is not reliable from inside a vitest worker.
+  // why: Oxlint's config discovery is not reliable from inside a Vitest worker.
   const result = spawnSync(
     process.execPath,
     [oxlintBinary, "-c", ".oxlintrc.json", "--format", "json", file],
@@ -121,7 +109,9 @@ export { a, b };`);
   });
 
   it("ignores ordinary comments that mention linting", () => {
-    expect(rulesHit(`// disabled features are listed in docs\nexport const a = 1;`)).toEqual([]);
+    expect(
+      rulesHit(`// why: Disabled features are listed in the docs.\nexport const a = 1;`),
+    ).toEqual([]);
   });
 });
 
@@ -210,10 +200,95 @@ export function go() {
   window.location.assign("/d");
   location.replace("/e");
 }`),
-    ).toEqual(Array<RuleName>(5).fill("no-window-navigation"));
+    ).toEqual(Array<RodeoRuleName>(5).fill("no-window-navigation"));
   });
 
   it("allows reading location", () => {
     expect(rulesHit(`export const path = () => window.location.pathname;`)).toEqual([]);
+  });
+});
+
+function pluginRuleNames(pluginModule: unknown) {
+  if (!isRecord(pluginModule) || !isRecord(pluginModule.default)) {
+    throw new Error("lint/rules.js has no default export");
+  }
+  const { rules } = pluginModule.default;
+  if (!isRecord(rules)) throw new Error("lint/rules.js exports no rules");
+  return Object.keys(rules);
+}
+
+describe("registration", () => {
+  it("registers every rule the plugin defines with Oxlint and React Doctor", async () => {
+    const pluginModule: unknown = await import(pluginPath);
+
+    expect(pluginRuleNames(pluginModule).toSorted()).toEqual(rodeoRuleNames.toSorted());
+  });
+});
+
+describe("no-comments", processTimeout, () => {
+  it("reports line, block, and JSX comments once per group", () => {
+    const hits = lint(`// Section label
+// that continues on the next line
+export const a = 1; /* trailing note */
+/** Describes the component. */
+export function Probe() { return <div>{/* Hero */}</div>; }`);
+
+    expect(hits.map((hit) => [hit.rule, hit.line])).toEqual([
+      ["no-comments", 1],
+      ["no-comments", 3],
+      ["no-comments", 4],
+      ["no-comments", 5],
+    ]);
+  });
+
+  it("requires a reason of at least three words after why:", () => {
+    const hits = lint(`// why: hack\nexport const a = 1;`);
+
+    expect(hits.map((hit) => hit.message)).toEqual([expect.stringContaining("at least 3 words")]);
+  });
+
+  it("allows why: comments across continued lines, blocks, and JSX", () => {
+    expect(
+      rulesHit(`// why: Safari drops the first frame
+// when the element starts hidden.
+export const a = 1;
+/* why: The spec requires a trailing slash here. */
+export function Probe() { return <div>{/* why: Screen readers skip this decoration. */}</div>; }`),
+    ).toEqual([]);
+  });
+
+  it("leaves TypeScript directives and lint directives to their own rules", () => {
+    expect(
+      rulesHit(`// @ts-expect-error The fixture is intentionally untyped.
+export const a: number = "x";
+// oxlint-disable-next-line no-console
+console.log(a);`),
+    ).toEqual(["no-disable-directives"]);
+  });
+});
+
+describe("no-import-meta-env", processTimeout, () => {
+  it("reports VITE_* reads and whole-object reads", () => {
+    expect(
+      rulesHit(`export const a = import.meta.env.VITE_APP_URL;
+export const b = import.meta.env["VITE_KEY"];
+export const { VITE_X } = import.meta.env;
+export const c = import.meta["env"].VITE_KEY;
+const { env } = import.meta;
+export const d = env;`),
+    ).toEqual(Array<RodeoRuleName>(5).fill("no-import-meta-env"));
+  });
+
+  it("allows Vite's built-in flags", () => {
+    expect(
+      rulesHit(`export const moduleUrl = import.meta.url;
+export const flags = [
+  import.meta.env.DEV,
+  import.meta.env.PROD,
+  import.meta.env.SSR,
+  import.meta.env.MODE,
+  import.meta.env.BASE_URL,
+];`),
+    ).toEqual([]);
   });
 });

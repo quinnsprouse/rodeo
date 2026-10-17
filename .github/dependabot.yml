@@ -14,14 +14,10 @@ updates:
         exclude-patterns:
           - vite-plus
           - "@oxlint/plugins"
-          - vitest
-          - "@vitest/coverage-v8"
       vite-plus-toolchain:
         patterns:
           - vite-plus
           - "@oxlint/plugins"
-          - vitest
-          - "@vitest/coverage-v8"
     commit-message:
       prefix: chore
       include: scope

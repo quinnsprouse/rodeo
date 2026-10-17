@@ -3,10 +3,8 @@ import { LazyMotion, m } from "motion/react";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
-// ease-out-quint — matches the hero entrance easing
-const EASE_OUT: [number, number, number, number] = [0.23, 1, 0.32, 1];
+const EASE_OUT_QUINT: [number, number, number, number] = [0.23, 1, 0.32, 1];
 
-// Module scope, because React Compiler can't compile import() inside a component.
 const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.domAnimation);
 
 type LineKind = "cmd" | "ok" | "dim" | "note";
@@ -19,7 +17,7 @@ const lines: { kind: LineKind; text: string }[] = [
   { kind: "ok", text: "react-doctor — no regressions on staged files" },
   { kind: "dim", text: "[main 1f2a9c3] feat: add billing page" },
   { kind: "cmd", text: "git push" },
-  { kind: "ok", text: "check — fmt · lint · types · unit tests" },
+  { kind: "ok", text: "check — fmt · lint · types · guardrail tests" },
   { kind: "ok", text: "build + knip — production-ready, no dead code" },
   { kind: "ok", text: "playwright — 4 e2e passed (7.2s)" },
   { kind: "note", text: "checks passed. ready to push." },
@@ -30,7 +28,6 @@ export function TerminalDemo({ className }: { className?: string }) {
 
   return (
     <div className={cn("overflow-hidden rounded-xl bg-terminal shadow-terminal", className)}>
-      {/* Title bar */}
       <div className="flex items-center gap-1.5 border-b border-white/[0.06] px-4 py-3">
         <span className="size-2.5 rounded-full bg-white/10" />
         <span className="size-2.5 rounded-full bg-white/10" />
@@ -38,8 +35,6 @@ export function TerminalDemo({ className }: { className?: string }) {
         <span className="ml-2 font-mono text-xs text-white/55">my-app — zsh</span>
       </div>
 
-      {/* Replay. strict makes a full `motion` component throw here, because it would load every
-          animation feature up front. */}
       <LazyMotion features={loadMotionFeatures} strict>
         <div className="space-y-1.5 overflow-x-auto px-4 py-4 font-mono text-xs leading-relaxed sm:px-5">
           {lines.map((line, i) => (
@@ -48,10 +43,10 @@ export function TerminalDemo({ className }: { className?: string }) {
               initial={reducedMotion ? false : { opacity: 0, y: 6 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.35, delay: i * 0.09, ease: EASE_OUT }}
+              transition={{ duration: 0.35, delay: i * 0.09, ease: EASE_OUT_QUINT }}
               className={cn(
-                // Motion renders the hidden initial state on the server. Without JavaScript,
-                // nothing would reveal the lines.
+                // why: Motion renders the hidden initial state on the server, and without
+                // JavaScript nothing would reveal the lines.
                 "flex items-baseline gap-2 whitespace-nowrap noscript:transform-none! noscript:opacity-100!",
                 line.kind === "cmd" && "text-white/90",
                 line.kind === "ok" && "text-white/55",

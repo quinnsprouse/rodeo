@@ -1,7 +1,7 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
-// Penflow's font parser reads window at import time, so load it only inside ClientOnly.
+// why: Penflow's font parser reads window at import time, so it loads only inside ClientOnly.
 const Penflow = lazy(() =>
   import("penflow/react").then(
     (module) => ({ default: module.Penflow }),

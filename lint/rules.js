@@ -1,9 +1,3 @@
-// Project-owned Oxlint rules that keep agents inside Rodeo's patterns.
-// Loaded by `lint.jsPlugins` in vite.config.ts and by `plugins` in doctor.config.ts.
-// Inline disable directives are banned; exceptions live in `lint.overrides`.
-//
-// Rule docs: docs/agents/LINT_RULES.md
-
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
 const BROWSER_GLOBALS = new Set([
@@ -16,8 +10,10 @@ const BROWSER_GLOBALS = new Set([
 ]);
 const DISABLE_DIRECTIVE = /^\s*((?:oxlint|eslint)-disable(?:-next-line|-line)?)/;
 const INITIAL_PROP = /^(?:default|initial)[A-Z_]/;
+const WHY_MARKER = /^why:/;
+const MIN_REASON_WORDS = 3;
+const VITE_BUILT_IN_ENV = new Set(["BASE_URL", "DEV", "MODE", "PROD", "SSR"]);
 
-/** @param {import("vite-plus/lint/plugins").ESTree.Node} node */
 function isFunction(node) {
   return (
     node.type === "FunctionDeclaration" ||
@@ -26,7 +22,6 @@ function isFunction(node) {
   );
 }
 
-/** @param {import("vite-plus/lint/plugins").ESTree.Node} node */
 function enclosingFunction(node) {
   let current = node.parent;
   while (current) {
@@ -36,7 +31,6 @@ function enclosingFunction(node) {
   return null;
 }
 
-/** @param {import("vite-plus/lint/plugins").ESTree.Expression | import("vite-plus/lint/plugins").ESTree.Super} callee */
 function calleeName(callee) {
   if (callee.type === "Identifier") return callee.name;
   if (
@@ -49,7 +43,6 @@ function calleeName(callee) {
   return null;
 }
 
-/** Walk the chain `createServerFn(...).a(...).b(...)` back to its root and collect the method names. */
 function chainMethods(call) {
   const methods = [];
   let current = call;
@@ -71,7 +64,6 @@ function chainMethods(call) {
   return { root: null, methods };
 }
 
-/** Does any node in the subtree satisfy `predicate`? Skips `parent` back-references. */
 function subtreeSome(node, predicate) {
   if (!node || typeof node.type !== "string") return false;
   if (predicate(node)) return true;
@@ -106,8 +98,8 @@ const noDisableDirectives = defineRule({
     schema: [],
   },
   create(context) {
-    // Reported at the very start of the file, not at the comment: a directive would otherwise
-    // suppress the diagnostic about itself. A zero-length span at 1:0 sits outside every range.
+    // why: A directive suppresses diagnostics inside its own range, including the report about
+    // itself. A zero-length span at 1:0 sits outside every range.
     const fileStart = { start: { line: 1, column: 0 }, end: { line: 1, column: 0 } };
     return {
       Program() {
@@ -145,7 +137,7 @@ const serverFnRequiresValidator = defineRule({
         if (calleeName(node.callee) !== "handler") return;
         const { root, methods } = chainMethods(node);
         if (root !== "createServerFn") return;
-        // inputValidator is the deprecated name. The no-deprecated rule reports it separately.
+        // why: inputValidator is the deprecated name, and no-deprecated already reports it.
         if (methods.includes("validator") || methods.includes("inputValidator")) return;
         const handler = node.arguments[0];
         if (!handler || !isFunction(handler)) return;
@@ -265,7 +257,6 @@ const noModuleScopeBrowserGlobals = defineRule({
   },
 });
 
-/** `location`, `window.location`, or `globalThis.location`. */
 function isLocation(node) {
   if (node.type === "Identifier") return node.name === "location";
   return (
@@ -325,10 +316,140 @@ const noWindowNavigation = defineRule({
   },
 });
 
+function commentText(comment) {
+  return comment.value
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*?/, "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
+function commentGroups(comments) {
+  const groups = [];
+  for (const comment of comments) {
+    const previous = groups.at(-1)?.at(-1);
+    const continuesLineComment =
+      previous?.type === "Line" &&
+      comment.type === "Line" &&
+      comment.loc.start.line === previous.loc.end.line + 1;
+    if (continuesLineComment) groups.at(-1).push(comment);
+    else groups.push([comment]);
+  }
+  return groups;
+}
+
+function isGovernedElsewhere(text) {
+  return DISABLE_DIRECTIVE.test(text) || text.startsWith("@ts-");
+}
+
+const noComments = defineRule({
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Ban code comments. Agents copy comments, so a workaround note spreads. The code must say what it does. A `why:` comment is a last resort for a constraint outside the code.",
+    },
+    messages: {
+      comment:
+        "Comments are not allowed. Make the code say it: a clearer name, a smaller function, a type, or a test. Delete a comment that restates the code, and fix a workaround instead of explaining it. A `why:` comment is a last resort: use one only when the code must stay as it is because of a constraint outside your control, such as a browser bug, and name that cause. See docs/agents/LINT_RULES.md#comments",
+      reason:
+        "A `why:` comment needs a reason of at least {{min}} words that names the cause outside the code. If you cannot name one, delete the comment.",
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      Program() {
+        for (const group of commentGroups(context.sourceCode.getAllComments())) {
+          const text = group.map(commentText).join(" ");
+          if (isGovernedElsewhere(text)) continue;
+          const loc = { start: group[0].loc.start, end: group.at(-1).loc.end };
+          if (!WHY_MARKER.test(text)) {
+            context.report({ loc, messageId: "comment" });
+            continue;
+          }
+          const reasonWords = text.replace(WHY_MARKER, "").split(/\s+/).filter(Boolean).length;
+          if (reasonWords < MIN_REASON_WORDS) {
+            context.report({ loc, messageId: "reason", data: { min: String(MIN_REASON_WORDS) } });
+          }
+        }
+      },
+    };
+  },
+});
+
+function isImportMeta(node) {
+  return (
+    node.type === "MetaProperty" && node.meta.name === "import" && node.property.name === "meta"
+  );
+}
+
+function isPropertyNamed(member, name) {
+  if (member.computed) return member.property.type === "Literal" && member.property.value === name;
+  return member.property.type === "Identifier" && member.property.name === name;
+}
+
+function destructuresEnv(pattern) {
+  return (
+    pattern.type === "ObjectPattern" &&
+    pattern.properties.some(
+      (property) =>
+        property.type === "Property" &&
+        (property.key.type === "Identifier"
+          ? property.key.name === "env"
+          : property.key.type === "Literal" && property.key.value === "env"),
+    )
+  );
+}
+
+function readsBuiltInEnv(envMember) {
+  const { parent } = envMember;
+  return (
+    parent?.type === "MemberExpression" &&
+    parent.object === envMember &&
+    !parent.computed &&
+    parent.property.type === "Identifier" &&
+    VITE_BUILT_IN_ENV.has(parent.property.name)
+  );
+}
+
+const noImportMetaEnv = defineRule({
+  meta: {
+    type: "problem",
+    docs: {
+      description:
+        "Read VITE_* variables through clientEnv, which validates them at startup, not from import.meta.env.",
+    },
+    messages: {
+      env: "Read environment variables from clientEnv in @/config/env, which validates them when the app starts. Vite's built-in flags (DEV, PROD, SSR, MODE, BASE_URL) may be read directly. To add a variable, add it to the schema in src/config/env.ts and to .env.example.",
+    },
+    schema: [],
+  },
+  create(context) {
+    return {
+      MetaProperty(node) {
+        if (!isImportMeta(node)) return;
+        const { parent } = node;
+        if (parent?.type === "MemberExpression" && parent.object === node) {
+          if (isPropertyNamed(parent, "env") && !readsBuiltInEnv(parent)) {
+            context.report({ node: parent, messageId: "env" });
+          }
+          return;
+        }
+        if (parent?.type === "VariableDeclarator" && destructuresEnv(parent.id)) {
+          context.report({ node: parent, messageId: "env" });
+        }
+      },
+    };
+  },
+});
+
 export default definePlugin({
   meta: { name: "rodeo" },
   rules: {
     "no-disable-directives": noDisableDirectives,
+    "no-comments": noComments,
+    "no-import-meta-env": noImportMetaEnv,
     "server-fn-requires-validator": serverFnRequiresValidator,
     "no-state-from-props": noStateFromProps,
     "no-module-scope-browser-globals": noModuleScopeBrowserGlobals,

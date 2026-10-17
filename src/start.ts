@@ -1,9 +1,10 @@
 import { createCsrfMiddleware, createStart } from "@tanstack/react-start";
 
-// Without this file, Start adds CSRF protection to server functions on its own. Once the file
-// exists, only the middleware listed here runs, so keep this one when you add more.
+// why: Start adds CSRF protection on its own only while this file does not exist. Once it exists,
+// only the middleware listed here runs, so keep this one when you add more.
 const csrfMiddleware = createCsrfMiddleware({
-  // Page requests arrive cross-site from links and search results, so only check server functions.
+  // why: Page requests arrive cross-site from links and search results, so only server functions
+  // are checked.
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
