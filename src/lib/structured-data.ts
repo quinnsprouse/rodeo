@@ -1,6 +1,11 @@
 import { absoluteUrl, homeMeta, philosophyMeta, site } from "@/config/site";
 
-const author = { "@type": "Person", name: site.author.name, url: site.author.url };
+const author = {
+  "@type": "Person",
+  name: site.author.name,
+  url: site.author.url,
+  sameAs: [site.author.url, `https://x.com/${site.author.xHandle}`],
+};
 
 export function homeStructuredData(origin: string) {
   const url = absoluteUrl(homeMeta.path, origin);

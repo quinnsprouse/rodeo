@@ -12,7 +12,11 @@ export const site = {
   tagline: "A free React starter for Claude Code and Codex.",
   repository: "https://github.com/quinnsprouse/rodeo",
   installCommand: "npx degit quinnsprouse/rodeo my-app",
-  author: { name: "Quinn Sprouse", url: "https://github.com/quinnsprouse" },
+  author: {
+    name: "Quinn Sprouse",
+    url: "https://github.com/quinnsprouse",
+    xHandle: "QuinnSprouse",
+  },
 };
 
 export const homeMeta: PageMeta = {
@@ -79,6 +83,8 @@ export function createSiteHead(canonicalPath: string | undefined, origin = clien
     { property: "og:type", content: "website" },
     { property: "og:site_name", content: site.name },
     { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:site", content: `@${site.author.xHandle}` },
+    { name: "twitter:creator", content: `@${site.author.xHandle}` },
   ];
   const links: Array<Record<string, string>> = [];
 
