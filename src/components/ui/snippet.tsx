@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { Icon, Tick02Icon, Copy01Icon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { ShimmerText } from "@/components/ui/shimmer-text";
+import { useOnScreen } from "@/hooks/use-on-screen";
 import { cn } from "@/lib/utils";
 
 const snippetVariants = cva("group relative flex items-center", {
@@ -42,6 +44,7 @@ export function Snippet({
   const copied = status === "copied";
   const timeoutRef = useRef<number | null>(null);
   const commandRef = useRef<HTMLDivElement>(null);
+  const onScreen = useOnScreen(commandRef);
   const lines = Array.isArray(text) ? text : [text];
 
   useEffect(() => {
@@ -132,13 +135,7 @@ export function Snippet({
                   "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
               )}
             >
-              {shimmer ? (
-                <span className="shimmer-text" data-text={line}>
-                  {line}
-                </span>
-              ) : (
-                line
-              )}
+              {shimmer ? <ShimmerText text={line} shimmering={onScreen} /> : line}
             </code>
           ))}
         </div>

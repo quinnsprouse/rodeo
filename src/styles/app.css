@@ -346,6 +346,34 @@
   }
 }
 
+@utility wipe {
+  clip-path: inset(0 var(--wipe-hidden, 0%) 0 0);
+  @media (prefers-reduced-motion: no-preference) {
+    transition: clip-path 1400ms cubic-bezier(0.645, 0.045, 0.355, 1);
+  }
+}
+
+@utility wipe-hidden {
+  --wipe-hidden: 100%;
+}
+
+@utility soft-focus {
+  filter: blur(2px);
+}
+
+@utility sheen-sweep {
+  animation: sheen-sweep 1000ms cubic-bezier(0.645, 0.045, 0.355, 1) both;
+}
+
+@keyframes sheen-sweep {
+  from {
+    translate: 0 -100px;
+  }
+  to {
+    translate: 0 260px;
+  }
+}
+
 @utility divider-t {
   box-shadow: inset 0 var(--border-s) 0 0 var(--border-default-color);
 }
@@ -389,37 +417,49 @@
   stroke-width: var(--icon-stroke-width);
 }
 
-@keyframes shimmer-sweep {
-  0% {
-    background-position: 100% 0;
+@keyframes shimmer-window {
+  from {
+    transform: translateX(-150%);
   }
-  100% {
-    background-position: 0 0;
+  to {
+    transform: translateX(150%);
   }
 }
 
-.shimmer-text {
-  position: relative;
-  display: inline-block;
+@keyframes shimmer-copy {
+  from {
+    transform: translateX(150%);
+  }
+  to {
+    transform: translateX(-150%);
+  }
 }
 
-.shimmer-text::after {
-  content: attr(data-text);
+.shimmer-window {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   pointer-events: none;
-  color: transparent;
-  background-image: linear-gradient(90deg, transparent 40%, var(--color-1) 50%, transparent 60%);
-  background-size: 400% 100%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation: shimmer-sweep 2.8s linear infinite;
+  mask-image: linear-gradient(90deg, transparent 10%, #000 50%, transparent 90%);
+  animation: shimmer-window 2.8s linear infinite;
+}
+
+.shimmer-window::after {
+  content: attr(data-text);
+  display: block;
+  color: var(--color-1);
+  white-space: nowrap;
+  animation: shimmer-copy 2.8s linear infinite;
+}
+
+.hold-still,
+.hold-still * {
+  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shimmer-text::after {
-    content: none;
+  .shimmer-window {
+    display: none;
   }
 }
 

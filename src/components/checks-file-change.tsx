@@ -1,6 +1,7 @@
-import { concealed, reveal, StatusPill } from "@/components/checks-motion";
+import { StatusPill } from "@/components/checks-motion";
 import type { DiffLine, Scenario } from "@/components/checks-scenarios";
 import { Icon, MinusSignIcon, PlusSignIcon } from "@/components/icons";
+import { concealed, reveal } from "@/lib/motion-classes";
 import { cn } from "@/lib/utils";
 
 const lineDelays = [

@@ -1,3 +1,5 @@
+import type { PointerEvent } from "react";
+
 import type { Entrance } from "@/hooks/use-entrance";
 import { cn } from "@/lib/utils";
 
@@ -35,16 +37,23 @@ export function entranceStyle(entrance: Entrance, index: number, hidden: string)
   return entrance === "entering" ? layerSteps[index] : undefined;
 }
 
+export function layerUnder(event: PointerEvent) {
+  if (event.pointerType === "touch" || !(event.target instanceof Element)) return undefined;
+  return event.target.closest("[data-layer]")?.getAttribute("data-layer") ?? undefined;
+}
+
 export const layerFocus =
   "motion-safe:transition motion-safe:duration-(--motion-large-duration) motion-safe:ease-(--motion-large-easing)";
 
 export function PyramidSlices({
   focused,
   entrance = "settled",
+  visible = pyramidSlices.length,
   className,
 }: {
   focused?: string | null | undefined;
   entrance?: Entrance | undefined;
+  visible?: number | undefined;
   className?: string | undefined;
 }) {
   return (
@@ -60,6 +69,7 @@ export function PyramidSlices({
             layerFocus,
             focused && (focused === slice.name ? "scale-103" : "opacity-30 blur-xs"),
             entranceStyle(entrance, index, "-translate-y-2 scale-95 opacity-0 blur-xs"),
+            index >= visible && "-translate-y-4 scale-94 opacity-0 blur-xs",
           )}
         />
       ))}

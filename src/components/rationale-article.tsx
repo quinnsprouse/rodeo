@@ -1,13 +1,11 @@
 import type { ComponentType, ReactNode } from "react";
 
-import {
-  BeforeAfterFigure,
-  EscapeHatchesFigure,
-  PyramidFigure,
-  TerminalFigure,
-  TokenBarsFigure,
-  UpkeepFigure,
-} from "@/components/rationale-figures";
+import { ExitsFigure } from "@/components/figures/exits-figure";
+import { PyramidFigure } from "@/components/figures/pyramid-figure";
+import { RenameFigure } from "@/components/figures/rename-figure";
+import { TerminalFigure } from "@/components/figures/terminal-figure";
+import { TokenBarsFigure } from "@/components/figures/token-figure";
+import { UpkeepFigure } from "@/components/figures/upkeep-figure";
 import type { StickerProps } from "@/components/stickers/frame";
 import { HeartSticker, ScissorsSticker, TokenSticker } from "@/components/stickers/rationale";
 import {
@@ -17,6 +15,7 @@ import {
   StaticAnalysisSticker,
 } from "@/components/stickers/topics";
 import { philosophyMeta } from "@/config/site";
+import { formatPublished } from "@/lib/format-date";
 
 export const rationaleSections = [
   { id: "teaching", title: "Teaching through the codebase" },
@@ -30,22 +29,22 @@ export const rationaleSections = [
 
 type SectionId = (typeof rationaleSections)[number]["id"];
 
-const publishedFormat = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-function formatPublished(isoDate: string) {
-  const parts = publishedFormat.formatToParts(new Date(isoDate));
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((entry) => entry.type === type)?.value;
-  return `${part("day")} ${part("month")}, ${part("year")}`;
-}
-
 const potetoPost = "https://x.com/poteto/status/2111133080526495985";
 const pocockSkills = "https://github.com/mattpocock/skills";
+const stack = [
+  { name: "vite+", href: "https://viteplus.dev" },
+  { name: "tanstack start", href: "https://tanstack.com/start" },
+  { name: "react", href: "https://react.dev" },
+  { name: "tailwind", href: "https://tailwindcss.com" },
+  { name: "shadcn/ui", href: "https://ui.shadcn.com" },
+  { name: "base ui", href: "https://base-ui.com" },
+  { name: "nitro", href: "https://nitro.build" },
+];
+
+function stackSeparator(index: number) {
+  if (index === stack.length - 1) return ".";
+  return index === stack.length - 2 ? " and " : ", ";
+}
 const link =
   "text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground";
 
@@ -213,7 +212,7 @@ export function RationaleArticle() {
           type. and if none of that works, it's usually a workaround, and the fix is fixing it, not
           writing about it.
         </p>
-        <BeforeAfterFigure />
+        <RenameFigure />
         <Subheading>Unit tests</Subheading>
         <p>
           agents love writing tests like "the header says welcome". then you change the header, the
@@ -245,7 +244,7 @@ export function RationaleArticle() {
           in vite.config.ts with a why: comment. it's all in one file, so it's easy to see
           everything that's been bent, and why.
         </p>
-        <EscapeHatchesFigure />
+        <ExitsFigure />
         <p>
           and when an agent makes the same mistake twice, it becomes a rule, not another paragraph
           in a doc. that's pretty much how rodeo got built.
@@ -296,6 +295,18 @@ export function RationaleArticle() {
           </a>{" "}
           and his focus on what matters now that agents write the code helped me narrow rodeo down a
           lot.
+        </p>
+        <p>
+          rodeo is built on{" "}
+          {stack.map((tool, index) => (
+            <span key={tool.name}>
+              <a href={tool.href} target="_blank" rel="noopener noreferrer" className={link}>
+                {tool.name}
+              </a>
+              {stackSeparator(index)}
+            </span>
+          ))}{" "}
+          thank you all.
         </p>
       </Section>
     </article>
