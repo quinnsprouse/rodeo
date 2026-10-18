@@ -28,7 +28,7 @@ export function PyramidSection() {
   return (
     <PageSection id={pyramidSectionId}>
       <h2 className="font-brand text-l font-heavy text-foreground">
-        Fix it in the codebase, not the prompt.
+        A better foundation to build on.
       </h2>
       <p className="mt-s max-w-[520px] text-muted-foreground">
         A note in a prompt fixes one session. A rule in the codebase fixes every session after it.
