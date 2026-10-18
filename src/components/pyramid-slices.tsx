@@ -28,7 +28,7 @@ export const pyramidSlices = [
   },
 ] as const;
 
-export const layerSteps = ["delay-0", "delay-90", "delay-180", "delay-270"];
+const layerSteps = ["delay-0", "delay-90", "delay-180", "delay-270"];
 
 export function entranceStyle(entrance: Entrance, index: number, hidden: string) {
   if (entrance === "waiting") return hidden;
