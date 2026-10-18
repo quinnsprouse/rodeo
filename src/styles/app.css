@@ -357,6 +357,22 @@
   box-shadow: inset calc(var(--border-s) * -1) 0 0 0 var(--border-default-color);
 }
 
+@utility clip-to-active-tab {
+  clip-path: inset(
+    calc(var(--active-tab-top) - var(--clip-outset, 0px))
+      calc(var(--active-tab-right) - var(--clip-outset, 0px))
+      calc(var(--active-tab-bottom) - var(--clip-outset, 0px))
+      calc(var(--active-tab-left) - var(--clip-outset, 0px)) round var(--radius-full)
+  );
+  @media (prefers-reduced-motion: no-preference) {
+    transition: clip-path var(--motion-large-duration) var(--motion-large-easing);
+  }
+}
+
+@utility clip-outset-border {
+  --clip-outset: var(--border-s);
+}
+
 [data-slot="icon"] * {
   stroke-width: var(--icon-stroke-width);
 }

@@ -237,3 +237,15 @@ test("the checks demo shows what Rodeo catches at each stage", async ({ page }) 
   await stages.getByRole("tab", { name: "Every pull request" }).press("Enter");
   await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
 });
+
+test("switching checks stages keeps the page where the reader left it", async ({ page }) => {
+  await page.goto("/");
+  const stages = page.getByRole("tablist", { name: "When Rodeo checks" });
+  await stages.evaluate((list) => list.scrollIntoView({ block: "center", behavior: "instant" }));
+  const scrollBefore = await page.evaluate(() => window.scrollY);
+
+  await stages.getByRole("tab", { name: "Every push" }).click();
+  await expect(page.getByText("Unused export: formatPrice")).toBeVisible();
+
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
+});
