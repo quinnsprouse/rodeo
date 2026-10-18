@@ -20,7 +20,7 @@ test("home page renders and copy flow works", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
-  await expect(page.getByText("Checks every")).toBeVisible();
+  await expect(page.getByText(/^Checks every/)).toBeVisible();
   await expect(page.getByRole("link", { name: /github/i }).first()).toBeVisible();
   await expect(page.getByText(installCommand).first()).toBeVisible();
 
@@ -215,7 +215,7 @@ test.describe("server-rendered introduction", () => {
   test("shows the introduction without JavaScript", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
-    await expect(page.getByText("Checks every")).toBeVisible();
+    await expect(page.getByText(/^Checks every/)).toBeVisible();
     await expect(page.getByText(installCommand).first()).toBeVisible();
     await expect(page.getByText("Format, lint, and types pass")).toBeVisible();
   });
