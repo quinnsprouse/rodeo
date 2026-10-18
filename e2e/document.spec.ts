@@ -39,19 +39,19 @@ test("the philosophy page paints its card color behind the browser chrome", asyn
 });
 
 test("each page names its own canonical URL from the configured origin", async ({ page }) => {
-  await page.goto("/example?demo=error");
+  await page.goto("/rationale?utm_source=newsletter");
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
-    "https://rodeo.example/example",
+    "https://rodeo.example/rationale",
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
-    "https://rodeo.example/example",
+    "https://rodeo.example/rationale",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://rodeo.example/og-home.png",
+    "https://rodeo.example/og-rationale.png",
   );
 });
 

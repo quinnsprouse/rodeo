@@ -175,9 +175,6 @@ function Home() {
               <Link to="/rationale" className={footerLink}>
                 Philosophy
               </Link>
-              <Link to="/example" className={footerLink}>
-                Example
-              </Link>
               <a
                 href="https://github.com/quinnsprouse/rodeo"
                 target="_blank"

@@ -10,17 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ExampleRouteImport } from './routes/example'
 import { Route as RationaleRouteImport } from './routes/rationale'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExampleRoute = ExampleRouteImport.update({
-  id: '/example',
-  path: '/example',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RationaleRoute = RationaleRouteImport.update({
@@ -31,31 +25,27 @@ const RationaleRoute = RationaleRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/example': typeof ExampleRoute
   '/rationale': typeof RationaleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/example': typeof ExampleRoute
   '/rationale': typeof RationaleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/example': typeof ExampleRoute
   '/rationale': typeof RationaleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/example' | '/rationale'
+  fullPaths: '/' | '/rationale'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/example' | '/rationale'
-  id: '__root__' | '/' | '/example' | '/rationale'
+  to: '/' | '/rationale'
+  id: '__root__' | '/' | '/rationale'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ExampleRoute: typeof ExampleRoute
   RationaleRoute: typeof RationaleRoute
 }
 
@@ -66,13 +56,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/example': {
-      id: '/example'
-      path: '/example'
-      fullPath: '/example'
-      preLoaderRoute: typeof ExampleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rationale': {
@@ -87,7 +70,6 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ExampleRoute: ExampleRoute,
   RationaleRoute: RationaleRoute,
 }
 export const routeTree = rootRouteImport
