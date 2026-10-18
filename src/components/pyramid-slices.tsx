@@ -1,3 +1,4 @@
+import type { Entrance } from "@/hooks/use-entrance";
 import { cn } from "@/lib/utils";
 
 export const pyramidSlices = [
@@ -27,11 +28,40 @@ export const pyramidSlices = [
   },
 ] as const;
 
-export function PyramidSlices({ className }: { className?: string | undefined }) {
+export const layerSteps = ["delay-0", "delay-90", "delay-180", "delay-270"];
+
+export function entranceStyle(entrance: Entrance, index: number, hidden: string) {
+  if (entrance === "waiting") return hidden;
+  return entrance === "entering" ? layerSteps[index] : undefined;
+}
+
+export const layerFocus =
+  "motion-safe:transition motion-safe:duration-(--motion-large-duration) motion-safe:ease-(--motion-large-easing)";
+
+export function PyramidSlices({
+  focused,
+  entrance = "settled",
+  className,
+}: {
+  focused?: string | null | undefined;
+  entrance?: Entrance | undefined;
+  className?: string | undefined;
+}) {
   return (
     <svg viewBox="0 0 320 252" aria-hidden="true" className={cn("shrink-0", className)}>
-      {pyramidSlices.map((slice) => (
-        <path key={slice.name} d={slice.shape} className={slice.fill} />
+      {pyramidSlices.map((slice, index) => (
+        <path
+          key={slice.name}
+          d={slice.shape}
+          data-layer={slice.name}
+          className={cn(
+            slice.fill,
+            "origin-center transform-fill",
+            layerFocus,
+            focused && (focused === slice.name ? "scale-103" : "opacity-30 blur-xs"),
+            entranceStyle(entrance, index, "-translate-y-2 scale-95 opacity-0 blur-xs"),
+          )}
+        />
       ))}
     </svg>
   );
