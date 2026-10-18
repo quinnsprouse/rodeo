@@ -47,7 +47,7 @@ function SiteNav() {
   return (
     <div className="px-l pt-s sm:px-xl sm:pt-l">
       <nav aria-label="Site" className="flex items-center justify-end">
-        <Link to="/rationale" className={navLink}>
+        <Link to="/philosophy" className={navLink}>
           Philosophy
         </Link>
         <a
@@ -153,7 +153,7 @@ function Home() {
               rodeo
             </p>
             <nav aria-label="Footer" className="flex items-center gap-l text-s font-medium">
-              <Link to="/rationale" className={footerLink}>
+              <Link to="/philosophy" className={footerLink}>
                 Philosophy
               </Link>
               <a

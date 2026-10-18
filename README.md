@@ -33,7 +33,7 @@ Add UI components with the configured shadcn CLI. See [UI and motion](docs/agent
 The landing page is a demo. To start from a blank app:
 
 1. Replace `src/routes/index.tsx` with your home route.
-2. Delete `src/routes/rationale.tsx`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
+2. Delete `src/routes/philosophy.tsx` and the `/rationale` redirects in `vite.config.ts`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
 3. In `src/styles/app.css`, remove `--text-logo` and the shimmer styles.
 4. Uninstall the demo package: `npm uninstall calligraph`.
 5. Update `src/config/site.ts` and its `sitePages` list, `public/og-home.png` and `public/og-rationale.png`, and the demo assertions in `e2e/smoke.spec.ts` and `e2e/discovery.spec.ts`.

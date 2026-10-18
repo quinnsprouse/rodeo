@@ -25,7 +25,7 @@ for (const theme of ["light", "dark"] as const) {
 }
 
 test("philosophy page has no WCAG violations", async ({ page }) => {
-  await page.goto("/rationale");
+  await page.goto("/philosophy");
   await expect(page.getByRole("heading", { name: "Rodeo Philosophy" })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
 });

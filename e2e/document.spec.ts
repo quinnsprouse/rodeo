@@ -32,22 +32,22 @@ test("browser chrome follows the chosen theme", async ({ page }) => {
 });
 
 test("the philosophy page paints its card color behind the browser chrome", async ({ page }) => {
-  await page.goto("/rationale");
+  await page.goto("/philosophy");
 
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(250, 250, 250)");
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#fafafa");
 });
 
 test("each page names its own canonical URL from the configured origin", async ({ page }) => {
-  await page.goto("/rationale?utm_source=newsletter");
+  await page.goto("/philosophy?utm_source=newsletter");
 
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     "href",
-    "https://rodeo.example/rationale",
+    "https://rodeo.example/philosophy",
   );
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
     "content",
-    "https://rodeo.example/rationale",
+    "https://rodeo.example/philosophy",
   );
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
