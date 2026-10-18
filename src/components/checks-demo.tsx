@@ -24,7 +24,7 @@ export function ChecksDemo({ className }: { className?: string }) {
           <Tabs.Panel
             key={scenario.value}
             value={scenario.value}
-            className="grid lg:min-h-120 lg:grid-cols-[18rem_1fr]"
+            className="grid data-ending-style:hidden lg:min-h-120 lg:grid-cols-[18rem_1fr]"
           >
             <Conversation scenario={scenario} />
             <FileChange scenario={scenario} />
@@ -32,19 +32,49 @@ export function ChecksDemo({ className }: { className?: string }) {
         ))}
       </div>
 
-      <Tabs.List aria-label="When Rodeo checks" className="flex rounded-full bg-muted p-xxs">
+      <Tabs.List
+        aria-label="When Rodeo checks"
+        className="relative flex rounded-full bg-muted p-xxs"
+      >
         {scenarios.map((scenario) => (
           <Tabs.Tab
             key={scenario.value}
             value={scenario.value}
-            className="h-9 rounded-full px-s text-s font-medium text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground data-active:bg-background data-active:text-foreground data-active:ring data-active:ring-border sm:px-m"
+            className={cn(
+              tabFace,
+              "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground noscript:data-active:bg-background noscript:data-active:text-foreground noscript:data-active:ring noscript:data-active:ring-border",
+            )}
           >
-            <span className="xs:hidden">{scenario.shortLabel}</span>
-            <span className="max-xs:hidden">{scenario.label}</span>
+            <TabLabel scenario={scenario} />
           </Tabs.Tab>
         ))}
+        <Tabs.Indicator
+          renderBeforeHydration
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0"
+        >
+          <span className="absolute inset-0 bg-border clip-to-active-tab clip-outset-border" />
+          <span className="absolute inset-0 flex bg-background p-xxs text-foreground clip-to-active-tab">
+            {scenarios.map((scenario) => (
+              <span key={scenario.value} className={tabFace}>
+                <TabLabel scenario={scenario} />
+              </span>
+            ))}
+          </span>
+        </Tabs.Indicator>
       </Tabs.List>
     </Tabs.Root>
+  );
+}
+
+const tabFace = "flex h-9 items-center rounded-full px-s text-s font-medium sm:px-m";
+
+function TabLabel({ scenario }: { scenario: Scenario }) {
+  return (
+    <>
+      <span className="xs:hidden">{scenario.shortLabel}</span>
+      <span className="max-xs:hidden">{scenario.label}</span>
+    </>
   );
 }
 
