@@ -370,6 +370,17 @@
   }
 }
 
+@utility follow-active-row {
+  translate: 0 var(--row-top, 0px);
+  height: var(--row-height, 0px);
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      translate var(--motion-large-duration) var(--motion-large-easing),
+      height var(--motion-large-duration) var(--motion-large-easing),
+      opacity var(--motion-duration) var(--motion-easing);
+  }
+}
+
 @utility clip-outset-border {
   --clip-outset: var(--border-s);
 }
