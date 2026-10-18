@@ -34,10 +34,10 @@ test("agents can read each page as Markdown", async ({ page, request }) => {
   expect(negotiated.headers().vary).toContain("accept");
   const article = await negotiated.text();
   expect(article).toMatch(/^# Rodeo Philosophy/);
-  expect(article).toContain(`(${origin}/philosophy#footnotes)`);
 
-  const home = await request.get("/index.md");
-  expect(await home.text()).toMatch(/^# rodeo: A free React starter for Claude Code and Codex\./);
+  const home = await (await request.get("/index.md")).text();
+  expect(home).toMatch(/^# rodeo: A free React starter for Claude Code and Codex\./);
+  expect(home).toContain(`[Read the philosophy](${origin}/philosophy)`);
 
   const browser = await request.get("/philosophy", {
     headers: { accept: "text/html,application/xhtml+xml,*/*;q=0.8" },

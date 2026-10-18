@@ -45,6 +45,7 @@ function formatPublished(isoDate: string) {
 }
 
 const potetoPost = "https://x.com/poteto/status/2111133080526495985";
+const pocockSkills = "https://github.com/mattpocock/skills";
 const link =
   "text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground";
 
@@ -206,11 +207,6 @@ export function RationaleArticle() {
           most comments just say the code again in english. the agent can already read the code, so
           that's tokens for nothing. and agents copy what they see. one comment explaining a
           workaround and suddenly every other file has one. it spreads like a weed.
-          <sup>
-            <a href="#footnotes" className="text-muted-foreground">
-              1
-            </a>
-          </sup>
         </p>
         <p>
           if the code needs explaining, explain it in code. a better name, a smaller function, a
@@ -291,22 +287,17 @@ export function RationaleArticle() {
           <a href={potetoPost} target="_blank" rel="noopener noreferrer" className={link}>
             their post on x
           </a>
-          , and so does the idea of killing comments. thanks to graphical for the theme and the
-          stickers, and to benji, whose family values post is why this page looks like this.
+          , and so does the idea of killing comments.
         </p>
         <p>
-          rodeo stands on vite+, tanstack start, react, tailwind, shadcn/ui, base ui and nitro.
-          thank you all.
+          thanks to matt pocock too.{" "}
+          <a href={pocockSkills} target="_blank" rel="noopener noreferrer" className={link}>
+            his skills
+          </a>{" "}
+          and his focus on what matters now that agents write the code helped me narrow rodeo down a
+          lot.
         </p>
       </Section>
-
-      <footer id="footnotes" className="scroll-mt-xl pt-xxl text-s">
-        <h2 className="font-medium text-foreground">Footnotes</h2>
-        <p className="mt-xs text-muted-foreground">
-          1. the one exception is a why: comment that names the library, browser or spec that forces
-          the code. lint checks that it does.
-        </p>
-      </footer>
     </article>
   );
 }
