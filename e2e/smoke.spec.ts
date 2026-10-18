@@ -122,19 +122,35 @@ test("home page fits on mobile", async ({ page }) => {
   expect(browserErrors).toHaveLength(0);
 });
 
-test("theme starts light and remembers a switch to dark", async ({ page }) => {
+test("a first visit follows the system theme", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.emulateMedia({ colorScheme: "dark" });
   await page.goto("/");
   const root = page.locator("html");
 
-  await expect(root).not.toHaveClass(/\bdark\b/);
-  await page.getByRole("button", { name: "Switch to dark theme" }).click();
-  await expect(root).toHaveClass(/\bdark\b/);
-
-  await page.reload();
   await expect(root).toHaveClass(/\bdark\b/);
   await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+
+  await page.emulateMedia({ colorScheme: "light" });
+  await expect(root).not.toHaveClass(/\bdark\b/);
+  expect(browserErrors).toHaveLength(0);
+});
+
+test("a theme switch overrides the system theme and is remembered", async ({ page }) => {
+  const browserErrors = trackBrowserErrors(page);
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.goto("/");
+  const root = page.locator("html");
+
+  await page.getByRole("button", { name: "Switch to light theme" }).click();
+  await expect(root).not.toHaveClass(/\bdark\b/);
+
+  await page.reload();
+  await expect(root).not.toHaveClass(/\bdark\b/);
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect(page.getByRole("button", { name: "Switch to dark theme" })).toBeVisible();
+  await expect(root).not.toHaveClass(/\bdark\b/);
   expect(browserErrors).toHaveLength(0);
 });
 
