@@ -40,7 +40,9 @@ export function AnimatedChipFace({ choice }: { choice: SwapChoice }) {
           </AnimatePresence>
         </LazyMotion>
       </span>
-      <Calligraph animation="snappy">{choice.word}</Calligraph>
+      <Calligraph animation="snappy" className="relative">
+        {choice.word}
+      </Calligraph>
     </>
   );
 }
