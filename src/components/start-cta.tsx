@@ -36,7 +36,7 @@ export function StartCta({ installCommand }: { installCommand: string }) {
         >
           <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
           GitHub
-        </a>
+        </a>{" "}
         <Link to="/rationale" className={link}>
           Read the philosophy
           <Icon icon={ArrowRight01Icon} className="size-3" aria-hidden="true" />

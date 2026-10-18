@@ -1,13 +1,23 @@
 import { clientEnv } from "@/config/env";
 
 interface PageMeta {
+  path: string;
   title: string;
   description: string;
   image: { path: string; alt: string };
 }
 
-const homeMeta: PageMeta = {
-  title: "Rodeo — Wrangle Your AI Agents",
+export const site = {
+  name: "Rodeo",
+  tagline: "A free React starter for Claude Code and Codex.",
+  repository: "https://github.com/quinnsprouse/rodeo",
+  installCommand: "npx degit quinnsprouse/rodeo my-app",
+  author: { name: "Quinn Sprouse", url: "https://github.com/quinnsprouse" },
+};
+
+export const homeMeta: PageMeta = {
+  path: "/",
+  title: "Rodeo — React starter for Claude Code and Codex",
   description:
     "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
   image: {
@@ -16,7 +26,8 @@ const homeMeta: PageMeta = {
   },
 };
 
-export const philosophyMeta: PageMeta = {
+export const philosophyMeta = {
+  path: "/rationale",
   title: "Rodeo Philosophy",
   description:
     "How Rodeo thinks about building with agents, and why it drops code comments, unit tests, and long docs.",
@@ -24,7 +35,18 @@ export const philosophyMeta: PageMeta = {
     path: "/og-rationale.png",
     alt: "Rodeo Philosophy, with coin, scissors, and bull stickers.",
   },
-};
+  published: "2026-10-17",
+} satisfies PageMeta & { published: string };
+
+export const sitePages: PageMeta[] = [homeMeta, philosophyMeta];
+
+export function markdownPath(pathname: string) {
+  return pathname === "/" ? "/index.md" : `${pathname}.md`;
+}
+
+export function absoluteUrl(path: string, origin: string) {
+  return new URL(path, `${origin}/`).toString();
+}
 
 export function pageMeta(page: PageMeta, origin = clientEnv.VITE_APP_URL) {
   const meta: Array<Record<string, string>> = [
@@ -37,7 +59,7 @@ export function pageMeta(page: PageMeta, origin = clientEnv.VITE_APP_URL) {
   ];
 
   if (origin) {
-    const image = new URL(page.image.path, `${origin}/`).toString();
+    const image = absoluteUrl(page.image.path, origin);
     meta.push(
       { property: "og:image", content: image },
       { property: "og:image:width", content: "1200" },
@@ -55,16 +77,23 @@ export function createSiteHead(canonicalPath: string | undefined, origin = clien
   const meta = [
     ...pageMeta(homeMeta, origin),
     { property: "og:type", content: "website" },
-    { property: "og:site_name", content: "Rodeo" },
+    { property: "og:site_name", content: site.name },
     { name: "twitter:card", content: "summary_large_image" },
   ];
   const links: Array<Record<string, string>> = [];
 
   if (origin && canonicalPath !== undefined) {
     const safePathname = new URL(canonicalPath, "https://placeholder.invalid").pathname;
-    const canonical = new URL(safePathname, `${origin}/`).toString();
+    const canonical = absoluteUrl(safePathname, origin);
     meta.push({ property: "og:url", content: canonical });
-    links.push({ rel: "canonical", href: canonical });
+    links.push(
+      { rel: "canonical", href: canonical },
+      {
+        rel: "alternate",
+        type: "text/markdown",
+        href: absoluteUrl(markdownPath(safePathname), origin),
+      },
+    );
   }
 
   return { links, meta };

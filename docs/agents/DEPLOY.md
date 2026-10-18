@@ -1,6 +1,6 @@
 # Deploy
 
-Nitro picks the target at build time, so one codebase ships to Node, Vercel, or Cloudflare Workers with the same security headers. On every target, set `VITE_APP_URL` to the public origin first. The canonical and social tags use it.
+Nitro picks the target at build time, so one codebase ships to Node, Vercel, or Cloudflare Workers with the same security headers. On every target, set `VITE_APP_URL` to the public origin first. The canonical and social tags, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it.
 
 ## Node
 

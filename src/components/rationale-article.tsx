@@ -16,6 +16,7 @@ import {
   OneWaySticker,
   StaticAnalysisSticker,
 } from "@/components/stickers/topics";
+import { philosophyMeta } from "@/config/site";
 
 export const rationaleSections = [
   { id: "teaching", title: "Teaching through the codebase" },
@@ -28,6 +29,20 @@ export const rationaleSections = [
 ] as const;
 
 type SectionId = (typeof rationaleSections)[number]["id"];
+
+const publishedFormat = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+function formatPublished(isoDate: string) {
+  const parts = publishedFormat.formatToParts(new Date(isoDate));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((entry) => entry.type === type)?.value;
+  return `${part("day")} ${part("month")}, ${part("year")}`;
+}
 
 const potetoPost = "https://x.com/poteto/status/2111133080526495985";
 const link =
@@ -64,7 +79,11 @@ export function RationaleArticle() {
     <article className="text-foreground">
       <header className="pb-xl">
         <h1 className="font-medium">Rodeo Philosophy</h1>
-        <p className="text-muted-foreground">17 October, 2026</p>
+        <p className="text-muted-foreground">
+          <time dateTime={philosophyMeta.published}>
+            {formatPublished(philosophyMeta.published)}
+          </time>
+        </p>
       </header>
 
       <div className="space-y-m">

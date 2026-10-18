@@ -136,7 +136,7 @@ export function SwapSentence() {
           <br className="md:hidden" /> <span className="whitespace-nowrap">on track.</span>
         </span>
       </p>
-      <span id={hintId} className="sr-only">
+      <span id={hintId} data-markdown="skip" className="sr-only">
         Select a highlighted word to see another example.
       </span>
     </>
