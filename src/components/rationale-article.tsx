@@ -97,10 +97,9 @@ export function RationaleArticle() {
           with them, and i needed a solid foundation to build all of them off of.
         </p>
         <p>
-          and the better agents got, the more the way i worked had to change. i kept picking up new
-          practices so i could focus on what really mattered in a project, instead of getting
-          frustrated, waiting forever for an agent to finish, and still not being sure the software
-          would hold up.
+          and the better agents got, the more the way i worked had to change. i kept changing how i
+          worked, mostly because i was tired of waiting forever on an agent and then not trusting
+          what it wrote.
         </p>
         <p>
           the thing i kept running into is that agents are really good at copying whatever's already
@@ -141,11 +140,11 @@ export function RationaleArticle() {
           worst.
         </p>
         <p>
-          so within rodeo, the foundation does most of the work. on top of that, lint checks
-          everything, even the design. if an agent reaches for a color or a size that isn't in the
-          theme, lint fails it, so you don't end up with little design papercuts everywhere. and
-          every lint error tells the agent how to fix it. then there are seven short guides an agent
-          only reads when it needs one. and then you, looking at whatever's left.
+          so in rodeo, the codebase does most of the work. on top of that, lint checks everything,
+          even the design. if an agent reaches for a color or a size that isn't in the theme, lint
+          fails it, so you don't end up with little design papercuts everywhere. and every lint
+          error tells the agent how to fix it. then there are seven short guides an agent only reads
+          when it needs one. and then you, looking at whatever's left.
         </p>
         <p>
           the trick is making the easy thing the right thing. agents take the shortest path, every
@@ -183,15 +182,15 @@ export function RationaleArticle() {
           wanted.
         </p>
         <p>
-          it sounds small but it changes how the whole thing feels. you stop finding the same
-          mistake in every review, because the agent already heard about it the second it wrote it.
+          it sounds small, but you stop finding the same mistake in every review, because the agent
+          already heard about it the second it wrote it.
         </p>
       </Section>
 
       <Section id="tokens" Sticker={TokenSticker}>
         <p>
-          agents read everything you give them. every comment, every test, every doc. all of it
-          costs context they could be spending on the actual task.
+          agents read everything you give them: comments, tests, docs. all of it costs context they
+          could be spending on the actual task.
         </p>
         <TokenBarsFigure />
         <p>
@@ -224,11 +223,11 @@ export function RationaleArticle() {
           agents love writing tests like "the header says welcome". then you change the header, the
           test fails even though nothing broke, and the agent burns tokens rewriting a test that
           never caught anything. a browser test clicks through the app like a person would, so when
-          it fails, something's actually broken.
+          it fails, something's broken.
         </p>
         <p>
-          browser tests are slower, sure. but you need way fewer of them, they test what people
-          actually do, and they don't fall over every time you rename something.
+          browser tests are slower, sure. but you need way fewer of them, they test what people do,
+          and they don't fall over every time you rename something.
         </p>
         <Subheading>Docs</Subheading>
         <p>
@@ -261,16 +260,13 @@ export function RationaleArticle() {
         <p>
           none of this is about taking people out of the loop. it's about what you spend your
           attention on. if the codebase catches the comments and the random colors and the
-          unvalidated inputs, your review goes to the stuff that actually needs a person.
+          unvalidated inputs, your review goes to the stuff that needs a person.
         </p>
         <p>
           you still review, obviously. but instead of writing "please don't add a comment here" for
           the hundredth time, you're looking at whether the feature actually makes sense.
         </p>
-        <p>
-          after a week in a rodeo app i hope you trust your agents a little more. and maybe sleep a
-          bit better.
-        </p>
+        <p>after a week in a rodeo app i hope you trust your agents a little more.</p>
       </Section>
 
       <Section id="change" Sticker={ScissorsSticker}>
@@ -280,12 +276,12 @@ export function RationaleArticle() {
           noise for the next model.
         </p>
         <p>
-          so here's my commitment: when a guardrail stops catching real mistakes, i'll take it out.
-          rodeo should fit what the current frontier models need, not what they needed a year ago.
+          when a guardrail stops catching real mistakes, i'll take it out. rodeo should fit what the
+          current frontier models need, not what they needed a year ago.
         </p>
         <p>
-          the whole point is to stay as lean as possible. give agents exactly what they need and
-          nothing they don't. ideally rodeo just saves you time and money, and it's free.
+          the goal is to keep rodeo as small as it can be. it's free, and ideally it saves you some
+          tokens and some review time.
         </p>
       </Section>
 

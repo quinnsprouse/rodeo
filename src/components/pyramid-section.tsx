@@ -16,7 +16,11 @@ import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
 
 const layers: { name: string; detail: string; Sticker: ComponentType<StickerProps> }[] = [
-  { name: "Codebase", detail: "Layers, tokens, server-only files.", Sticker: CodebaseSticker },
+  {
+    name: "Codebase",
+    detail: "One-way imports, theme tokens, server-only files.",
+    Sticker: CodebaseSticker,
+  },
   { name: "Static analysis", detail: "Every error names its fix.", Sticker: StaticAnalysisSticker },
   { name: "Prose", detail: "Short guides, read when needed.", Sticker: ProseSticker },
   {
