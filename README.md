@@ -30,7 +30,7 @@ Add UI components with the configured shadcn CLI. See [UI and motion](docs/agent
 
 The landing page is a demo. To start from a blank app:
 
-1. Replace `src/routes/index.tsx` with your home route. `src/routes/example.tsx` and `src/lib/starter-status.ts` are the server-function example. Keep them to copy from, or delete them and their tests in `e2e/`.
+1. Replace `src/routes/index.tsx` with your home route.
 2. Delete `src/routes/rationale.tsx`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
 3. In `src/styles/app.css`, remove `--text-logo` and the shimmer styles.
 4. Uninstall the demo package: `npm uninstall calligraph`.
@@ -65,7 +65,7 @@ Optional skills are listed in `skills-lock.json`; restore them with `npm run set
 
 ## Layout
 
-- `src/routes/`: TanStack routes and the full-stack example
+- `src/routes/`: TanStack routes
 - `src/components/`: application and UI components
 - `src/hooks/`, `src/lib/`, `src/styles/`: hooks, shared logic, and theme
 - `lint/`, `e2e/`: custom rules and verification tests

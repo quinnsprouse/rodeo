@@ -10,20 +10,12 @@ test("responses carry the baseline security headers", async ({ request }) => {
   expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
 });
 
-test("server functions reject cross-site requests", async ({ page, request }) => {
-  await page.goto("/example");
-  const serverFnCall = page.waitForRequest((call) => call.url().includes("/_serverFn/"));
-  await page.getByRole("link", { name: "Preview the error path" }).click();
-  const call = await serverFnCall;
-  const headers = await call.allHeaders();
+test("server functions reject cross-site requests", async ({ request }) => {
+  const serverFn = "/_serverFn/csrf-probe";
 
-  const crossSite = await request.get(call.url(), {
-    headers: { ...headers, "sec-fetch-site": "cross-site" },
-  });
+  const crossSite = await request.post(serverFn, { headers: { "sec-fetch-site": "cross-site" } });
   expect(crossSite.status()).toBe(403);
 
-  const sameOrigin = await request.get(call.url(), {
-    headers: { ...headers, "sec-fetch-site": "same-origin" },
-  });
-  expect(await sameOrigin.text()).toContain("The starter server function failed as requested.");
+  const sameOrigin = await request.post(serverFn, { headers: { "sec-fetch-site": "same-origin" } });
+  expect(sameOrigin.status()).not.toBe(403);
 });

@@ -351,6 +351,10 @@
   box-shadow: inset 0 calc(var(--border-s) * -1) 0 0 var(--border-default-color);
 }
 
+@utility divider-r {
+  box-shadow: inset calc(var(--border-s) * -1) 0 0 0 var(--border-default-color);
+}
+
 [data-slot="icon"] * {
   stroke-width: var(--icon-stroke-width);
 }

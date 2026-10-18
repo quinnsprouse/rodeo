@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import type { ComponentType, ReactNode } from "react";
 
 import {
@@ -136,15 +135,6 @@ export function RationaleArticle() {
           better.
         </p>
         <PyramidFigure />
-        <p>
-          there's also{" "}
-          <Link to="/example" className={link}>
-            one real example
-          </Link>{" "}
-          to copy, a page that loads data through a server function and handles the error when it
-          fails. agents are going to copy something anyway, so you might as well give them something
-          good.
-        </p>
         <p>
           if your first instinct is a longer AGENTS.md, i get it, mine was too. but every line you
           add there is a suggestion. a lint rule isn't.

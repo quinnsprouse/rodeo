@@ -30,12 +30,8 @@ test("philosophy page has no WCAG violations", async ({ page }) => {
   expect(await axeViolations(page)).toEqual([]);
 });
 
-test("not-found and error pages have no WCAG violations", async ({ page }) => {
+test("the not-found page has no WCAG violations", async ({ page }) => {
   await page.goto("/definitely-missing");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
-  expect(await axeViolations(page)).toEqual([]);
-
-  await page.goto("/example?demo=crash");
-  await expect(page.getByRole("heading", { name: "Something went wrong" })).toBeVisible();
   expect(await axeViolations(page)).toEqual([]);
 });

@@ -12,7 +12,7 @@ const homeMeta: PageMeta = {
     "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
   image: {
     path: "/og-home.png",
-    alt: "The Rodeo bull logo above the line: checks every edit, catches stray comments, and keeps Claude Code on track.",
+    alt: "The Rodeo logo: a purple bull sticker beside the word rodeo.",
   },
 };
 

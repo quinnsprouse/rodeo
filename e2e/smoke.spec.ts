@@ -107,20 +107,6 @@ test("swap chips play on their own when motion is allowed", async ({ page }) => 
   expect(browserErrors).toHaveLength(0);
 });
 
-test("full-stack example handles and recovers from server errors", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
-  await page.goto("/example");
-
-  await page.getByRole("link", { name: "Preview the error path" }).click();
-  await expect(page.getByRole("heading", { name: "Handled server error" })).toBeVisible();
-  await expect(page.getByText("The starter server function failed as requested.")).toBeVisible();
-
-  await page.getByRole("link", { name: "Return to ready state" }).click();
-  await expect(page.getByText("Route loader and server function are connected.")).toBeVisible();
-  expect(new URL(page.url()).search).toBe("");
-  expect(browserErrors).toHaveLength(0);
-});
-
 test("home page fits on mobile", async ({ page }) => {
   const browserErrors = trackBrowserErrors(page);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -234,19 +220,20 @@ test("unknown routes return a real 404 inside the application shell", async ({ p
   ).toHaveLength(0);
 });
 
-test("production route errors hide internals and offer recovery", async ({ page }) => {
-  const response = await page.goto("/example?demo=crash");
+test("the checks demo shows what Rodeo catches at each stage", async ({ page }) => {
+  await page.goto("/");
+  const stages = page.getByRole("tablist", { name: "When Rodeo checks" });
 
-  expect(response?.status()).toBe(500);
-  await expect(page).toHaveTitle("Full-stack example — Rodeo");
-  await expect(page.getByRole("heading", { name: "Something went wrong" })).toBeVisible();
-  await expect(
-    page.getByText("The application hit an unexpected error.", { exact: false }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("The starter server function failed as requested.", { exact: false }),
-  ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
-  await page.getByRole("link", { name: "Back home" }).click();
-  await expect(page.getByText(installCommand).first()).toBeVisible();
+  await expect(stages.getByRole("tab", { name: "Every edit" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByText("process.env in browser code")).toBeVisible();
+
+  await stages.getByRole("tab", { name: "Every push" }).click();
+  await expect(page.getByText("Unused export: formatPrice")).toBeVisible();
+  await expect(page.getByText("process.env in browser code")).toBeHidden();
+
+  await stages.getByRole("tab", { name: "Every pull request" }).press("Enter");
+  await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
 });

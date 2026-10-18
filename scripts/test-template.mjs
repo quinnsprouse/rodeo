@@ -114,7 +114,7 @@ async function smokeProductionServer() {
   productionServer.stdout.on("data", (chunk) => appendFileSync(serverLog, chunk));
   productionServer.stderr.on("data", (chunk) => appendFileSync(serverLog, chunk));
 
-  await waitForHealthyServer(`http://127.0.0.1:${port}/example`, Date.now() + 20_000);
+  await waitForHealthyServer(`http://127.0.0.1:${port}/`, Date.now() + 20_000);
 }
 
 async function waitForHealthyServer(url, deadline) {
@@ -122,7 +122,7 @@ async function waitForHealthyServer(url, deadline) {
     const response = await fetch(url);
     const html = await response.text();
     assert.equal(response.status, 200);
-    assert.match(html, /Route loader and server function are connected\./);
+    assert.match(html, /Checks every/);
   } catch (error) {
     if (Date.now() >= deadline) {
       throw new Error(`Production server did not become healthy: ${String(error)}`, {

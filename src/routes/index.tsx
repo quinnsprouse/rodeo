@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { ChecksSection } from "@/components/checks-section";
 import { ArrowDown01Icon, Icon } from "@/components/icons";
 import { OpinionsSection } from "@/components/opinions-section";
 import { PageSection } from "@/components/page-section";
@@ -7,7 +8,6 @@ import { PyramidSection, pyramidSectionId } from "@/components/pyramid-section";
 import { StartCta } from "@/components/start-cta";
 import { BullSticker, TerminalSticker } from "@/components/stickers/hero";
 import { SwapSentence } from "@/components/swap-sentence";
-import { TerminalDemo } from "@/components/terminal-demo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Snippet } from "@/components/ui/snippet";
 import { fonts, preloadFont } from "@/config/fonts";
@@ -21,14 +21,6 @@ export const Route = createFileRoute("/")({
 
 const installCommand = "npx degit quinnsprouse/rodeo my-app";
 
-const checkpoints: { when: string; what: string }[] = [
-  { when: "on edit", what: "Format, lint, and typecheck the file the agent just wrote." },
-  { when: "end of turn", what: "Check every changed file and the tests that reach it." },
-  { when: "on commit", what: "Check the staged files and the commit message." },
-  { when: "on push", what: "Build the app, look for dead code, and run every browser test." },
-  { when: "in CI", what: "Install the starter from scratch and run it all again." },
-];
-
 const stack = [
   { name: "Vite+", href: "https://viteplus.dev" },
   { name: "TanStack Start", href: "https://tanstack.com/start" },
@@ -38,8 +30,6 @@ const stack = [
   { name: "Nitro", href: "https://nitro.build" },
 ];
 
-const heading = "font-brand text-l font-heavy text-foreground";
-const lead = "mt-s max-w-[480px] text-muted-foreground";
 const footerLink =
   "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground";
 const inlineLink =
@@ -140,24 +130,7 @@ function Home() {
 
         <OpinionsSection />
 
-        <PageSection>
-          <h2 className={heading}>Checks run where the mistake happens.</h2>
-          <p className={lead}>
-            Fast checks run while the agent works. The full suite runs before anything leaves your
-            machine.
-          </p>
-
-          <TerminalDemo className="mt-xl" />
-
-          <dl className="mt-xl space-y-s">
-            {checkpoints.map((step) => (
-              <div key={step.when} className="grid gap-xxs sm:grid-cols-[160px_1fr] sm:gap-0">
-                <dt className="font-data text-s text-foreground">{step.when}</dt>
-                <dd className="text-muted-foreground">{step.what}</dd>
-              </div>
-            ))}
-          </dl>
-        </PageSection>
+        <ChecksSection />
 
         <PageSection>
           <StartCta installCommand={installCommand} />
@@ -174,9 +147,6 @@ function Home() {
             <nav aria-label="Footer" className="flex items-center gap-l text-s font-medium">
               <Link to="/rationale" className={footerLink}>
                 Philosophy
-              </Link>
-              <Link to="/example" className={footerLink}>
-                Example
               </Link>
               <a
                 href="https://github.com/quinnsprouse/rodeo"
