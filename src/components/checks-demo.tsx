@@ -24,7 +24,7 @@ export function ChecksDemo({ className }: { className?: string }) {
           <Tabs.Panel
             key={scenario.value}
             value={scenario.value}
-            className="grid data-ending-style:hidden lg:min-h-120 lg:grid-cols-[18rem_1fr]"
+            className="grid data-ending-style:hidden data-starting-style:opacity-0 motion-safe:transition-opacity motion-safe:duration-(--motion-large-duration) motion-safe:ease-(--motion-large-easing) lg:min-h-120 lg:grid-cols-[18rem_1fr]"
           >
             <Conversation scenario={scenario} />
             <FileChange scenario={scenario} />

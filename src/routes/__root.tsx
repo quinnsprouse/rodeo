@@ -8,6 +8,8 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { SiteAnalytics } from "@/components/site-analytics";
+import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { createSiteHead } from "@/config/site";
 import { useTheme } from "@/hooks/use-theme";
@@ -79,6 +81,7 @@ function RootShell({ children }: { children: ReactNode }) {
           Skip to content
         </a>
         {children}
+        {clientEnv.VITE_VERCEL_ANALYTICS && <SiteAnalytics />}
         <Scripts />
       </body>
     </html>

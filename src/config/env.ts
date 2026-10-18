@@ -15,6 +15,7 @@ const clientEnvSchema = z.object({
       ),
     ),
   ),
+  VITE_VERCEL_ANALYTICS: z.pipe(z.transform(blankToUndefined), z.optional(z.stringbool())),
 });
 
 function parseClientEnv(env: Record<string, unknown>) {

@@ -8,7 +8,18 @@ export const browserChrome: Record<Theme, Record<Canvas, string>> = {
   dark: { background: "#000000", card: "#202020" },
 };
 
-export const themeInitScript = `try{if(localStorage.getItem("${storageKey}")==="dark"){var r=document.documentElement;r.classList.add("dark");r.style.colorScheme="dark"}}catch(e){}`;
+const systemDark = "(prefers-color-scheme: dark)";
+
+export const themeInitScript = `try{var s=localStorage.getItem("${storageKey}");if(s?s==="dark":matchMedia("${systemDark}").matches){var r=document.documentElement;r.classList.add("dark");r.style.colorScheme="dark"}}catch(e){}`;
+
+function storedTheme(): Theme | undefined {
+  try {
+    const stored = localStorage.getItem(storageKey);
+    return stored === "dark" || stored === "light" ? stored : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function storeTheme(theme: Theme) {
   try {
@@ -25,13 +36,7 @@ function applyTheme(theme: Theme) {
   window.dispatchEvent(new Event(changeEvent));
 }
 
-function applyThemeInOneStep(theme: Theme) {
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!reducedMotion && "startViewTransition" in document) {
-    document.startViewTransition(() => applyTheme(theme));
-    return;
-  }
-
+function snapToTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.add("theme-snap");
   applyTheme(theme);
@@ -40,9 +45,24 @@ function applyThemeInOneStep(theme: Theme) {
   });
 }
 
+function applyThemeInOneStep(theme: Theme) {
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reducedMotion && "startViewTransition" in document) {
+    document.startViewTransition(() => applyTheme(theme));
+    return;
+  }
+  snapToTheme(theme);
+}
+
 function followOtherTabs(event: StorageEvent) {
   if (event.key !== storageKey) return;
   applyTheme(event.newValue === "dark" ? "dark" : "light");
+}
+
+function followSystem(event: MediaQueryListEvent) {
+  const theme = event.matches ? "dark" : "light";
+  if (storedTheme() || currentTheme() === theme) return;
+  snapToTheme(theme);
 }
 
 export function setTheme(theme: Theme) {
@@ -55,10 +75,13 @@ export function currentTheme(): Theme {
 }
 
 export function subscribeToTheme(onChange: () => void) {
+  const system = window.matchMedia(systemDark);
   window.addEventListener(changeEvent, onChange);
   window.addEventListener("storage", followOtherTabs);
+  system.addEventListener("change", followSystem);
   return () => {
     window.removeEventListener(changeEvent, onChange);
     window.removeEventListener("storage", followOtherTabs);
+    system.removeEventListener("change", followSystem);
   };
 }
