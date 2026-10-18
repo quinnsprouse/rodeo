@@ -151,7 +151,7 @@ export default defineConfig({
       },
       "verify:template": {
         command: "node scripts/test-template.mjs",
-        dependsOn: ["verify:push"],
+        dependsOn: ["verify:fast"],
         cache: false,
       },
       "verify:doctor": {
