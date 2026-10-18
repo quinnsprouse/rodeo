@@ -31,7 +31,9 @@
 /* Untitled theme. Values come from gui/themes/untitled.md. color-1 is the brand purple, and
    Open Runde replaces GT Standard M. Each color is light-dark(light, dark). The block repeats on
    .light and .dark because Chrome resolves light-dark() where a custom property is declared, so a
-   .dark element inside a light page needs its own declarations. */
+   .dark element inside a light page needs its own declarations. Muted text uses neutral-8 in dark
+   mode, not the theme's neutral-7, which reads at APCA Lc 50 on dark surfaces against Lc 67-76
+   for neutral-7 in light mode. */
 :root,
 .light,
 .dark {
@@ -142,7 +144,7 @@
   --cte-surface: var(--neutral-2);
   --cte-surface-muted: var(--neutral-3);
   --cte-text: var(--neutral-10);
-  --cte-text-muted: var(--neutral-7);
+  --cte-text-muted: light-dark(var(--neutral-7), var(--neutral-8));
   --cte-border: var(--border-default-color);
   --cte-accent: var(--color-1);
   --cte-accent-text: var(--neutral-2);
@@ -160,7 +162,7 @@
   --secondary: var(--neutral-3);
   --secondary-foreground: var(--neutral-10);
   --muted: var(--neutral-3);
-  --muted-foreground: var(--neutral-7);
+  --muted-foreground: light-dark(var(--neutral-7), var(--neutral-8));
   --accent: var(--neutral-3);
   --accent-foreground: var(--neutral-10);
   --destructive: var(--error);
