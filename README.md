@@ -1,6 +1,6 @@
 # Rodeo 🤠
 
-[Live demo](https://rodeo-quinnsprouses-projects.vercel.app)
+[Live demo](https://userodeo.dev)
 
 A React starter for working with coding agents. Built on Vite+, TanStack Start, React 19, and Tailwind v4, with shadcn/ui configured for Base UI components. Includes Git hooks, tests, and agent docs.
 
