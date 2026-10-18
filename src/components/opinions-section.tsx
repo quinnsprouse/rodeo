@@ -61,8 +61,8 @@ export function OpinionsSection() {
 
       <ul className="mt-xxl grid gap-x-xxl gap-y-xl sm:grid-cols-2">
         {opinions.map(({ title, reason, Sticker }) => (
-          <li key={title}>
-            <Sticker className="size-11" />
+          <li key={title} className="group/opinion">
+            <Sticker className="size-11 group-hover/opinion:scale-110 group-hover/opinion:-rotate-6 motion-safe:transition motion-safe:duration-(--motion-large-duration) motion-safe:ease-(--motion-large-easing)" />
             <h3 className="mt-s font-medium text-foreground">{title}</h3>
             <p className="mt-xs text-s text-muted-foreground">{reason}</p>
           </li>

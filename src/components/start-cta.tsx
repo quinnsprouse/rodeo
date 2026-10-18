@@ -6,7 +6,7 @@ import { StaticAnalysisSticker } from "@/components/stickers/topics";
 import { Snippet } from "@/components/ui/snippet";
 
 const link =
-  "inline-flex items-center gap-xs underline-offset-4 hover:underline focus-visible:outline-primary-foreground";
+  "group/link inline-flex items-center gap-xs underline-offset-4 hover:underline focus-visible:outline-primary-foreground";
 
 export function StartCta({ installCommand }: { installCommand: string }) {
   return (
@@ -39,7 +39,11 @@ export function StartCta({ installCommand }: { installCommand: string }) {
         </a>{" "}
         <Link to="/philosophy" className={link}>
           Read the philosophy
-          <Icon icon={ArrowRight01Icon} className="size-3" aria-hidden="true" />
+          <Icon
+            icon={ArrowRight01Icon}
+            className="size-3 group-hover/link:translate-x-0.5 motion-safe:transition-transform motion-safe:duration-(--motion-duration) motion-safe:ease-(--motion-easing)"
+            aria-hidden="true"
+          />
         </Link>
       </div>
     </div>
