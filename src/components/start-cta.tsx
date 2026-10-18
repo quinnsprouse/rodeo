@@ -6,7 +6,7 @@ import { StaticAnalysisSticker } from "@/components/stickers/topics";
 import { Snippet } from "@/components/ui/snippet";
 
 const link =
-  "inline-flex items-center gap-xs transition-opacity duration-(--motion-duration) ease-(--motion-easing) hover:opacity-80 focus-visible:outline-primary-foreground";
+  "inline-flex items-center gap-xs underline-offset-4 hover:underline focus-visible:outline-primary-foreground";
 
 export function StartCta({ installCommand }: { installCommand: string }) {
   return (
