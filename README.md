@@ -22,7 +22,9 @@ Initialize Git before installation so Vite+ can install the hooks. If you instal
 
 ## Customize
 
-Update `src/config/site.ts` with the product identity and set `VITE_APP_URL` in production for canonical and social metadata. Leaving the URL unset omits origin-dependent tags.
+Update `src/config/site.ts` with the product identity and its pages, and set `VITE_APP_URL` in production. The canonical links, social metadata, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it. Leaving the URL unset omits the origin-dependent tags, and the generated files fall back to the request's origin.
+
+Agents can read every page as Markdown, at `/index.md` or the page path plus `.md`, or by sending `Accept: text/markdown`. `src/server.ts` converts the rendered page.
 
 Add UI components with the configured shadcn CLI. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, and icon conventions.
 
@@ -34,7 +36,7 @@ The landing page is a demo. To start from a blank app:
 2. Delete `src/routes/rationale.tsx`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
 3. In `src/styles/app.css`, remove `--text-logo` and the shimmer styles.
 4. Uninstall the demo package: `npm uninstall calligraph`.
-5. Update `src/config/site.ts`, `public/og-home.png` and `public/og-rationale.png`, and the demo assertions in `e2e/smoke.spec.ts`.
+5. Update `src/config/site.ts` and its `sitePages` list, `public/og-home.png` and `public/og-rationale.png`, and the demo assertions in `e2e/smoke.spec.ts` and `e2e/discovery.spec.ts`.
 
 Then run `npm run check:push`. Knip reports any file, export, or package that only the demo used.
 

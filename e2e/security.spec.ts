@@ -10,6 +10,13 @@ test("responses carry the baseline security headers", async ({ request }) => {
   expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
 });
 
+test("the trailing-slash redirect never leaves the site", async ({ baseURL, request }) => {
+  const response = await request.get(`${baseURL}//evil.example/`, { maxRedirects: 0 });
+
+  expect(response.status()).toBe(308);
+  expect(response.headers().location).toBe("/evil.example");
+});
+
 test("server functions reject cross-site requests", async ({ request }) => {
   const serverFn = "/_serverFn/csrf-probe";
 

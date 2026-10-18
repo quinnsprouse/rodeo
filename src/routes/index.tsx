@@ -10,16 +10,22 @@ import { BullSticker, TerminalSticker } from "@/components/stickers/hero";
 import { SwapSentence } from "@/components/swap-sentence";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Snippet } from "@/components/ui/snippet";
+import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
+import { site } from "@/config/site";
 import { useScrolledPast } from "@/hooks/use-scrolled-past";
+import { homeStructuredData, structuredDataScript } from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
-  head: () => ({ links: [preloadFont(fonts.bold), preloadFont(fonts.mono)] }),
+  head: () => ({
+    links: [preloadFont(fonts.bold), preloadFont(fonts.mono)],
+    scripts: clientEnv.VITE_APP_URL
+      ? [structuredDataScript(homeStructuredData(clientEnv.VITE_APP_URL))]
+      : [],
+  }),
   component: Home,
 });
-
-const installCommand = "npx degit quinnsprouse/rodeo my-app";
 
 const stack = [
   { name: "Vite+", href: "https://viteplus.dev" },
@@ -64,6 +70,7 @@ function Hero() {
       <h1 className="flex items-center gap-xxs font-brand text-logo font-heavy tracking-xs text-foreground">
         <BullSticker className="size-[1.4em]" />
         rodeo
+        <span className="sr-only">: {site.tagline}</span>
       </h1>
 
       <div className="mt-l w-full sm:mt-xl">
@@ -71,15 +78,15 @@ function Hero() {
       </div>
 
       <Snippet
-        text={installCommand}
+        text={site.installCommand}
         size="lg"
         leading={<TerminalSticker className="size-[2em]" />}
         shimmer
         className="mt-xl max-w-full sm:mt-xxl"
       />
 
-      <p className="mt-m text-center text-s text-muted-foreground sm:text-m">
-        A free React starter for Claude Code and Codex.
+      <p aria-hidden="true" className="mt-m text-center text-s text-muted-foreground sm:text-m">
+        {site.tagline}
       </p>
     </section>
   );
@@ -92,6 +99,7 @@ function ScrollHint() {
     <a
       href={`#${pyramidSectionId}`}
       aria-label="Scroll to how Rodeo works"
+      data-markdown="skip"
       className={cn(
         "mx-auto mb-m flex flex-col items-center gap-xxs px-m py-xs text-s text-muted-foreground transition duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
         scrolled && "invisible opacity-0",
@@ -133,7 +141,7 @@ function Home() {
         <ChecksSection />
 
         <PageSection>
-          <StartCta installCommand={installCommand} />
+          <StartCta installCommand={site.installCommand} />
         </PageSection>
       </main>
 

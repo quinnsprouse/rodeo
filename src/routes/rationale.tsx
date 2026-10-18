@@ -2,15 +2,22 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { RationaleArticle, rationaleSections } from "@/components/rationale-article";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { clientEnv } from "@/config/env";
 import { pageMeta, philosophyMeta } from "@/config/site";
 import { useActiveSection } from "@/hooks/use-active-section";
+import { philosophyStructuredData, structuredDataScript } from "@/lib/structured-data";
 import { cn } from "@/lib/utils";
 
 const sectionIds = rationaleSections.map((section) => section.id);
 
 export const Route = createFileRoute("/rationale")({
   staticData: { canvas: "card" },
-  head: () => ({ meta: pageMeta(philosophyMeta) }),
+  head: () => ({
+    meta: pageMeta(philosophyMeta),
+    scripts: clientEnv.VITE_APP_URL
+      ? [structuredDataScript(philosophyStructuredData(clientEnv.VITE_APP_URL))]
+      : [],
+  }),
   component: Rationale,
 });
 

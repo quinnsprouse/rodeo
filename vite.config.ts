@@ -357,6 +357,13 @@ export default defineConfig({
         },
       },
       {
+        // why: TanStack Start loads a custom server entry only from the default export of src/server.ts.
+        files: ["src/server.ts"],
+        rules: {
+          "import/no-default-export": "off",
+        },
+      },
+      {
         // why: Config files must default-export, and Node scripts and hooks print to the terminal.
         files: ["*.config.ts", "lint/**", "scripts/**", ".agents/hooks/**", "e2e/**"],
         rules: {

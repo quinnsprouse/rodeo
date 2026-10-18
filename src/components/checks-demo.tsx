@@ -34,6 +34,7 @@ export function ChecksDemo({ className }: { className?: string }) {
 
       <Tabs.List
         aria-label="When Rodeo checks"
+        data-markdown="skip"
         className="relative flex rounded-full bg-muted p-xxs"
       >
         {scenarios.map((scenario) => (
@@ -89,7 +90,10 @@ function Conversation({ scenario }: { scenario: Scenario }) {
         <li className="flex gap-xs rounded-m bg-destructive/10 px-xs py-xs ring ring-destructive/30">
           <BullSticker className="-my-0.5 -ml-0.5 size-6" />
           <span className="flex min-w-0 flex-col">
-            <span className="font-medium break-words text-foreground">{scenario.caught.title}</span>
+            <span className="font-medium break-words text-foreground">
+              {scenario.caught.title}
+              <span className="sr-only">. </span>
+            </span>
             <span className="text-muted-foreground">{scenario.caught.detail}</span>
           </span>
         </li>
@@ -130,7 +134,7 @@ function Step({ text, done = false }: { text: string; done?: boolean }) {
 
 function FileChange({ scenario }: { scenario: Scenario }) {
   return (
-    <div className="hidden min-w-0 flex-col lg:flex">
+    <div data-markdown="skip" className="hidden min-w-0 flex-col lg:flex">
       <p className="flex items-center gap-xs px-m py-s font-data text-xs text-foreground divider-b">
         <span className="truncate">{scenario.file.path}</span>
         <span className="text-muted-foreground">{scenario.file.summary}</span>
@@ -148,6 +152,7 @@ function FileChange({ scenario }: { scenario: Scenario }) {
 function StatusPill({ status, className }: { status: string; className?: string }) {
   return (
     <p
+      data-markdown="skip"
       className={cn(
         "dark flex w-fit items-center gap-s rounded-full bg-card py-xxs pr-m pl-xs text-s text-card-foreground ring ring-border",
         className,

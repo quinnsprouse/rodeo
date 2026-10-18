@@ -210,7 +210,7 @@ test("unknown routes return a real 404 inside the application shell", async ({ p
   const response = await page.goto("/definitely-missing");
 
   expect(response?.status()).toBe(404);
-  await expect(page).toHaveTitle("Rodeo — Wrangle Your AI Agents");
+  await expect(page).toHaveTitle("Rodeo — React starter for Claude Code and Codex");
   await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Back home" })).toBeVisible();
   expect(
