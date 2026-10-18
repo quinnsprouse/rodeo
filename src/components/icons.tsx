@@ -1,9 +1,12 @@
 import {
   ArrowDown01Icon,
   ArrowRight01Icon,
+  ArrowUp02Icon,
   ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
+  MinusSignIcon,
+  PlusSignIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon, type HugeiconsIconProps, type IconSvgElement } from "@hugeicons/react";
@@ -22,8 +25,11 @@ export function Icon({ icon, className, size = 16, ...props }: IconProps) {
 export {
   ArrowDown01Icon,
   ArrowRight01Icon,
+  ArrowUp02Icon,
   ArrowUpRight01Icon,
   Copy01Icon,
   Github01Icon,
+  MinusSignIcon,
+  PlusSignIcon,
   Tick02Icon,
 };

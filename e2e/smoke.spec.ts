@@ -219,3 +219,21 @@ test("unknown routes return a real 404 inside the application shell", async ({ p
     ),
   ).toHaveLength(0);
 });
+
+test("the checks demo shows what Rodeo catches at each stage", async ({ page }) => {
+  await page.goto("/");
+  const stages = page.getByRole("tablist", { name: "When Rodeo checks" });
+
+  await expect(stages.getByRole("tab", { name: "Every edit" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByText("process.env in browser code")).toBeVisible();
+
+  await stages.getByRole("tab", { name: "Every push" }).click();
+  await expect(page.getByText("Unused export: formatPrice")).toBeVisible();
+  await expect(page.getByText("process.env in browser code")).toBeHidden();
+
+  await stages.getByRole("tab", { name: "Every pull request" }).press("Enter");
+  await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
+});
