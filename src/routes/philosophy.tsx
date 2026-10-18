@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const sectionIds = rationaleSections.map((section) => section.id);
 
-export const Route = createFileRoute("/rationale")({
+export const Route = createFileRoute("/philosophy")({
   staticData: { canvas: "card" },
   head: () => ({
     meta: pageMeta(philosophyMeta),

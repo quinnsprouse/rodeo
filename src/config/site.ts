@@ -31,7 +31,7 @@ export const homeMeta: PageMeta = {
 };
 
 export const philosophyMeta = {
-  path: "/rationale",
+  path: "/philosophy",
   title: "Rodeo Philosophy",
   description:
     "How Rodeo thinks about building with agents, and why it drops code comments, unit tests, and long docs.",
