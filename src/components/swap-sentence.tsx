@@ -14,6 +14,7 @@ import {
 import { StaticChipFace, type SwapChoice } from "@/components/swap-chip-face";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { useThemeRevealing } from "@/hooks/use-theme-revealing";
 
 const AnimatedChipFace = lazy(() =>
   import("@/components/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),
@@ -99,8 +100,9 @@ export function SwapSentence() {
   const [held, setHeld] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const visible = usePageVisible();
+  const revealing = useThemeRevealing();
   const hintId = useId();
-  const autoplay = !reducedMotion && visible && !held;
+  const autoplay = !reducedMotion && visible && !held && !revealing;
 
   useEffect(() => {
     if (!autoplay) return;

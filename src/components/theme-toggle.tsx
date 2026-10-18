@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+
 import { buttonVariants } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { playSound, preloadSounds } from "@/lib/sound";
@@ -42,9 +44,13 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
   const theme = useTheme();
   const isDark = theme === "dark";
 
-  function toggle() {
+  function toggle(event: MouseEvent<HTMLButtonElement>) {
     void playSound("click");
-    setTheme(isDark ? "light" : "dark");
+    const box = event.currentTarget.getBoundingClientRect();
+    setTheme(isDark ? "light" : "dark", {
+      x: box.left + box.width / 2,
+      y: box.top + box.height / 2,
+    });
   }
 
   return (
