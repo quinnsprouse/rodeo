@@ -15,6 +15,8 @@ The server listens on `PORT`, default `3000`, and on `HOST`. It serves prebuilt 
 
 Import the repository in Vercel and add `VITE_APP_URL` under **Environment Variables**. Nitro detects Vercel during the build, so nothing else needs configuring.
 
+To count visitors with Vercel Web Analytics, enable it in the project's **Analytics** tab, then set `VITE_VERCEL_ANALYTICS=true` for Production. Leave it unset on other hosts, where the analytics script doesn't exist.
+
 ## Cloudflare Workers
 
 ```bash
