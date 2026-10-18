@@ -71,6 +71,18 @@ test("each page describes itself with structured data", async ({ page }) => {
   await expect(page.locator("article time")).toHaveAttribute("datetime", "2026-10-17");
 });
 
+test("shared links credit the author on X", async ({ page }) => {
+  await page.goto("/rationale");
+
+  await expect(page.locator('meta[name="twitter:creator"]')).toHaveAttribute(
+    "content",
+    "@QuinnSprouse",
+  );
+  expect(await structuredData(page)).toMatchObject({
+    author: { sameAs: expect.arrayContaining(["https://x.com/QuinnSprouse"]) },
+  });
+});
+
 test("a trailing slash redirects permanently to the page", async ({ request }) => {
   const response = await request.get("/rationale/?ref=x", { maxRedirects: 0 });
 
