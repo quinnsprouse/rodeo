@@ -1,5 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useId, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
 import {
   ClaudeSticker,
@@ -12,6 +12,7 @@ import {
   PushSticker,
 } from "@/components/stickers/swap";
 import { StaticChipFace, type SwapChoice } from "@/components/swap-chip-face";
+import { useOnScreen } from "@/hooks/use-on-screen";
 import { usePageVisible } from "@/hooks/use-page-visible";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useThemeRevealing } from "@/hooks/use-theme-revealing";
@@ -102,7 +103,9 @@ export function SwapSentence() {
   const visible = usePageVisible();
   const revealing = useThemeRevealing();
   const hintId = useId();
-  const autoplay = !reducedMotion && visible && !held && !revealing;
+  const sentence = useRef<HTMLParagraphElement>(null);
+  const onScreen = useOnScreen(sentence);
+  const autoplay = !reducedMotion && visible && onScreen && !held && !revealing;
 
   useEffect(() => {
     if (!autoplay) return;
@@ -126,7 +129,10 @@ export function SwapSentence() {
 
   return (
     <>
-      <p className="text-center text-display font-heavy tracking-xs text-foreground md:text-display-wide">
+      <p
+        ref={sentence}
+        className="text-center text-display font-heavy tracking-xs text-foreground md:text-display-wide"
+      >
         <span className="block">
           Checks every <span className="whitespace-nowrap">{chip(0, checkpoints)},</span>
         </span>{" "}

@@ -1,8 +1,8 @@
-import { useRef, useState, type ComponentType, type PointerEvent } from "react";
+import { useRef, useState, type ComponentType } from "react";
 
 import { ArrowUpRight01Icon, Icon } from "@/components/icons";
 import { PageSection } from "@/components/page-section";
-import { entranceStyle, layerFocus, PyramidSlices } from "@/components/pyramid-slices";
+import { entranceStyle, layerFocus, layerUnder, PyramidSlices } from "@/components/pyramid-slices";
 import type { StickerProps } from "@/components/stickers/frame";
 import {
   CodebaseSticker,
@@ -31,11 +31,6 @@ const layers: { name: string; detail: string; Sticker: ComponentType<StickerProp
 ];
 
 export const pyramidSectionId = "how-it-works";
-
-function layerUnder(event: PointerEvent) {
-  if (event.pointerType === "touch" || !(event.target instanceof Element)) return undefined;
-  return event.target.closest("[data-layer]")?.getAttribute("data-layer") ?? undefined;
-}
 
 export function PyramidSection() {
   const [focused, setFocused] = useState<string | null>(null);

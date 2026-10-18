@@ -108,7 +108,7 @@ function ScrollHint() {
       Scroll
       <Icon
         icon={ArrowDown01Icon}
-        className="size-4 motion-safe:animate-nudge"
+        className={cn("size-4", !scrolled && "motion-safe:animate-nudge")}
         aria-hidden="true"
       />
     </a>

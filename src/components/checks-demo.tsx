@@ -2,13 +2,15 @@ import { Tabs } from "@base-ui/react/tabs";
 import { useEffect, useRef, useState } from "react";
 
 import { FileChange } from "@/components/checks-file-change";
-import { concealed, iconOut, iconSwap, reveal, StatusPill } from "@/components/checks-motion";
+import { StatusPill } from "@/components/checks-motion";
 import { scenarios, type Scenario } from "@/components/checks-scenarios";
 import { ArrowUp02Icon, Icon, Loading03Icon, PlusSignIcon, Tick02Icon } from "@/components/icons";
 import { BullSticker } from "@/components/stickers/hero";
+import { ShimmerText } from "@/components/ui/shimmer-text";
 import { useBeats } from "@/hooks/use-beats";
 import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { concealed, iconOut, iconSwap, reveal } from "@/lib/motion-classes";
 import { cn } from "@/lib/utils";
 
 function playbackFor(reducedMotion: boolean, switched: boolean, entrance: Playback): Playback {
@@ -235,7 +237,8 @@ function Step({
         <Icon
           icon={Loading03Icon}
           className={cn(
-            "absolute inset-0 size-4 animate-spin text-primary",
+            "absolute inset-0 size-4 text-primary",
+            working && "animate-spin",
             iconSwap,
             !working && iconOut,
           )}
@@ -250,8 +253,8 @@ function Step({
         />
       </span>
       {working ? (
-        <span className="shimmer-text text-muted-foreground" data-text={text}>
-          {text}
+        <span className="text-muted-foreground">
+          <ShimmerText text={text} />
         </span>
       ) : (
         <span className={final ? "text-foreground" : "text-muted-foreground"}>{text}</span>
