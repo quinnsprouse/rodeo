@@ -31,8 +31,10 @@ export function PyramidSection() {
         A better foundation to build on.
       </h2>
       <p className="mt-s max-w-[520px] text-muted-foreground">
-        A note in a prompt fixes one session. A rule in the codebase fixes every session after it.
-        Rodeo does most of its work at the top, so agents write good code out of the box.
+        Agents copy whatever's already in a codebase. Give them a messy one and you get more mess,
+        just faster. So Rodeo starts with the foundation. The pyramid shows where its effort goes:
+        most into the codebase, less into static analysis and prose, and the least into human
+        review, which scales the worst.
       </p>
 
       <div className="mt-xl flex flex-col gap-xl sm:flex-row sm:items-start sm:gap-xl">
