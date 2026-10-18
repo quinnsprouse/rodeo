@@ -47,14 +47,18 @@ function Panel({ label, children }: { label: string; children: ReactNode }) {
 
 export function RenameFigure() {
   const card = useRef<HTMLDivElement>(null);
-  const beat = useBeats(beats, useScrollPlayback(card));
+  const playback = useScrollPlayback(card);
+  const beat = useBeats(beats, playback);
   const struck = beat >= struckBeat;
   const [hovered, setHovered] = useState<string | null>(null);
   const inComment = (idea: Idea) => hovered === idea || (beat >= ideas.indexOf(idea) && !struck);
   const inCode = (idea: Idea) => hovered === idea || beat >= ideas.indexOf(idea);
 
   return (
-    <Figure caption="a better name does the comment's job, and that's what the next agent copies.">
+    <Figure
+      caption="a better name does the comment's job, and that's what the next agent copies."
+      waiting={playback === "waiting"}
+    >
       <div
         ref={card}
         onPointerOver={(event) => setHovered(hoveredData(event, "idea"))}

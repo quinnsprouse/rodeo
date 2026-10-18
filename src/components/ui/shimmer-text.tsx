@@ -12,11 +12,7 @@ export function ShimmerText({
   return (
     <span className={cn("relative inline-block", className)}>
       {text}
-      {shimmering && (
-        <span aria-hidden="true" className="shimmer-window">
-          <span className="shimmer-copy">{text}</span>
-        </span>
-      )}
+      {shimmering && <span aria-hidden="true" data-text={text} className="shimmer-window" />}
     </span>
   );
 }

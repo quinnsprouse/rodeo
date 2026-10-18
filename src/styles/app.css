@@ -444,11 +444,17 @@
   animation: shimmer-window 2.8s linear infinite;
 }
 
-.shimmer-copy {
+.shimmer-window::after {
+  content: attr(data-text);
   display: block;
   color: var(--color-1);
   white-space: nowrap;
   animation: shimmer-copy 2.8s linear infinite;
+}
+
+.hold-still,
+.hold-still * {
+  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

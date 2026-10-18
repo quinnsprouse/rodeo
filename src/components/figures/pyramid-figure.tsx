@@ -46,7 +46,7 @@ export function PyramidFigure() {
   const visible = beat + 1;
 
   return (
-    <Figure caption="most of the work happens at the top.">
+    <Figure caption="most of the work happens at the top." waiting={playback === "waiting"}>
       <Card ref={card} className="py-xl">
         <div
           onPointerOver={(event) => setFocused(layerUnder(event) ?? null)}

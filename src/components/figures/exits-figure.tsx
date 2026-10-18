@@ -53,10 +53,14 @@ function exitsFor(lit: boolean) {
 
 export function ExitsFigure() {
   const card = useRef<HTMLDivElement>(null);
-  const beat = useBeats(beats, useScrollPlayback(card));
+  const playback = useScrollPlayback(card);
+  const beat = useBeats(beats, playback);
 
   return (
-    <Figure caption="one way out per rule, and it always leaves a reason.">
+    <Figure
+      caption="one way out per rule, and it always leaves a reason."
+      waiting={playback === "waiting"}
+    >
       <Card ref={card}>
         <dl className="grid gap-x-s gap-y-s text-s sm:grid-cols-[168px_1fr]">
           {exitsFor(beat >= reasonsBeat).map(({ rule, exit }, index) => {

@@ -36,7 +36,10 @@ export function UpkeepFigure() {
   const dimmed = (name: string) => focused !== null && focused !== name;
 
   return (
-    <Figure caption="the overhead piles up because every change has to read and fix more of it. also an illustration.">
+    <Figure
+      caption="the overhead piles up because every change has to read and fix more of it. also an illustration."
+      waiting={hidden}
+    >
       <Card ref={card}>
         <div
           onPointerOver={(event) => setFocused(hoveredData(event, "series"))}
@@ -100,7 +103,6 @@ export function UpkeepFigure() {
                 className={cn(
                   "flex cursor-default items-center gap-xs",
                   focusFade,
-                  dimmed(line.name) && "opacity-50",
                   focused === line.name && "text-foreground",
                 )}
               >

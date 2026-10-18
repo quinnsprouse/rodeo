@@ -2,9 +2,17 @@ import type { ReactNode, Ref } from "react";
 
 import { cn } from "@/lib/utils";
 
-export function Figure({ caption, children }: { caption: string; children: ReactNode }) {
+export function Figure({
+  caption,
+  waiting = false,
+  children,
+}: {
+  caption: string;
+  waiting?: boolean;
+  children: ReactNode;
+}) {
   return (
-    <figure className="py-s">
+    <figure className={cn("py-s", waiting && "hold-still")}>
       {children}
       <figcaption className="mt-s text-center text-xs text-pretty text-muted-foreground">
         {caption}

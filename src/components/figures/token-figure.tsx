@@ -85,7 +85,10 @@ export function TokenBarsFigure() {
   }, [playback]);
 
   return (
-    <Figure caption="where an agent's tokens go on one change. an illustration, not a benchmark.">
+    <Figure
+      caption="where an agent's tokens go on one change. an illustration, not a benchmark."
+      waiting={playback === "waiting"}
+    >
       <Card ref={card} className="py-xl">
         <div
           onPointerOver={(event) => setFocused(hoveredData(event, "part"))}

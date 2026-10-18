@@ -38,11 +38,15 @@ const indents: Record<LineKind, string> = {
 
 export function TerminalFigure() {
   const terminal = useRef<HTMLDivElement>(null);
-  const beat = useBeats(beats, useScrollPlayback(terminal));
+  const playback = useScrollPlayback(terminal);
+  const beat = useBeats(beats, playback);
   const settled = beat >= lines.length;
 
   return (
-    <Figure caption="the error says how to fix it, so the agent fixes it before you ever see the diff.">
+    <Figure
+      caption="the error says how to fix it, so the agent fixes it before you ever see the diff."
+      waiting={playback === "waiting"}
+    >
       <div
         ref={terminal}
         className="dark overflow-hidden rounded-l bg-card text-card-foreground ring ring-border"
@@ -69,7 +73,7 @@ export function TerminalFigure() {
                   line.id === "second-edit" && "pt-s",
                   reveal,
                   hidden && concealed,
-                  settled && line.retried && "opacity-45",
+                  settled && line.retried && "text-muted-foreground",
                 )}
               >
                 {marker && (
