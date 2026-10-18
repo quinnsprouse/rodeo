@@ -7,7 +7,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   // why: exactOptionalPropertyTypes rejects `workers: undefined`, so the key is omitted locally
   // and Playwright picks its default worker count.
-  ...(process.env.CI ? { workers: 1 } : {}),
+  ...(process.env.CI ? { workers: 2 } : {}),
   reporter: process.env.CI
     ? [["github"], ["html", { open: "never", outputFolder: "playwright-report" }]]
     : "list",
