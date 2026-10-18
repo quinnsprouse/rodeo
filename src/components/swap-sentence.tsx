@@ -80,7 +80,7 @@ function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
       onFocus={() => onHold(true)}
       onBlur={() => onHold(false)}
       aria-describedby={hintId}
-      className="group/chip inline-flex h-[1.2em] items-center gap-xxs rounded-l bg-muted pr-xs pl-xxs align-middle transition duration-(--motion-duration) ease-(--motion-easing) select-none hover:bg-neutral-4 active:translate-y-(--motion-press-distance) md:h-[1.34em] md:gap-xs md:pr-m"
+      className="group/chip relative isolate inline-flex h-[1.2em] items-center gap-xxs rounded-l bg-muted pr-xs pl-xxs align-middle transition duration-(--motion-duration) ease-(--motion-easing) select-none hover:bg-neutral-4 active:translate-y-(--motion-press-distance) md:h-[1.34em] md:gap-xs md:pr-m"
     >
       {animate ? (
         <ClientOnly fallback={<StaticChipFace choice={choice} />}>
