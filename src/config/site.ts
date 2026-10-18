@@ -23,7 +23,7 @@ export const homeMeta: PageMeta = {
   path: "/",
   title: "Rodeo — React starter for Claude Code and Codex",
   description:
-    "An agent-ready React starter with guardrails for AI agents. Built on Vite+, TanStack Start, shadcn/ui, and Tailwind v4.",
+    "Lint, hooks, and browser tests catch an agent's mistakes before you review them. Free, and built on Vite+ and TanStack Start.",
   image: {
     path: "/og-home.png",
     alt: "The Rodeo logo: a purple bull sticker beside the word rodeo.",

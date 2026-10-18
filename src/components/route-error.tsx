@@ -3,7 +3,7 @@ import type { ErrorComponentProps } from "@tanstack/react-router";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 
-const productionMessage = "The application hit an unexpected error. You can retry or return home.";
+const productionMessage = "Try again, or go back home.";
 
 export function RouteErrorComponent({ error }: ErrorComponentProps) {
   const router = useRouter();
@@ -16,7 +16,7 @@ export function RouteErrorComponent({ error }: ErrorComponentProps) {
     >
       <div className="space-y-xs">
         <p className="text-s font-medium text-muted-foreground">Error</p>
-        <h1 className="font-brand text-xl font-heavy text-balance">Something went wrong</h1>
+        <h1 className="font-brand text-xl font-heavy text-balance">This page didn't load</h1>
         <p className="text-muted-foreground">{message}</p>
       </div>
       <div className="flex flex-wrap justify-center gap-s">
