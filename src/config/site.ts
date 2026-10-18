@@ -37,7 +37,7 @@ export const philosophyMeta = {
     "How Rodeo thinks about building with agents, and why it drops code comments, unit tests, and long docs.",
   image: {
     path: "/og-rationale.png",
-    alt: "Rodeo Philosophy, with coin, scissors, and bull stickers.",
+    alt: "Rodeo Philosophy: how i think about building with agents, and why rodeo is different. With coin, scissors, and codebase stickers.",
   },
   published: "2026-10-17",
 } satisfies PageMeta & { published: string };
