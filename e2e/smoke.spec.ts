@@ -163,7 +163,7 @@ test("the scroll hint leads past the header and then gets out of the way", async
 
   await hint.click();
   await expect(
-    page.getByRole("heading", { name: "Fix it in the codebase, not the prompt." }),
+    page.getByRole("heading", { name: "A better foundation to build on." }),
   ).toBeInViewport();
   await expect(hint).toBeHidden();
   expect(browserErrors).toHaveLength(0);
