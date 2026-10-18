@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 
 import { RationaleArticle, rationaleSections } from "@/components/rationale-article";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -23,6 +24,16 @@ export const Route = createFileRoute("/philosophy")({
 
 function Rationale() {
   const active = useActiveSection(sectionIds);
+  const contents = useRef<HTMLOListElement>(null);
+  const marker = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    const item = contents.current?.querySelector<HTMLElement>(`[data-section="${active}"]`);
+    const line = marker.current;
+    if (!item || !line) return;
+    line.style.setProperty("--row-top", `${item.offsetTop}px`);
+    line.style.setProperty("--row-height", `${item.offsetHeight}px`);
+  }, [active]);
 
   return (
     <div className="min-h-svh bg-card px-l py-xxl sm:px-xl xl:grid xl:grid-cols-[1fr_560px_1fr] xl:gap-xxl xl:px-0 xl:py-22">
@@ -37,22 +48,32 @@ function Rationale() {
             </Link>
             <ThemeToggle className="-my-2.5 -mr-2.5" />
           </div>
-          <ol className="mt-xxl hidden space-y-s text-s xl:block">
-            {rationaleSections.map((section) => (
-              <li key={section.id}>
-                <a
-                  href={`#${section.id}`}
-                  aria-current={active === section.id ? "location" : undefined}
-                  className={cn(
-                    "transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
-                    active === section.id ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {section.title}
-                </a>
-              </li>
-            ))}
-          </ol>
+          <div className="relative mt-xxl hidden text-s xl:block">
+            <ol ref={contents} className="space-y-s">
+              {rationaleSections.map((section) => (
+                <li key={section.id} data-section={section.id}>
+                  <a
+                    href={`#${section.id}`}
+                    aria-current={active === section.id ? "location" : undefined}
+                    className={cn(
+                      "transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
+                      active === section.id ? "text-foreground" : "text-muted-foreground",
+                    )}
+                  >
+                    {section.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+            <span
+              ref={marker}
+              aria-hidden="true"
+              className={cn(
+                "pointer-events-none absolute top-0 -left-s follow-active-row w-0.5 rounded-full bg-foreground",
+                !active && "opacity-0",
+              )}
+            />
+          </div>
         </nav>
       </aside>
 

@@ -26,6 +26,9 @@ interface SnippetProps extends VariantProps<typeof snippetVariants> {
   onCopy?: () => void;
 }
 
+const iconMorph = "transition duration-(--motion-duration) ease-(--motion-easing)";
+const iconHidden = "opacity-0 motion-safe:scale-40 motion-safe:blur-xs";
+
 export function Snippet({
   text,
   prompt = true,
@@ -148,11 +151,22 @@ export function Snippet({
           className="mr-xs"
           aria-label={copied ? "Copied" : "Copy to clipboard"}
         >
-          <Icon
-            icon={copied ? Tick02Icon : Copy01Icon}
-            className={size === "lg" ? "size-[calc(var(--text-install)*1.1)]" : "size-5"}
+          <span
             aria-hidden="true"
-          />
+            className={cn(
+              "relative",
+              size === "lg" ? "size-[calc(var(--text-install)*1.1)]" : "size-5",
+            )}
+          >
+            <Icon
+              icon={Copy01Icon}
+              className={cn("absolute inset-0 size-full", iconMorph, copied && iconHidden)}
+            />
+            <Icon
+              icon={Tick02Icon}
+              className={cn("absolute inset-0 size-full", iconMorph, !copied && iconHidden)}
+            />
+          </span>
         </Button>
       </div>
       <output className={status === "failed" ? "mt-xs text-xs text-foreground" : "sr-only"}>
