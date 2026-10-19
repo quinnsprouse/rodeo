@@ -1,15 +1,9 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 
 import { Card, Figure } from "@/components/figures/figure";
-import { layerFocus, layerUnder, PyramidSlices, pyramidSlices } from "@/components/pyramid-slices";
-import { useBeats } from "@/hooks/use-beats";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { PyramidDiagram, pyramidLayers } from "@/components/pyramid-diagram";
+import { useEntrance } from "@/hooks/use-entrance";
 import { useScrollPlayback } from "@/hooks/use-scroll-playback";
-import { cn } from "@/lib/utils";
-
-const beats = [420, 420, 420, 380];
-const sheenBeat = pyramidSlices.length;
-const lastLayer = pyramidSlices.length - 1;
 
 function Sheen() {
   return (
@@ -20,8 +14,8 @@ function Sheen() {
     >
       <defs>
         <clipPath id="pyramid-sheen-clip">
-          {pyramidSlices.map((slice) => (
-            <path key={slice.name} d={slice.shape} />
+          {pyramidLayers.map((layer) => (
+            <path key={layer.name} d={layer.shape} />
           ))}
         </clipPath>
         <linearGradient id="pyramid-sheen" x1="0" y1="0" x2="0" y2="1">
@@ -40,40 +34,16 @@ function Sheen() {
 export function PyramidFigure() {
   const card = useRef<HTMLDivElement>(null);
   const playback = useScrollPlayback(card);
-  const beat = useBeats(beats, playback);
-  const reducedMotion = usePrefersReducedMotion();
-  const [focused, setFocused] = useState<string | null>(null);
-  const visible = beat + 1;
+  const entrance = useEntrance(playback, 700);
 
   return (
     <Figure caption="most of the work happens at the top." waiting={playback === "waiting"}>
       <Card ref={card} className="py-xl">
-        <div
-          onPointerOver={(event) => setFocused(layerUnder(event) ?? null)}
-          onPointerLeave={() => setFocused(null)}
-          className="flex items-center justify-center gap-l sm:gap-xl"
-        >
-          <div className="relative w-[150px] shrink-0 sm:w-[220px]">
-            <PyramidSlices focused={focused} visible={visible} className="w-full" />
-            {playback === "playing" && beat >= sheenBeat && !reducedMotion && <Sheen />}
-          </div>
-          <ol className="flex h-[118px] flex-col justify-around text-s whitespace-nowrap sm:h-[173px]">
-            {pyramidSlices.map(({ name }, index) => (
-              <li
-                key={name}
-                data-layer={name}
-                className={cn(
-                  layerFocus,
-                  index === lastLayer ? "text-muted-foreground" : "text-foreground",
-                  focused && focused !== name && "opacity-40",
-                  index >= visible && "-translate-x-1.5 opacity-0 blur-xs",
-                )}
-              >
-                {name}
-              </li>
-            ))}
-          </ol>
-        </div>
+        <PyramidDiagram
+          size="figure"
+          entrance={entrance}
+          overlay={playback === "playing" && entrance === "settled" && <Sheen />}
+        />
       </Card>
     </Figure>
   );
