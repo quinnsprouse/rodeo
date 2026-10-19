@@ -90,17 +90,15 @@ export function RationaleArticle() {
           build all of them off of.
         </p>
         <p>
-          and the better agents got, the more the way i worked had to change. i kept changing how i
-          worked, mostly because i was tired of waiting forever on an agent and then not trusting
-          what it wrote.
+          and the better agents got, the more i had to change how i worked, mostly because i was
+          tired of waiting forever on an agent and then not trusting what it wrote.
         </p>
         <p>
           the thing i kept running into is that agents are really good at copying whatever's already
           in your codebase.
         </p>
         <p>
-          rodeo is where all of that ended up. it's the starting place i wanted for any web app,
-          something durable and reliable from day one.
+          rodeo is where all of that ended up. it's the starting place i wanted for any web app.
         </p>
         <p>
           this isn't a setup guide. it's more about how i think about building with agents, and it's
@@ -130,8 +128,7 @@ export function RationaleArticle() {
         <p>
           so in rodeo, the codebase does most of the work. on top of that, lint checks everything,
           even the design. if an agent reaches for a color or a size that isn't in the theme, lint
-          fails it, so you don't end up with little design papercuts everywhere. and most lint
-          errors tell the agent how to fix it.
+          fails it, so you don't end up with little design papercuts everywhere.
         </p>
         <p>
           agents take the shortest path, every time. left alone, an agent will write a server
@@ -199,8 +196,9 @@ export function RationaleArticle() {
         <p>
           agents love writing tests like "the header says welcome". then you change the header, the
           test fails even though nothing broke, and the agent burns tokens rewriting a test that
-          never caught anything. a browser test clicks through the app like a person would, so when
-          it fails, something's broken.
+          never caught anything. a browser test clicks through the app like a person would. it still
+          trips when you reword a heading, mine did this week, but when it fails on a flow, a person
+          would've hit it too.
         </p>
         <p>
           browser tests are slower, sure. but you need way fewer of them, and they test what people
@@ -226,8 +224,7 @@ export function RationaleArticle() {
       <Section id="change" Sticker={ScissorsSticker}>
         <p>
           none of this is set in stone. models keep getting smarter, and some of these guardrails
-          are going to stop pulling their weight. a rule that saves an agent today might just be
-          noise for the next model.
+          are going to stop pulling their weight.
         </p>
         <p>
           when a guardrail stops catching real mistakes, i'll take it out. rodeo should fit what the
