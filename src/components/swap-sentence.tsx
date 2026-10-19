@@ -86,7 +86,7 @@ function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
       {animate ? (
         <ClientOnly fallback={<StaticChipFace choice={choice} />}>
           <Suspense fallback={<StaticChipFace choice={choice} />}>
-            <AnimatedChipFace choice={choice} />
+            <AnimatedChipFace choices={choices} pick={pick % choices.length} />
           </Suspense>
         </ClientOnly>
       ) : (
