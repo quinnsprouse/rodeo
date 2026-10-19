@@ -11,7 +11,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 **Write browser tests this way:**
 
 - Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, which loads `.env.e2e`, then tests the built server.
-- Select elements by role or text. Assert that the page threw nothing, with `trackBrowserErrors` from `e2e/smoke.spec.ts`.
+- Select elements by role or text. Assert that the page threw nothing, with `trackBrowserErrors` from `e2e/helpers.ts`.
 - To reach an error that a browser API controls, stub the API with `page.addInitScript`, as the clipboard tests do.
 - Add each new route to `e2e/accessibility.spec.ts`. Fix an axe violation instead of turning the rule off.
 

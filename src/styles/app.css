@@ -222,28 +222,7 @@
   --shadow-m: 0px 8px 24px 0px #00000000;
   --shadow-l: 0px 12px 30px 0px #00000000;
 
-  --text-logo: clamp(3rem, min(9vw, 11vh), 6rem);
-  --text-logo--line-height: 1.125;
-  --text-display: clamp(1.125rem, 6.3cqi, 3rem);
-  --text-display--line-height: 1.6;
-  --text-display-wide: clamp(2rem, min(4.6vw, 7.5vh), 4rem);
-  --text-display-wide--line-height: 1.45;
-  --text-install: clamp(0.875rem, min(1.55vw, 2.6vh), 1.375rem);
-  --text-install--line-height: 1.5;
-
   --breakpoint-xs: 28rem;
-
-  --animate-nudge: nudge 1.8s ease-in-out infinite;
-
-  @keyframes nudge {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(4px);
-    }
-  }
 }
 
 @theme inline {
@@ -329,51 +308,6 @@
   }
 }
 
-@utility reveal-on-scroll {
-  @media (prefers-reduced-motion: no-preference) {
-    @supports (animation-timeline: view()) {
-      animation: reveal-on-scroll linear both;
-      animation-timeline: view();
-      animation-range: entry 0% cover 30%;
-    }
-  }
-}
-
-@keyframes reveal-on-scroll {
-  from {
-    filter: blur(4px);
-    translate: 0 6px;
-  }
-}
-
-@utility wipe {
-  clip-path: inset(0 var(--wipe-hidden, 0%) 0 0);
-  @media (prefers-reduced-motion: no-preference) {
-    transition: clip-path 1400ms cubic-bezier(0.645, 0.045, 0.355, 1);
-  }
-}
-
-@utility wipe-hidden {
-  --wipe-hidden: 100%;
-}
-
-@utility soft-focus {
-  filter: blur(2px);
-}
-
-@utility sheen-sweep {
-  animation: sheen-sweep 1000ms cubic-bezier(0.645, 0.045, 0.355, 1) both;
-}
-
-@keyframes sheen-sweep {
-  from {
-    translate: 0 -100px;
-  }
-  to {
-    translate: 0 260px;
-  }
-}
-
 @utility divider-t {
   box-shadow: inset 0 var(--border-s) 0 0 var(--border-default-color);
 }
@@ -384,33 +318,6 @@
 
 @utility divider-r {
   box-shadow: inset calc(var(--border-s) * -1) 0 0 0 var(--border-default-color);
-}
-
-@utility clip-to-active-tab {
-  clip-path: inset(
-    calc(var(--active-tab-top) - var(--clip-outset, 0px))
-      calc(var(--active-tab-right) - var(--clip-outset, 0px))
-      calc(var(--active-tab-bottom) - var(--clip-outset, 0px))
-      calc(var(--active-tab-left) - var(--clip-outset, 0px)) round var(--radius-full)
-  );
-  @media (prefers-reduced-motion: no-preference) {
-    transition: clip-path var(--motion-large-duration) var(--motion-large-easing);
-  }
-}
-
-@utility follow-active-row {
-  translate: 0 var(--row-top, 0px);
-  height: var(--row-height, 0px);
-  @media (prefers-reduced-motion: no-preference) {
-    transition:
-      translate var(--motion-large-duration) var(--motion-large-easing),
-      height var(--motion-large-duration) var(--motion-large-easing),
-      opacity var(--motion-duration) var(--motion-easing);
-  }
-}
-
-@utility clip-outset-border {
-  --clip-outset: var(--border-s);
 }
 
 [data-slot="icon"] * {
@@ -450,11 +357,6 @@
   color: var(--color-1);
   white-space: nowrap;
   animation: shimmer-copy 2.8s linear infinite;
-}
-
-.hold-still,
-.hold-still * {
-  transition: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -497,3 +399,5 @@ html.theme-snap *::before,
 html.theme-snap *::after {
   transition: none !important;
 }
+
+@import "./demo.css";

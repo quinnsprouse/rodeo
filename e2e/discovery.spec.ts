@@ -1,10 +1,6 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-const origin = "https://rodeo.example";
-
-async function structuredData(page: Page): Promise<unknown> {
-  return JSON.parse(String(await page.locator('script[type="application/ld+json"]').textContent()));
-}
+import { origin } from "./helpers";
 
 test("robots.txt points crawlers at a sitemap of every page", async ({ request }) => {
   const robots = await request.get("/robots.txt");
@@ -12,92 +8,53 @@ test("robots.txt points crawlers at a sitemap of every page", async ({ request }
 
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.headers()["content-type"]).toContain("application/xml");
-  const pages = await sitemap.text();
-  expect(pages).toContain(`<loc>${origin}/</loc>`);
-  expect(pages).toContain(`<loc>${origin}/philosophy</loc>`);
+  expect(await sitemap.text()).toContain(`<loc>${origin}/</loc>`);
 });
 
 test("llms.txt links every page as Markdown and the agent rules", async ({ request }) => {
-  const response = await request.get("/llms.txt");
-  const index = await response.text();
+  const index = await (await request.get("/llms.txt")).text();
 
   expect(index).toMatch(/^# Rodeo\n/);
   expect(index).toContain(`(${origin}/index.md)`);
-  expect(index).toContain(`(${origin}/philosophy.md)`);
   expect(index).toContain("/main/AGENTS.md)");
 });
 
 test("agents can read each page as Markdown", async ({ page, request }) => {
-  const negotiated = await request.get("/philosophy", { headers: { accept: "text/markdown" } });
+  const negotiated = await request.get("/", { headers: { accept: "text/markdown" } });
   expect(negotiated.status()).toBe(200);
   expect(negotiated.headers()["content-type"]).toContain("text/markdown");
   expect(negotiated.headers().vary).toContain("accept");
-  const article = await negotiated.text();
-  expect(article).toMatch(/^# Rodeo Philosophy/);
 
-  const home = await (await request.get("/index.md")).text();
-  expect(home).toMatch(/^# rodeo: A free React starter for Claude Code and Codex\./);
-  expect(home).toContain(`[Read the philosophy](${origin}/philosophy)`);
+  const markdown = await request.get("/index.md");
+  expect(markdown.status()).toBe(200);
+  expect(markdown.headers()["content-type"]).toContain("text/markdown");
 
-  const browser = await request.get("/philosophy", {
+  const browser = await request.get("/", {
     headers: { accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
   });
   expect(browser.headers()["content-type"]).toContain("text/html");
 
-  await page.goto("/philosophy");
+  await page.goto("/");
   await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute(
     "href",
-    `${origin}/philosophy.md`,
+    `${origin}/index.md`,
   );
 });
 
-test("each page describes itself with structured data", async ({ page }) => {
-  await page.goto("/");
-  expect(await structuredData(page)).toMatchObject({
-    "@graph": expect.arrayContaining([
-      expect.objectContaining({
-        "@type": "SoftwareSourceCode",
-        codeRepository: "https://github.com/quinnsprouse/rodeo",
-      }),
-    ]),
-  });
-
-  await page.goto("/philosophy");
-  expect(await structuredData(page)).toMatchObject({
-    "@type": "Article",
-    url: `${origin}/philosophy`,
-    datePublished: "2026-10-17",
-  });
-  await expect(page.locator("article time")).toHaveAttribute("datetime", "2026-10-17");
-});
-
 test("shared links credit the author on X", async ({ page }) => {
-  await page.goto("/philosophy");
+  await page.goto("/");
 
   await expect(page.locator('meta[name="twitter:creator"]')).toHaveAttribute(
     "content",
     "@QuinnSprouse",
   );
-  expect(await structuredData(page)).toMatchObject({
-    author: { sameAs: expect.arrayContaining(["https://x.com/QuinnSprouse"]) },
-  });
-});
-
-test("the old /rationale URL redirects permanently to /philosophy", async ({ request }) => {
-  const page = await request.get("/rationale", { maxRedirects: 0 });
-  expect(page.status()).toBe(308);
-  expect(page.headers().location).toBe("/philosophy");
-
-  const markdown = await request.get("/rationale.md", { maxRedirects: 0 });
-  expect(markdown.status()).toBe(308);
-  expect(markdown.headers().location).toBe("/philosophy.md");
 });
 
 test("a trailing slash redirects permanently to the page", async ({ request }) => {
-  const response = await request.get("/philosophy/?ref=x", { maxRedirects: 0 });
+  const response = await request.get("/definitely-missing/?ref=x", { maxRedirects: 0 });
 
   expect(response.status()).toBe(308);
-  expect(response.headers().location).toBe("/philosophy?ref=x");
+  expect(response.headers().location).toBe("/definitely-missing?ref=x");
 });
 
 test("older browsers and crawlers find the icon at /favicon.ico", async ({ request }) => {
