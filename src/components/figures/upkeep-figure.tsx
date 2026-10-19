@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 const series = [
   {
-    name: "most codebases",
+    name: "without rodeo",
     path: "M6 164 C 170 160, 330 118, 496 18",
     end: 18,
     stroke: "stroke-muted-foreground",
@@ -61,7 +61,7 @@ export function UpkeepFigure() {
             <path
               d={piledUp}
               fill="url(#upkeep-pile)"
-              className={cn(focusFade, dimmed("most codebases") && "opacity-0")}
+              className={cn(focusFade, dimmed("without rodeo") && "opacity-0")}
             />
             {series.map((line) => (
               <g

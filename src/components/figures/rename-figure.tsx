@@ -1,47 +1,61 @@
 import { useRef, useState, type ReactNode } from "react";
 
-import { Figure } from "@/components/figures/figure";
+import { Card, Figure } from "@/components/figures/figure";
 import { useBeats } from "@/hooks/use-beats";
 import { useScrollPlayback } from "@/hooks/use-scroll-playback";
 import { hoveredData } from "@/lib/hover";
+import { concealed, reveal } from "@/lib/motion-classes";
 import { cn } from "@/lib/utils";
 
-type Idea = "edit" | "author" | "admin";
+type Idea = "author" | "admin";
 
-const ideas: Idea[] = ["edit", "author", "admin"];
-const beats = [600, 500, 500, 700];
-const struckBeat = ideas.length;
+const beats = [500, 650, 450, 300];
+const rodeoBeat = 1;
+const namedBeat: Record<Idea, number> = { author: 2, admin: 3 };
 
-function Mark({
-  idea,
-  lit,
-  children,
-}: {
-  idea: Idea;
-  lit: (idea: Idea) => boolean;
-  children: ReactNode;
-}) {
+function Mark({ idea, lit, children }: { idea: Idea; lit: boolean; children: ReactNode }) {
   return (
     <span
       data-idea={idea}
       className={cn(
-        "-mx-0.5 cursor-default rounded-xs px-0.5 transition-colors duration-300 ease-(--motion-large-easing)",
-        lit(idea) && "bg-primary-transparent text-foreground",
+        "relative isolate cursor-default transition-colors duration-300 ease-(--motion-large-easing)",
+        lit && "text-foreground",
       )}
     >
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute -inset-x-0.5 inset-y-0 -z-10 origin-left rounded-xs bg-primary-transparent transition-transform duration-300 ease-(--motion-large-easing)",
+          !lit && "scale-x-0",
+        )}
+      />
       {children}
     </span>
   );
 }
 
-function Panel({ label, children }: { label: string; children: ReactNode }) {
+function Row({ label, shown, children }: { label: string; shown: boolean; children: ReactNode }) {
   return (
-    <div className="space-y-xs rounded-m bg-card px-m py-s">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <pre className="font-data text-s whitespace-pre-wrap text-foreground">
+    <>
+      <span
+        className={cn(
+          "mt-s text-s text-foreground first:mt-0 sm:mt-0",
+          reveal,
+          !shown && concealed,
+        )}
+      >
+        {label}
+      </span>
+      <pre
+        className={cn(
+          "rounded-m bg-muted px-m py-s font-data text-xs leading-4.5 whitespace-pre-wrap text-foreground delay-100",
+          reveal,
+          !shown && concealed,
+        )}
+      >
         <code>{children}</code>
       </pre>
-    </div>
+    </>
   );
 }
 
@@ -49,64 +63,56 @@ export function RenameFigure() {
   const card = useRef<HTMLDivElement>(null);
   const playback = useScrollPlayback(card);
   const beat = useBeats(beats, playback);
-  const struck = beat >= struckBeat;
   const [hovered, setHovered] = useState<string | null>(null);
-  const inComment = (idea: Idea) => hovered === idea || (beat >= ideas.indexOf(idea) && !struck);
-  const inCode = (idea: Idea) => hovered === idea || beat >= ideas.indexOf(idea);
+  const named = (idea: Idea) => (hovered === null ? beat >= namedBeat[idea] : hovered === idea);
+  const spelledOut = (idea: Idea) => hovered === idea;
 
   return (
     <Figure
       caption="a better name does the comment's job, and that's what the next agent copies."
       waiting={playback === "waiting"}
     >
-      <div
-        ref={card}
-        onPointerOver={(event) => setHovered(hoveredData(event, "idea"))}
-        onPointerLeave={() => setHovered(null)}
-        className="space-y-xs rounded-l bg-background p-xs ring ring-border"
-      >
-        <Panel label="Before">
-          <span
-            className={cn(
-              "line-through decoration-transparent transition-colors duration-500 ease-(--motion-large-easing)",
-              struck && "text-muted-foreground decoration-muted-foreground",
-            )}
-          >
-            {"// Only the "}
-            <Mark idea="author" lit={inComment}>
-              author
+      <Card ref={card}>
+        <div
+          onPointerOver={(event) => setHovered(hoveredData(event, "idea"))}
+          onPointerLeave={() => setHovered(null)}
+          className="grid items-center gap-x-m gap-y-xs sm:grid-cols-[112px_1fr] sm:gap-y-m"
+        >
+          <Row label="without rodeo" shown={beat >= 0}>
+            <span className="text-muted-foreground">
+              {"// only "}
+              <Mark idea="author" lit={named("author")}>
+                authors
+              </Mark>
+              {" and "}
+              <Mark idea="admin" lit={named("admin")}>
+                admins
+              </Mark>
+              {" can edit"}
+            </span>
+            {"\nif ("}
+            <Mark idea="author" lit={spelledOut("author")}>
+              user.id === post.authorId
             </Mark>
-            {" or an "}
-            <Mark idea="admin" lit={inComment}>
-              admin
+            {" ||\n    "}
+            <Mark idea="admin" lit={spelledOut("admin")}>
+              user.role === "admin"
             </Mark>
-            {" can "}
-            <Mark idea="edit" lit={inComment}>
-              edit
+            {") {"}
+          </Row>
+          <Row label="rodeo" shown={beat >= rodeoBeat}>
+            {"if ("}
+            <Mark idea="author" lit={named("author")}>
+              isAuthor
             </Mark>
-          </span>
-          {'\nif (user.id === post.authorId || user.role === "admin") {'}
-        </Panel>
-        <Panel label="After">
-          {"const "}
-          <Mark idea="edit" lit={inCode}>
-            canEdit
-          </Mark>
-          {" = "}
-          <Mark idea="author" lit={inCode}>
-            isAuthor
-          </Mark>
-          {"(user, post) || "}
-          <Mark idea="admin" lit={inCode}>
-            isAdmin
-          </Mark>
-          {"(user);\nif ("}
-          <Mark idea="edit" lit={inCode}>
-            canEdit
-          </Mark>
-          {") {"}
-        </Panel>
-      </div>
+            {"(user, post) ||\n    "}
+            <Mark idea="admin" lit={named("admin")}>
+              isAdmin
+            </Mark>
+            {"(user)) {"}
+          </Row>
+        </div>
+      </Card>
     </Figure>
   );
 }
