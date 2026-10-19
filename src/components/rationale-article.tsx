@@ -130,8 +130,8 @@ export function RationaleArticle() {
         <p>
           so in rodeo, the codebase does most of the work. on top of that, lint checks everything,
           even the design. if an agent reaches for a color or a size that isn't in the theme, lint
-          fails it, so you don't end up with little design papercuts everywhere. and every lint
-          error tells the agent how to fix it.
+          fails it, so you don't end up with little design papercuts everywhere. and most lint
+          errors tell the agent how to fix it.
         </p>
         <p>
           agents take the shortest path, every time. left alone, an agent will write a server
@@ -159,8 +159,9 @@ export function RationaleArticle() {
         </p>
         <CatchFigure />
         <p>
-          every error names its fix. an error that just says no teaches the agent to sneak around
-          it. write bg-gray-100 and the error lists the theme colors to use instead.
+          rodeo's errors name their fix, most of them anyway. an error that just says no teaches the
+          agent to sneak around it. write bg-gray-100 and the error lists the theme colors to use
+          instead.
         </p>
         <p>
           it sounds small, but you stop finding the same mistake in every review, because the agent
