@@ -18,7 +18,7 @@ export function StartCta({ installCommand }: { installCommand: string }) {
       </div>
 
       <h2 className="max-w-[240px] font-brand text-l font-heavy tracking-xs sm:max-w-[440px] sm:text-xl">
-        Start with the guardrails in place.
+        Use it for your next app.
       </h2>
       <p className="mt-s max-w-[460px]">
         Clone it and point Claude Code or Codex at AGENTS.md. Both run the same hooks, and Vite+,

@@ -21,11 +21,11 @@ const layers: { name: string; detail: string; Sticker: ComponentType<StickerProp
     detail: "One-way imports, theme tokens, server-only files.",
     Sticker: CodebaseSticker,
   },
-  { name: "Static analysis", detail: "Every error names its fix.", Sticker: StaticAnalysisSticker },
+  { name: "Static analysis", detail: "Most errors name the fix.", Sticker: StaticAnalysisSticker },
   { name: "Prose", detail: "Short guides, read when needed.", Sticker: ProseSticker },
   {
     name: "Human review",
-    detail: "Only the exceptions, each marked.",
+    detail: "Whether the feature makes sense.",
     Sticker: HumanReviewSticker,
   },
 ];
@@ -41,7 +41,7 @@ export function PyramidSection() {
   return (
     <PageSection id={pyramidSectionId}>
       <h2 className="font-brand text-l font-heavy text-foreground">
-        A better foundation to build on.
+        Start with code you want the agent to copy.
       </h2>
       <p className="mt-s max-w-[520px] text-muted-foreground">
         Agents now write a lot of our code, and they learn by copying what's already there. Good

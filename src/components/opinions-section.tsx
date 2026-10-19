@@ -21,13 +21,13 @@ const opinions: { title: string; reason: string; Sticker: ComponentType<StickerP
   {
     title: "Browser tests, not unit tests",
     reason:
-      'Agents often write unit tests like "the header says Welcome." Change the copy and the test fails though nothing broke, so the agent spends tokens rewriting it. A browser test clicks through a real flow. When it fails, a person would have hit the same bug.',
+      'Agents often write unit tests like "the header says Welcome." Change the copy and the test fails though nothing broke, so the agent spends tokens rewriting it. A browser test clicks through a real flow instead, so it\'s checking what people actually do.',
     Sticker: BrowserTestsSticker,
   },
   {
     title: "Lint rules stay on",
     reason:
-      "When a lint rule gets in the way, the easy fix for an agent is a disable comment, and the problem hides. Rodeo rejects those comments. Exceptions go in vite.config.ts with a reason, so you can see them all in one file.",
+      "When a lint rule gets in the way, the easy fix for an agent is a disable comment, and the problem hides. Rodeo rejects those comments. Exceptions go in two config files, each with a written reason, so you can find every one of them.",
     Sticker: LintRulesSticker,
   },
   {
@@ -39,13 +39,13 @@ const opinions: { title: string; reason: string; Sticker: ComponentType<StickerP
   {
     title: "One design system",
     reason:
-      "Left alone, an agent reaches for a new gray or a 13px font whenever it needs one, and each screen drifts a little further. Lint knows the theme's sizes and colors and rejects anything else, so new screens match the old ones without you checking.",
+      "Left alone, an agent reaches for a new gray or a 13px font whenever it needs one, and each screen drifts a little further. Lint knows the theme's colors and font sizes and rejects the rest, so new screens are built from the same pieces as the old ones.",
     Sticker: DesignSystemSticker,
   },
   {
     title: "Code flows one way",
     reason:
-      "Routes import components, components import hooks, and hooks import src/lib. Lint blocks any import that points back up. So when an agent edits a component, it knows nothing below can break.",
+      "Routes import components, components import hooks, and hooks import src/lib. Lint blocks imports that point back up, so editing a component can't break the hooks and helpers under it.",
     Sticker: OneWaySticker,
   },
 ];
