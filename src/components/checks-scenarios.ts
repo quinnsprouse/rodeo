@@ -28,7 +28,8 @@ export const scenarios: Scenario[] = [
     stepsBefore: ["Read AGENTS.md", "Edit src/routes/pricing.tsx"],
     caught: {
       title: "process.env in browser code",
-      detail: "Loaders run in the browser too. Move Stripe to a .server.ts file.",
+      detail:
+        "Loaders run in the browser too. Put Stripe in a .server.ts file and call it through a server function.",
     },
     stepsAfter: ["Move Stripe to prices.server.ts", "Format, lint, and types pass"],
     result: "Your pricing page is ready.",
@@ -72,7 +73,7 @@ export const scenarios: Scenario[] = [
       title: "Unused export: formatPrice",
       detail: "Nothing imports it anymore. Delete it, or use it.",
     },
-    stepsAfter: ["Delete formatPrice", "Build, dead code, and browser tests pass"],
+    stepsAfter: ["Delete formatPrice and commit", "Build, dead code, and browser tests pass"],
     result: "Pushed to origin/pricing-page.",
     file: {
       path: "src/lib/format.ts",
