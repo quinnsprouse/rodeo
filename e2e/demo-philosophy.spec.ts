@@ -3,10 +3,10 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { axeViolations, origin, structuredData, trackBrowserErrors } from "./helpers";
 
 const lastToAppear = [
-  { figure: "terminal", text: "Format, lint, and types pass" },
+  { figure: "catch", text: "caught in the pull request" },
   { figure: "token bars", text: "reading docs" },
   { figure: "upkeep chart", text: "a year in" },
-  { figure: "escape hatches", text: "skipping a hook" },
+  { figure: "rename", text: "isAdmin" },
 ];
 
 function finalLine(page: Page, text: string) {

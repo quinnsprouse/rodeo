@@ -1,9 +1,8 @@
 import type { ComponentType, ReactNode } from "react";
 
-import { ExitsFigure } from "@/components/figures/exits-figure";
+import { CatchFigure } from "@/components/figures/catch-figure";
 import { PyramidFigure } from "@/components/figures/pyramid-figure";
 import { RenameFigure } from "@/components/figures/rename-figure";
-import { TerminalFigure } from "@/components/figures/terminal-figure";
 import { TokenBarsFigure } from "@/components/figures/token-figure";
 import { UpkeepFigure } from "@/components/figures/upkeep-figure";
 import type { StickerProps } from "@/components/stickers/frame";
@@ -11,7 +10,6 @@ import { HeartSticker, ScissorsSticker, TokenSticker } from "@/components/sticke
 import {
   CodebaseSticker,
   HumanReviewSticker,
-  OneWaySticker,
   StaticAnalysisSticker,
 } from "@/components/stickers/topics";
 import { philosophyMeta } from "@/config/site";
@@ -21,7 +19,6 @@ export const rationaleSections = [
   { id: "teaching", title: "Teaching through the codebase" },
   { id: "catching", title: "Catching mistakes where they happen" },
   { id: "tokens", title: "Spending tokens on signal" },
-  { id: "way-out", title: "One way out" },
   { id: "review", title: "You review what matters" },
   { id: "change", title: "This will change" },
   { id: "thanks", title: "Acknowledgements" },
@@ -88,41 +85,30 @@ export function RationaleArticle() {
 
       <div className="space-y-m">
         <p>
-          rodeo is a react starter for building with agents. you clone it, point claude code or
-          codex at it, and the agent writes pretty good code on the first try. most of the time
-          anyway.
+          rodeo is the react starter i built for myself to work with agents. as agents got better, i
+          started building more and more web apps with them, and i needed a solid foundation to
+          build all of them off of.
         </p>
         <p>
-          i built rodeo for myself. as agents got better, i started building more and more web apps
-          with them, and i needed a solid foundation to build all of them off of.
-        </p>
-        <p>
-          and the better agents got, the more the way i worked had to change. i kept changing how i
-          worked, mostly because i was tired of waiting forever on an agent and then not trusting
-          what it wrote.
+          and the better agents got, the more i had to change how i worked, mostly because i was
+          tired of waiting forever on an agent and then not trusting what it wrote.
         </p>
         <p>
           the thing i kept running into is that agents are really good at copying whatever's already
-          in your codebase. if it's messy you get more mess, just faster. if it's clean and strict,
-          you get clean and strict.
+          in your codebase.
         </p>
         <p>
-          rodeo is where all of that ended up. it's the starting place i wanted for any web app,
-          something durable and reliable from day one.
+          rodeo is where all of that ended up. it's the starting place i wanted for any web app.
         </p>
         <p>
-          this isn't a setup guide, the readme has that. it's more about how i think about building
-          with agents, and why rodeo drops a few habits you're probably used to, like comments and
-          unit tests.
+          this isn't a setup guide. it's more about how i think about building with agents, and it's
+          opinionated.
         </p>
         <p>
           everything in rodeo comes back to three ideas: teach with the codebase, catch mistakes
           where they happen, and spend tokens on signal.
         </p>
-        <p>
-          none of them are new honestly. agents just made them matter a lot more, because an agent
-          will happily repeat anything you let slide.
-        </p>
+        <p>none of them are new honestly. agents just made them matter a lot more.</p>
         <p>
           you'll probably disagree with some of it, and that's fine. it's a starter. rip out
           whatever doesn't work for you.
@@ -142,28 +128,21 @@ export function RationaleArticle() {
         <p>
           so in rodeo, the codebase does most of the work. on top of that, lint checks everything,
           even the design. if an agent reaches for a color or a size that isn't in the theme, lint
-          fails it, so you don't end up with little design papercuts everywhere. and every lint
-          error tells the agent how to fix it. then there are seven short guides an agent only reads
-          when it needs one. and then you, looking at whatever's left.
+          fails it, so you don't end up with little design papercuts everywhere.
         </p>
         <p>
-          the trick is making the easy thing the right thing. agents take the shortest path, every
-          time. so if the shortest path is importing server code into a component, that's exactly
-          what you'll get. in rodeo that import fails the build, so the shortest path goes somewhere
-          better.
+          agents take the shortest path, every time. left alone, an agent will write a server
+          function that trusts whatever the browser sends. in rodeo that fails lint until the
+          function checks its input with a schema.
         </p>
         <PyramidFigure />
-        <p>
-          if your first instinct is a longer AGENTS.md, i get it, mine was too. but every line you
-          add there is a suggestion. a lint rule isn't.
-        </p>
       </Section>
 
       <Section id="catching" Sticker={StaticAnalysisSticker}>
         <p>
           an agent is at its best right after it writes something. the file's open, the context is
-          fresh, and fixing it costs one more edit. the same mistake caught in review costs you a
-          whole round trip.
+          fresh, and fixing it costs one more edit. the same mistake caught in a pull request costs
+          a review comment, another commit, and another CI run.
         </p>
         <p>
           so rodeo checks all the time. every edit gets formatted, linted and typechecked. the end
@@ -171,15 +150,15 @@ export function RationaleArticle() {
           app and run every browser test, and CI starts from a clean install and does it all again.
         </p>
         <p>
-          the fast checks only look at the file the agent just touched, so they come back quick. the
-          slow stuff, building the whole app and running browser tests, waits until you push, when
-          you're done anyway.
+          the fast checks mostly look at the file the agent just touched, so they come back quick.
+          the slow stuff, building the whole app and running browser tests, waits until you push,
+          when you're done anyway.
         </p>
-        <TerminalFigure />
+        <CatchFigure />
         <p>
-          that's the other thing. every error names its fix. an error that just says no teaches the
-          agent to sneak around it. one that says "use a clearer name" teaches it what you actually
-          wanted.
+          rodeo's errors name their fix, most of them anyway. an error that just says no teaches the
+          agent to sneak around it. write bg-gray-100 and the error lists the theme colors to use
+          instead.
         </p>
         <p>
           it sounds small, but you stop finding the same mistake in every review, because the agent
@@ -217,49 +196,27 @@ export function RationaleArticle() {
         <p>
           agents love writing tests like "the header says welcome". then you change the header, the
           test fails even though nothing broke, and the agent burns tokens rewriting a test that
-          never caught anything. a browser test clicks through the app like a person would, so when
-          it fails, something's broken.
+          never caught anything. a browser test clicks through the app like a person would. it still
+          trips when you reword a heading, mine did this week, but when it fails on a flow, a person
+          would've hit it too.
         </p>
         <p>
-          browser tests are slower, sure. but you need way fewer of them, they test what people do,
-          and they don't fall over every time you rename something.
+          browser tests are slower, sure. but you need way fewer of them, and they test what people
+          do.
         </p>
         <Subheading>Docs</Subheading>
         <p>
-          rodeo has seven short guides and that's it. an agent opens one when the task needs it. a
-          hook blocks new docs anywhere else, because docs go stale and agents trust them anyway.
+          rodeo has seven short guides. an agent opens one when the task needs it. a hook blocks new
+          docs in most of the repo, because docs go stale and agents trust them anyway.
         </p>
-        <p>
-          if something can be a lint rule, it's a lint rule. docs are for the stuff code can't say.
-        </p>
-      </Section>
-
-      <Section id="way-out" Sticker={OneWaySticker}>
-        <p>
-          every rule needs a way out, or agents find their own, and theirs is usually worse. so each
-          rule in rodeo has exactly one exit, and it always makes you leave a reason behind.
-        </p>
-        <p>
-          inline disable comments are just banned. if a rule is wrong for a file, the exception goes
-          in vite.config.ts with a why: comment. it's all in one file, so it's easy to see
-          everything that's been bent, and why.
-        </p>
-        <ExitsFigure />
-        <p>
-          and when an agent makes the same mistake twice, it becomes a rule, not another paragraph
-          in a doc. that's pretty much how rodeo got built.
-        </p>
+        <p>if something can be a lint rule, it's a lint rule.</p>
       </Section>
 
       <Section id="review" Sticker={HumanReviewSticker}>
         <p>
-          none of this is about taking people out of the loop. it's about what you spend your
-          attention on. if the codebase catches the comments and the random colors and the
-          unvalidated inputs, your review goes to the stuff that needs a person.
-        </p>
-        <p>
-          you still review, obviously. but instead of writing "please don't add a comment here" for
-          the hundredth time, you're looking at whether the feature actually makes sense.
+          i still want to read what the agent wrote and decide whether the feature makes sense. i
+          just don't want to spend that time pointing out the same random colors or missing input
+          checks.
         </p>
         <p>after a week in a rodeo app i hope you trust your agents a little more.</p>
       </Section>
@@ -267,8 +224,7 @@ export function RationaleArticle() {
       <Section id="change" Sticker={ScissorsSticker}>
         <p>
           none of this is set in stone. models keep getting smarter, and some of these guardrails
-          are going to stop pulling their weight. a rule that saves an agent today might just be
-          noise for the next model.
+          are going to stop pulling their weight.
         </p>
         <p>
           when a guardrail stops catching real mistakes, i'll take it out. rodeo should fit what the

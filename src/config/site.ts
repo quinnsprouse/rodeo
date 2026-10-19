@@ -34,7 +34,7 @@ export const philosophyMeta = {
   path: "/philosophy",
   title: "Rodeo Philosophy",
   description:
-    "How Rodeo thinks about building with agents, and why it drops code comments, unit tests, and long docs.",
+    "how i think about building with agents, and why rodeo drops code comments, unit tests, and long docs.",
   image: {
     path: "/og-rationale.png",
     alt: "Rodeo Philosophy: how i think about building with agents. With coin, scissors, and codebase stickers.",

@@ -96,7 +96,7 @@ export function TokenBarsFigure() {
           className="space-y-m"
         >
           <div className="grid grid-cols-[96px_1fr] items-center gap-m text-s sm:grid-cols-[112px_1fr]">
-            <span className="text-foreground">most codebases</span>
+            <span className="text-foreground">without rodeo</span>
             <Track
               overlay={
                 <div
