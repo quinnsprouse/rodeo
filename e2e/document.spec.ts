@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { origin } from "./helpers";
+
 test("hashed assets ship compressed and cached for a year", async ({ page, request }) => {
   await page.goto("/");
   const assets = [
@@ -19,39 +21,24 @@ test("hashed assets ship compressed and cached for a year", async ({ page, reque
   }
 });
 
-test("browser chrome follows the chosen theme", async ({ page }) => {
+test("browser chrome follows the stored theme", async ({ page }) => {
   await page.goto("/");
   const browserChrome = page.locator('meta[name="theme-color"]');
-
   await expect(browserChrome).toHaveAttribute("content", "#ffffff");
-  await page.getByRole("button", { name: "Switch to dark theme" }).click();
-  await expect(browserChrome).toHaveAttribute("content", "#000000");
 
+  await page.evaluate(() => localStorage.setItem("rodeo-theme", "dark"));
   await page.reload();
   await expect(browserChrome).toHaveAttribute("content", "#000000");
 });
 
-test("the philosophy page paints its card color behind the browser chrome", async ({ page }) => {
-  await page.goto("/philosophy");
-
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(250, 250, 250)");
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", "#fafafa");
-});
-
 test("each page names its own canonical URL from the configured origin", async ({ page }) => {
-  await page.goto("/philosophy?utm_source=newsletter");
+  await page.goto("/?utm_source=newsletter");
 
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
-    "href",
-    "https://rodeo.example/philosophy",
-  );
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
-    "content",
-    "https://rodeo.example/philosophy",
-  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${origin}/`);
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", `${origin}/`);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://rodeo.example/og-rationale.png",
+    `${origin}/og-home.png`,
   );
 });
 
@@ -62,6 +49,6 @@ test("a missing page claims no canonical URL", async ({ page }) => {
   await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
     "content",
-    "https://rodeo.example/og-home.png",
+    `${origin}/og-home.png`,
   );
 });

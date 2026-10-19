@@ -1,0 +1,82 @@
+@theme static {
+  --text-logo: clamp(3rem, min(9vw, 11vh), 6rem);
+  --text-logo--line-height: 1.125;
+  --text-display: clamp(1.125rem, 6.3cqi, 3rem);
+  --text-display--line-height: 1.6;
+  --text-display-wide: clamp(2rem, min(4.6vw, 7.5vh), 4rem);
+  --text-display-wide--line-height: 1.45;
+  --text-install: clamp(0.875rem, min(1.55vw, 2.6vh), 1.375rem);
+  --text-install--line-height: 1.5;
+
+  --animate-nudge: nudge 1.8s ease-in-out infinite;
+
+  @keyframes nudge {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(4px);
+    }
+  }
+}
+
+@utility wipe {
+  clip-path: inset(0 var(--wipe-hidden, 0%) 0 0);
+  @media (prefers-reduced-motion: no-preference) {
+    transition: clip-path 1400ms cubic-bezier(0.645, 0.045, 0.355, 1);
+  }
+}
+
+@utility wipe-hidden {
+  --wipe-hidden: 100%;
+}
+
+@utility soft-focus {
+  filter: blur(2px);
+}
+
+@utility sheen-sweep {
+  animation: sheen-sweep 1000ms cubic-bezier(0.645, 0.045, 0.355, 1) both;
+}
+
+@keyframes sheen-sweep {
+  from {
+    translate: 0 -100px;
+  }
+  to {
+    translate: 0 260px;
+  }
+}
+
+@utility clip-to-active-tab {
+  clip-path: inset(
+    calc(var(--active-tab-top) - var(--clip-outset, 0px))
+      calc(var(--active-tab-right) - var(--clip-outset, 0px))
+      calc(var(--active-tab-bottom) - var(--clip-outset, 0px))
+      calc(var(--active-tab-left) - var(--clip-outset, 0px)) round var(--radius-full)
+  );
+  @media (prefers-reduced-motion: no-preference) {
+    transition: clip-path var(--motion-large-duration) var(--motion-large-easing);
+  }
+}
+
+@utility follow-active-row {
+  translate: 0 var(--row-top, 0px);
+  height: var(--row-height, 0px);
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      translate var(--motion-large-duration) var(--motion-large-easing),
+      height var(--motion-large-duration) var(--motion-large-easing),
+      opacity var(--motion-duration) var(--motion-easing);
+  }
+}
+
+@utility clip-outset-border {
+  --clip-outset: var(--border-s);
+}
+
+.hold-still,
+.hold-still * {
+  transition: none !important;
+}

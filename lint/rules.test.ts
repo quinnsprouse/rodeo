@@ -294,7 +294,7 @@ export const a = 1;`),
         "e2e/probe.spec.ts",
       ),
       ...rulesHit(
-        `// why: LazyMotion loads this module with import(), so the features get their own chunk.\nexport const a = 1;`,
+        `// why: TanStack Router reads this export by name, so renaming it breaks the route.\nexport const a = 1;`,
       ),
     ]).toEqual([]);
   });

@@ -129,14 +129,14 @@ return <Panel />;
   {
     name: "padding on a kit component, even from the theme scale",
     rule: "shadcn(no-restyle)",
-    source: `import { Snippet } from "@/components/ui/snippet";
-export function Probe() { return <Snippet text="npm ci" className="px-l" />; }`,
+    source: `import { Button } from "@/components/ui/button";
+export function Probe() { return <Button type="button" className="px-l">Save</Button>; }`,
   },
   {
     name: "restyling a kit component",
     rule: "shadcn(no-restyle)",
-    source: `import { Snippet } from "@/components/ui/snippet";
-export function Probe() { return <Snippet text="npm ci" className="bg-brand" />; }`,
+    source: `import { Button } from "@/components/ui/button";
+export function Probe() { return <Button type="button" className="bg-brand">Save</Button>; }`,
   },
   {
     name: "Tailwind default scales the theme replaced",
@@ -310,7 +310,7 @@ const allowed: Probe[] = [
     name: "explicit behavior and external synchronization with cleanup",
     source: `import { useEffect, useState } from "react";
 import * as z from "zod/mini";
-import { Snippet } from "@/components/ui/snippet";
+import { Button } from "@/components/ui/button";
 export const itemSchema = z.object({ id: z.string(), tab: z.catch(z.enum(["a", "b"]), "a") });
 export function Probe({ delay }: { delay: number }) {
   const [ticks, setTicks] = useState(0);
@@ -354,7 +354,7 @@ export function Editable() {
 export function Themed() {
   return (
     <>
-      <Snippet text="npm ci" className="mt-m w-full" />
+      <Button type="button" className="mt-m w-full">Save</Button>
       <p className="text-s font-medium text-success">Ready</p>
     </>
   );
@@ -376,10 +376,9 @@ export const region = process.env.REGION;`,
   {
     name: "kit imports inside the kit",
     layer: "src/components/ui",
-    source: `import { Copy01Icon, Icon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
+    source: `import { Button } from "@/components/ui/button";
 export function Probe() {
-  return <Button type="button"><Icon icon={Copy01Icon} aria-hidden="true" /> Copy</Button>;
+  return <Button type="button">Copy</Button>;
 }`,
   },
 ];

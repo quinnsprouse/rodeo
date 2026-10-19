@@ -404,7 +404,7 @@ const noComments = defineRule({
       length:
         "A `why:` comment in src/ and e2e/ is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
       cause:
-        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as Motion or Safari. If the cause is in this repo, fix the code instead and delete the comment.",
+        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is in this repo, fix the code instead and delete the comment.",
     },
     schema: [],
   },

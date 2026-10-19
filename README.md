@@ -22,7 +22,7 @@ Initialize Git before installation so Vite+ can install the hooks. If you instal
 
 ## Customize
 
-Update `src/config/site.ts` with the product identity and its pages, and set `VITE_APP_URL` in production. The canonical links, social metadata, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it. Leaving the URL unset omits the origin-dependent tags, and the generated files fall back to the request's origin.
+Update `src/config/site.ts` with the product identity and its pages, and set `VITE_APP_URL` in production. The canonical links, social metadata, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it. Leaving the URL unset omits the origin-dependent tags, and the generated files fall back to the request's origin. The e2e tests check the site name, title, and author, so update their expectations in `e2e/` to match.
 
 Agents can read every page as Markdown, at `/index.md` or the page path plus `.md`, or by sending `Accept: text/markdown`. `src/server.ts` converts the rendered page.
 
@@ -30,15 +30,14 @@ Add UI components with the configured shadcn CLI. See [UI and motion](docs/agent
 
 ### Remove the demo
 
-The landing page is a demo. To start from a blank app:
+The landing page and the philosophy page are a demo. To start from a blank app:
 
-1. Replace `src/routes/index.tsx` with your home route.
-2. Delete `src/routes/philosophy.tsx` and the `/rationale` redirects in `vite.config.ts`, then the landing sections and stickers in `src/components/` that Knip reports as unused, plus `public/stickers/`.
-3. In `src/styles/app.css`, remove `--text-logo` and the shimmer styles.
-4. Uninstall the demo package: `npm uninstall calligraph`.
-5. Update `src/config/site.ts` and its `sitePages` list, `public/og-home.png` and `public/og-rationale.png`, and the demo assertions in `e2e/smoke.spec.ts` and `e2e/discovery.spec.ts`.
+1. Replace `src/routes/index.tsx` with your home route. Delete `src/routes/philosophy.tsx` and the `/rationale` redirects in `vite.config.ts`.
+2. In `src/config/site.ts`, delete `philosophyMeta` and remove it from `sitePages`. Delete `public/og-rationale.png`.
+3. Run `npx knip` and delete every file it reports. Repeat until it reports no files, then remove the exports it reports and `npm uninstall` the packages. Knip also reports kit pieces that only the demo used, such as the theme toggle, `Snippet`, and the icon wrapper. To keep one, use it.
+4. Delete `src/styles/demo.css`, the `@import "./demo.css";` line at the end of `src/styles/app.css`, `public/stickers/`, and `e2e/demo-*.spec.ts`.
 
-Then run `npm run check:push`. Knip reports any file, export, or package that only the demo used.
+Then run `npm run check:push`. The stylesheet test reports any CSS that only a deleted component used, such as the shimmer styles. Delete what it reports.
 
 ## Commands
 
