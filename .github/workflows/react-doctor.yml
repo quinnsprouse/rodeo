@@ -30,7 +30,7 @@ jobs:
         id: doctor-version
         run: echo "version=$(node -p "require('./package.json').devDependencies['react-doctor']")" >> "$GITHUB_OUTPUT"
 
-      - uses: millionco/react-doctor@013f7373f91a3b9e68bd1dc7d4d354f4b041b117 # v2
+      - uses: millionco/react-doctor@695e46eee203a5d1855020191aa7e9c010a1250e # v2
         with:
           blocking: warning
           version: ${{ steps.doctor-version.outputs.version }}
