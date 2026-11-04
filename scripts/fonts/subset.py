@@ -23,6 +23,7 @@ from fontTools.varLib import instancer
 ROOT = Path(__file__).resolve().parents[2]
 SOURCES = ROOT / "scripts" / "fonts" / "sources"
 USAGE = ROOT / "scripts" / "fonts" / "usage.json"
+CONFIG = ROOT / "scripts" / "fonts" / "config.json"
 OUTPUT = ROOT / "src" / "assets" / "fonts"
 STYLESHEET = ROOT / "src" / "styles" / "fonts.gen.css"
 STYLESHEET_TO_OUTPUT = "../assets/fonts"
@@ -114,19 +115,28 @@ class Face:
         return (self.weight, self.weight) if isinstance(self.weight, int) else self.weight
 
 
+def configured_face(entry: dict) -> Face:
+    weight = entry["weight"]
+    return Face(
+        family=entry["family"],
+        source=entry["source"],
+        output=entry["output"],
+        weight=tuple(weight) if isinstance(weight, list) else weight,
+        license=entry["license"],
+        style=entry.get("style", "normal"),
+        rename_to=entry.get("renameTo"),
+    )
+
+
 FACES = [
-    Face("Open Runde", "open-runde-400.woff2", "open-runde-400", 400, "open-runde-OFL.txt"),
-    Face("Open Runde", "open-runde-500.woff2", "open-runde-500", 500, "open-runde-OFL.txt"),
-    Face("Open Runde", "open-runde-700.woff2", "open-runde-700", 700, "open-runde-OFL.txt"),
-    Face(
-        "Geist Mono Variable", "GeistMono[wght].ttf", "geist-mono", (100, 900), "geist-mono-OFL.txt"
-    ),
+    configured_face(entry) for entry in json.loads(CONFIG.read_text(encoding="utf-8"))["faces"]
 ]
 
 
 @dataclass
 class Usage:
     characters: set[int] = field(default_factory=set)
+    content: set[int] = field(default_factory=set)
     axis_values: dict[str, set[float]] = field(default_factory=dict)
     overridden_axes: set[str] = field(default_factory=set)
     features: set[str] = field(default_factory=set)
@@ -286,11 +296,11 @@ def axis_limits(font: TTFont, usage: Usage) -> dict[str, float | tuple[float, fl
         default = axis.defaultValue
         if not values:
             continue
-        if values == {default} and axis.axisTag not in usage.overridden_axes and "avar" not in font:
+        if values == {default} and axis.axisTag not in usage.overridden_axes:
             limits[axis.axisTag] = default
-        elif min(values) >= default and "avar" not in font:
+        elif min(values) >= default:
             limits[axis.axisTag] = (default, axis.maxValue)
-        elif max(values) <= default and "avar" not in font:
+        elif max(values) <= default:
             limits[axis.axisTag] = (axis.minValue, default)
     return limits
 
@@ -343,6 +353,14 @@ def rename(font: TTFont, family: str) -> None:
         name.setName(value, name_id, 3, 1, 0x409)
 
 
+def restrict_cmap(font: TTFont, codepoints: set[int]) -> None:
+    # why: fontTools 4.68's subsetter can map characters it was not asked for, such as U+2264 in
+    # JetBrains Mono, so the file would cover characters its unicode-range doesn't list.
+    for table in font["cmap"].tables:
+        if table.isUnicode():
+            table.cmap = {u: g for u, g in table.cmap.items() if u in codepoints}
+
+
 def drop_empty_tables(font: TTFont) -> None:
     for table in ("GSUB", "GPOS"):
         if table in font and not font[table].table.FeatureList.FeatureRecord:
@@ -374,6 +392,7 @@ def build_font(
         subsetter = subset.Subsetter(options)
         subsetter.populate(unicodes=codepoints)
         subsetter.subset(font)
+        restrict_cmap(font, codepoints)
         drop_empty_tables(font)
         if face.rename_to:
             rename(font, face.rename_to)
@@ -515,7 +534,8 @@ def css_weight(face: Face, limits: dict) -> str:
         low, high = face.weight_range
         return str(low) if low == high else f"{low} {high}"
     if isinstance(wght, tuple):
-        return f"{wght[0]:g} {wght[1]:g}"
+        low, high = max(wght[0], face.weight_range[0]), min(wght[1], face.weight_range[1])
+        return f"{low:g}" if low == high else f"{low:g} {high:g}"
     return f"{wght:g}"
 
 
@@ -523,7 +543,13 @@ def plan(face: Face, usage: Usage) -> Result:
     source = TTFont(SOURCES / face.source)
     available = set(source.getBestCmap())
     keep = (
-        ASCII | INVISIBLE | CORE_PUNCTUATION | LATIN_1 | LATIN_EXTENDED_A | usage.characters
+        ASCII
+        | INVISIBLE
+        | CORE_PUNCTUATION
+        | LATIN_1
+        | LATIN_EXTENDED_A
+        | usage.characters
+        | usage.content
     ) & available
     core = (ASCII | INVISIBLE | CORE_PUNCTUATION | usage.characters) & keep
     pieces = [Piece(f"{face.output}-core", core), Piece(f"{face.output}-extended", keep - core)]
@@ -594,8 +620,11 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    groups = json.loads(USAGE.read_text(encoding="utf-8"))["groups"]
-    usage = collect_usage(groups)
+    recorded = json.loads(USAGE.read_text(encoding="utf-8")) if USAGE.exists() else {"groups": []}
+    usage = collect_usage(recorded["groups"])
+    content = recorded.get("contentCharacters", {})
+    for face, entry in usage.items():
+        entry.content = {ord(c) for c in content.get(face.family, "")}
     results = [plan(face, usage[face]) for face in FACES]
     failures = []
     OUTPUT.mkdir(parents=True, exist_ok=True)

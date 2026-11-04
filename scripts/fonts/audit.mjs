@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { globSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -7,14 +7,16 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const usagePath = join(repoRoot, "scripts", "fonts", "usage.json");
-const families = ["Open Runde", "Geist Mono Variable"];
+const fontsDirectory = join(repoRoot, "scripts", "fonts");
+const usagePath = join(fontsDirectory, "usage.json");
+const config = JSON.parse(readFileSync(join(fontsDirectory, "config.json"), "utf8"));
+const families = [...new Set(config.faces.map((face) => face.family))];
+const maxScrollSteps = 2000;
 const viewports = [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
 ];
 const generatedSources = new Set(["src/lib/cn-tables.ts", "src/routeTree.gen.ts"]);
-const missingPage = "/__font-audit-missing-page";
 
 function collectFontUsage(familyNames) {
   const wanted = new Map(familyNames.map((name) => [name.toLowerCase(), name]));
@@ -204,29 +206,43 @@ async function startServer() {
   throw new Error(`The built server did not answer on ${origin}.`);
 }
 
-async function sitePaths(origin) {
+async function sitemapPaths(origin) {
+  if (!config.sitemap) return [];
   const sitemap = await fetch(`${origin}/sitemap.xml`).then((response) => response.text());
-  const paths = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(
-    (match) => new URL(match[1]).pathname,
-  );
-  return [...new Set(paths), missingPage];
+  return [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => new URL(match[1]).pathname);
 }
 
-async function exercisePage(page, groups) {
+async function sitePages(origin) {
+  const listed = config.pages.map((entry) =>
+    typeof entry === "string" ? { path: entry, click: [] } : { click: [], ...entry },
+  );
+  const fromSitemap = (await sitemapPaths(origin))
+    .filter((path) => !listed.some((entry) => entry.path === path))
+    .map((path) => ({ path, click: [] }));
+  const notFound = config.notFoundPage ? [{ path: config.notFoundPage, click: [] }] : [];
+  return [...fromSitemap, ...listed, ...notFound];
+}
+
+async function scrollThrough(page, collect, stepsLeft = maxScrollSteps) {
+  const reachedEnd = await page.evaluate(() => {
+    const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
+    window.scrollBy(0, window.innerHeight);
+    return atBottom;
+  });
+  await page.waitForTimeout(150);
+  await collect();
+  if (!reachedEnd && stepsLeft > 0) await scrollThrough(page, collect, stepsLeft - 1);
+}
+
+async function exercisePage(page, groups, buttons) {
   const collect = async () => mergeGroups(groups, await page.evaluate(collectFontUsage, families));
   await collect();
-  await page.evaluate(
-    () =>
-      new Promise((resolveScroll) => {
-        const scrollFrom = (top) => {
-          window.scrollTo(0, top);
-          if (top >= document.documentElement.scrollHeight) resolveScroll();
-          else setTimeout(() => scrollFrom(top + window.innerHeight / 2), 100);
-        };
-        scrollFrom(0);
-      }),
-  );
-  await collect();
+  await scrollThrough(page, collect);
+  await inOrder(buttons, async (name) => {
+    await page.getByRole("button", { name, exact: true }).first().click();
+    await page.waitForTimeout(1000);
+    await collect();
+  });
   const tabs = await page.getByRole("tab").all();
   await inOrder(tabs, async (tab) => {
     if (!(await tab.isVisible())) return;
@@ -240,21 +256,26 @@ async function exercisePage(page, groups) {
 
 async function auditSite(origin) {
   const groups = new Map();
-  const paths = await sitePaths(origin);
+  const pages = await sitePages(origin);
   const browser = await chromium.launch();
-  const visits = viewports.flatMap((viewport) => paths.map((path) => ({ viewport, path })));
+  const visits = viewports.flatMap((viewport) => pages.map((entry) => ({ viewport, ...entry })));
   try {
-    await inOrder(visits, async ({ viewport, path }) => {
+    await inOrder(visits, async ({ viewport, path, click }) => {
       const context = await browser.newContext({ viewport });
       const page = await context.newPage();
-      await page.goto(origin + path, { waitUntil: "load" });
-      await exercisePage(page, groups);
+      const response = await page.goto(origin + path, { waitUntil: "load" });
+      if (path !== config.notFoundPage && !response?.ok()) {
+        throw new Error(
+          `${path} answered ${response?.status()}. Update pages in scripts/fonts/config.json.`,
+        );
+      }
+      await exercisePage(page, groups, click);
       await context.close();
     });
   } finally {
     await browser.close();
   }
-  return { paths, groups: [...groups.values()] };
+  return { paths: pages.map((entry) => entry.path), groups: [...groups.values()] };
 }
 
 function sourceCharacters() {
@@ -270,6 +291,20 @@ function sourceCharacters() {
     }
   }
   return found;
+}
+
+function contentCharacters() {
+  return new Map(
+    config.contentFiles.map(({ family, files }) => {
+      const characters = new Set();
+      for (const file of files.flatMap((pattern) => globSync(pattern, { cwd: repoRoot }))) {
+        for (const character of readFileSync(join(repoRoot, file), "utf8")) {
+          if (character.codePointAt(0) > 0x7e) characters.add(character);
+        }
+      }
+      return [family, characters];
+    }),
+  );
 }
 
 function sortedText(characters) {
@@ -297,9 +332,11 @@ try {
   server.stop();
 }
 
+const content = contentCharacters();
+const kept = new Set(Array.from(content.values(), (characters) => Array.from(characters)).flat());
 const rendered = new Set(audit.groups.flatMap((group) => [...group.characters]));
 const unseen = [...sourceCharacters()]
-  .filter(([character]) => !rendered.has(character))
+  .filter(([character]) => !rendered.has(character) && !kept.has(character))
   .map(
     ([character, files]) => `${hex(character)} ${character} in ${[...new Set(files)].join(", ")}`,
   );
@@ -310,6 +347,9 @@ const usage = {
   groups: audit.groups
     .map((group) => Object.assign(group, { characters: sortedText(group.characters) }))
     .toSorted((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+  contentCharacters: Object.fromEntries(
+    Array.from(content, ([family, characters]) => [family, sortedText(characters)]),
+  ),
   sourceCharactersNotRendered: unseen,
 };
 writeFileSync(usagePath, `${JSON.stringify(usage, null, 2)}\n`);

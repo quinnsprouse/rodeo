@@ -1,0 +1,36 @@
+{
+  "sitemap": true,
+  "pages": [],
+  "notFoundPage": "/__font-audit-missing-page",
+  "contentFiles": [],
+  "faces": [
+    {
+      "family": "Open Runde",
+      "source": "open-runde-400.woff2",
+      "output": "open-runde-400",
+      "weight": 400,
+      "license": "open-runde-OFL.txt"
+    },
+    {
+      "family": "Open Runde",
+      "source": "open-runde-500.woff2",
+      "output": "open-runde-500",
+      "weight": 500,
+      "license": "open-runde-OFL.txt"
+    },
+    {
+      "family": "Open Runde",
+      "source": "open-runde-700.woff2",
+      "output": "open-runde-700",
+      "weight": 700,
+      "license": "open-runde-OFL.txt"
+    },
+    {
+      "family": "Geist Mono Variable",
+      "source": "GeistMono[wght].ttf",
+      "output": "geist-mono",
+      "weight": [100, 900],
+      "license": "geist-mono-OFL.txt"
+    }
+  ]
+}
