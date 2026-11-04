@@ -109,10 +109,19 @@ class Face:
     license: str
     style: str = "normal"
     rename_to: str | None = None
+    coverage: frozenset[int] | None = None
 
     @property
     def weight_range(self) -> tuple[int, int]:
         return (self.weight, self.weight) if isinstance(self.weight, int) else self.weight
+
+
+def parse_unicode_range(text: str) -> frozenset[int]:
+    codepoints = set()
+    for part in text.split(","):
+        low, _, high = part.strip().removeprefix("U+").partition("-")
+        codepoints |= set(range(int(low, 16), int(high or low, 16) + 1))
+    return frozenset(codepoints)
 
 
 def configured_face(entry: dict) -> Face:
@@ -125,6 +134,7 @@ def configured_face(entry: dict) -> Face:
         license=entry["license"],
         style=entry.get("style", "normal"),
         rename_to=entry.get("renameTo"),
+        coverage=parse_unicode_range(entry["coverage"]) if "coverage" in entry else None,
     )
 
 
@@ -541,7 +551,7 @@ def css_weight(face: Face, limits: dict) -> str:
 
 def plan(face: Face, usage: Usage) -> Result:
     source = TTFont(SOURCES / face.source)
-    available = set(source.getBestCmap())
+    available = set(source.getBestCmap()) & (face.coverage or set(source.getBestCmap()))
     keep = (
         ASCII
         | INVISIBLE
