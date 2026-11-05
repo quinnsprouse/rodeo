@@ -1,0 +1,72 @@
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("../assets/fonts/open-runde-400-core.woff2") format("woff2");
+  unicode-range: U+20-7E, U+A0, U+AD, U+2013-2014, U+2018-2019, U+201C-201D, U+2026, U+21A9;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("../assets/fonts/open-runde-400-extended.woff2") format("woff2");
+  unicode-range: U+A1-AC, U+AE-148, U+14A-17F;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("../assets/fonts/open-runde-500-core.woff2") format("woff2");
+  unicode-range: U+20-7E, U+A0, U+AD, U+2013-2014, U+2018-2019, U+201C-201D, U+2026;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 500;
+  src: url("../assets/fonts/open-runde-500-extended.woff2") format("woff2");
+  unicode-range: U+A1-AC, U+AE-148, U+14A-17F;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("../assets/fonts/open-runde-700-core.woff2") format("woff2");
+  unicode-range: U+20-7E, U+A0, U+AD, U+2013-2014, U+2018-2019, U+201C-201D, U+2026;
+}
+
+@font-face {
+  font-family: "Open Runde";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 700;
+  src: url("../assets/fonts/open-runde-700-extended.woff2") format("woff2");
+  unicode-range: U+A1-AC, U+AE-148, U+14A-17F;
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("../assets/fonts/geist-mono-core.woff2") format("woff2");
+  unicode-range: U+20-7E, U+A0, U+2013-2014, U+2018-2019, U+201C-201D, U+2026, U+2212;
+}
+
+@font-face {
+  font-family: "Geist Mono Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 400;
+  src: url("../assets/fonts/geist-mono-extended.woff2") format("woff2");
+  unicode-range:
+    U+A1-AC, U+AE-113, U+116-12B, U+12E-131, U+134-137, U+139-13E, U+141-148, U+14A-14D, U+150-17E;
+}

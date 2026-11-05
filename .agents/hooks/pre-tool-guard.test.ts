@@ -100,6 +100,9 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
   it("denies edits to generated and tool-owned files", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [edit("src/routeTree.gen.ts"), "deny"],
+      [edit("src/styles/fonts.gen.css"), "deny"],
+      [edit("src/assets/fonts/open-runde-400-core.woff2"), "deny"],
+      [edit("scripts/fonts/usage.json"), "deny"],
       [edit("package-lock.json"), "deny"],
       [edit(".vite-hooks/_/h"), "deny"],
       [edit(".output/server/index.mjs"), "deny"],

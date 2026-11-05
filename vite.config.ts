@@ -440,6 +440,14 @@ export default defineConfig({
           "typescript/no-deprecated": "off",
         },
       },
+      {
+        // why: Playwright serializes the function passed to page.evaluate and runs it in the
+        // browser, so its helpers must be nested inside it to exist there.
+        files: ["scripts/fonts/audit.mjs"],
+        rules: {
+          "unicorn/consistent-function-scoping": "off",
+        },
+      },
       ...rodeoRuleExceptions.map(({ files, rules }) => ({
         files,
         rules: Object.fromEntries(rules.map((rule) => [rule, "off" as const])),

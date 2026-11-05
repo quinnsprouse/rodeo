@@ -1,8 +1,7 @@
-import geistMono from "@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2?url";
-
-import openRundeRegular from "@/assets/fonts/open-runde-400.woff2?url";
-import openRundeMedium from "@/assets/fonts/open-runde-500.woff2?url";
-import openRundeBold from "@/assets/fonts/open-runde-700.woff2?url";
+import geistMono from "@/assets/fonts/geist-mono-core.woff2?url";
+import openRundeRegular from "@/assets/fonts/open-runde-400-core.woff2?url";
+import openRundeMedium from "@/assets/fonts/open-runde-500-core.woff2?url";
+import openRundeBold from "@/assets/fonts/open-runde-700-core.woff2?url";
 
 export const fonts = {
   regular: openRundeRegular,
