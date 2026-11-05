@@ -4,7 +4,7 @@
 
 A React starter for working with coding agents. Built on Vite+, TanStack Start, React 19, and Tailwind v4, with shadcn/ui configured for Base UI components. Includes Git hooks, tests, and agent docs.
 
-Requires Node 24.11 or newer within Node 24, npm 11.12 or newer within npm 11, and Git 2.36 or newer.
+Requires Node 24.11 or newer within Node 24, npm 11.12 or newer (npm 12 works too), and Git 2.36 or newer.
 
 ## Quick start
 
