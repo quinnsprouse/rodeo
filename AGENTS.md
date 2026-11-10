@@ -2,15 +2,16 @@ Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on Base UI, Tail
 
 ## Commands
 
-- `npm run dev` starts the dev server on localhost:3000.
-- `npm run check` runs format, lint, types, and guardrail tests. Run it while you work.
+- `npm run dev` starts the dev server.
+- `npm run check` runs fast checks such as format, lint, types, and guardrail tests. Run it while you work.
 - `npm run check:push` adds the build, dead-code check, and Playwright. The pre-push hook runs it.
 - `npm run check:ci` adds a clean template install, React Doctor, and `npm audit`.
 - `npm run setup` reinstalls the Git hooks after `git init`.
+- `scripts/lib/tasks.mjs` defines what each check runs.
 
 ## Rules
 
-- **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add an exception to `lint.overrides` in `vite.config.ts` with a `why:` comment.
+- **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add a file-scoped exception with its `why` to `lint/exceptions.ts`.
 - **No comments.** Make the code say it with a clearer name, a smaller function, or a type. A `why:` comment is a last resort, only for a constraint outside the code that you can't fix, such as a browser bug.
 - **No unit tests in app code.** Test behavior end to end with Playwright in `e2e/`.
 - **UI work follows `GUI.md`.** Use the `graphical-ui`, `graphical-convert`, or `graphical-audit` skill as the task needs.

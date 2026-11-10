@@ -2,13 +2,13 @@
 
 Most lint errors name the fix. Read the error, fix the cause, and move on. Warnings fail too.
 
-**Never suppress a rule inline.** `oxlint-disable` and `eslint-disable` comments are errors. If a rule is wrong for a file, prove it with a minimal example, then add a file-scoped entry to `lint.overrides` in `vite.config.ts` with a `why:` comment. An exception to a `rodeo/*` rule goes in `rodeoRuleExceptions` in `lint/rodeo-rules.ts` instead, because React Doctor reads that file and ignores the overrides.
+**Never suppress a rule inline.** `oxlint-disable` and `eslint-disable` comments are errors. If a rule is wrong for a file, prove it with a minimal example, then add a file-scoped entry with its `why` to `exceptions` in `lint/exceptions.ts`. Oxlint and React Doctor both read that list.
 
 ## Comments
 
 Comments are banned. Agents copy them, and one note about a workaround teaches the next agent to write its own workaround instead of fixing the cause. Say it in code: a better name, a smaller function, a type.
 
-Almost every comment can go. Write a `why:` comment only after an agent got the code wrong because of a dependency, a browser, or a spec, and the code can't change. In `src/` and `e2e/`, lint requires the comment to name that cause and keeps it to 6 to 30 words:
+Almost every comment can go. Write a `why:` comment only after an agent got the code wrong because of a dependency, a browser, or a spec, and the code can't change. In `src/` and `e2e/`, lint requires the comment to name that cause and keeps it within the limits of `defaultCommentOptions` in `lint/rules.js`:
 
 ```ts
 // why: Vite inlines VITE_* values into the client bundle, so a secret here becomes public.
@@ -20,13 +20,13 @@ Lint matches cause names as whole words. It takes them from `KNOWN_CAUSES` in `l
 
 ## Where code goes
 
-Each folder in `src/` imports only from the folders below it, and the lint error names the right home when you cross a line:
+Each folder in `src/` imports only from the folders below it, as `lint/layers.ts` defines, and the lint error names the right home when you cross a line:
 
 ```
 routes → components → components/ui, hooks → lib, config
 ```
 
-Nothing imports a route module. Server-only code lives in `*.server.ts`, the only place `process`, `Buffer`, and `node:*` imports are allowed. Read `VITE_*` values from `clientEnv`, never from `import.meta.env`.
+Nothing imports a route module. Only the demo imports the demo, so removing it leaves a working app. Server-only code lives in `*.server.ts`, the only place `process`, `Buffer`, and `node:*` imports are allowed. Read `VITE_*` values from `clientEnv`, never from `import.meta.env`.
 
 ## Errors that need more context
 
@@ -37,4 +37,4 @@ Nothing imports a route module. Server-only code lives in `*.server.ts`, the onl
 
 ## Add a rule
 
-When you correct the same mistake twice, make it a rule instead of more prose. Prefer a compiler check or a built-in rule, and prove its valid and invalid cases in `lint/policy.test.ts`. Write a custom rule in `lint/rules.js` only when nothing built in fits. Put the fix in its message, test it in `lint/rules.test.ts`, and add its name to `rodeoRuleNames` in `lint/rodeo-rules.ts`.
+When you correct the same mistake twice, make it a rule instead of more prose. Prefer a compiler check or a built-in rule, and prove its valid and invalid cases in `lint/policy.test.ts`. Write a custom rule in `lint/rules.js` only when nothing built in fits. Put the fix in its message, add it to the `rules` export, and test it in `lint/rules.test.ts`.

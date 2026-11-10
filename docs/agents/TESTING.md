@@ -10,21 +10,21 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 
 **Write browser tests this way:**
 
-- Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, which loads `.env.e2e`, then tests the built server.
-- Select elements by role or text. Assert that the page threw nothing, with `trackBrowserErrors` from `e2e/helpers.ts`.
-- To reach an error that a browser API controls, stub the API with `page.addInitScript`, as the clipboard tests do.
+- Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, which loads `.env.e2e`, then tests the built server. It skips the build when nothing changed.
+- Select elements by role or text. Import `test` and `expect` from `e2e/fixtures.ts`, so a test fails on any browser error not in `expectedBrowserErrors`.
+- To reach an error that a browser API controls, stub the API with `page.addInitScript` before you load the page.
 - To test a streamed skeleton, set a desktop browser `userAgent` on the test. TanStack Router sends bots the finished page, and headless Chromium's default user agent counts as one.
-- Add each new route to `e2e/accessibility.spec.ts`. Fix an axe violation instead of turning the rule off.
+- `e2e/pages.spec.ts` runs axe and its other checks on every sitemap page. Fix an axe violation instead of turning the rule off.
 
-**Keep guardrail tests fast.** The Stop hook reruns all of them whenever `lint/` or `.agents/hooks/` changes. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook's decisions by importing its rules module, and start the hook only to check its input and output, as `pre-tool-guard.test.ts` does.
+**Keep guardrail tests fast.** The Stop hook reruns the tests a change reaches, through imports or `forceRerunTriggers` in `vitest.config.ts`. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook's decisions by importing its rules module, and start the hook only to check its input and output, as `pre-tool-guard.test.ts` does.
 
 **The check:** change the internals without changing what a user sees. If the test fails, it tested the implementation.
 
 ## Hooks that check your work
 
-- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/` and `gui/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a command that discards uncommitted work, such as `git checkout .`, `git restore`, or `rm -rf` on files Git can't restore. It reads a command the way a shell does, so a flag inside a commit message or a quoted string doesn't count.
+- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside the places `scripts/lib/project.mjs` allows, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a command that discards uncommitted work, such as `git checkout .`, `git restore`, or `rm -rf` on files Git can't restore. It reads a command the way a shell does, so a flag inside a commit message or a quoted string doesn't count.
 - `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it, so `lint/layout.test.ts` fails `npm run check` on a doc or unit test in the wrong place.
 - `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail. In a checkout without dependencies or Git hooks, such as a new worktree, it sends you back to run `npm ci` or `npm run setup`.
-- Vite+ installs the Git hooks from `.vite-hooks/`. Pre-push runs `npm run check:push`. Don't add Husky.
+- Vite+ installs the Git hooks from `.vite-hooks/`. Don't add Husky.
 
-`npm run test:template` runs the whole starter from a clean copy of the staged files. CI runs it. Stage your changes before you run it locally.
+`npm run test:template` runs the whole starter from a clean copy of the staged files, then removes the demo there and runs the push checks again. CI runs it. Stage your changes before you run it locally.
