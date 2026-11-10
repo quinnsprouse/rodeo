@@ -146,6 +146,10 @@
   --border: var(--border-default-color);
   --input: var(--neutral-4);
   --ring: var(--color-1);
+
+  --skullet-base: var(--muted);
+  --skullet-highlight: light-dark(var(--neutral-2), var(--neutral-4));
+  --skullet-radius: var(--radius-s);
 }
 
 :root {

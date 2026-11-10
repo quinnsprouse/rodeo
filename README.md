@@ -26,7 +26,7 @@ Update `src/config/site.ts` with the product identity and its pages, and set `VI
 
 Agents can read every page as Markdown, at `/index.md` or the page path plus `.md`, or by sending `Accept: text/markdown`. `src/server.ts` converts the rendered page.
 
-Add UI components with the configured shadcn CLI. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, and icon conventions.
+Add UI components with the configured shadcn CLI. Three motion packages are installed: [Torph](https://torph.lochie.me/) for text that morphs in place, [Skullet](https://skullet.lochie.me/) for loading skeletons drawn from the real component, and [Glimm](https://glimm.dev/) for a shader sweep on milestone moments. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, icon, and motion conventions.
 
 ### Remove the demo
 

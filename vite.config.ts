@@ -66,6 +66,21 @@ const restrictedImportPatterns: ImportPattern[] = [
     message: "Import from motion/react; framer-motion is the legacy package name.",
   },
   {
+    group: ["react-loading-skeleton", "react-content-loader"],
+    message:
+      "Loading skeletons come from skullet/react, which draws them from the real component so nothing moves when the data arrives. See docs/agents/UI_MOTION.md",
+  },
+  {
+    group: ["@number-flow/*", "number-flow", "react-countup", "calligraph"],
+    message:
+      "Animate text and numbers that change in place with TextMorph from torph/react. See docs/agents/UI_MOTION.md",
+  },
+  {
+    group: ["glimm/next"],
+    message:
+      "glimm/next is the Next.js adapter, and this app uses TanStack Router. Import GlimmProvider and useGlimm from glimm/react and navigate inside sweep(). See docs/agents/UI_MOTION.md",
+  },
+  {
     group: ["@/routes/*"],
     message:
       "Route modules are entry points that only the router imports. Move the shared code into src/components, src/hooks, or src/lib.",

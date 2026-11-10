@@ -8,7 +8,7 @@ Load data in route loaders, validate everything that reaches the server, and kee
 - **Refresh with `router.invalidate()`** after a mutation, or to retry a failed loader.
 - **Secrets come from `process.env` in a `*.server.ts` module**, parsed with a Zod Mini schema the way `src/config/env.ts` parses `clientEnv`. Never put one in a `VITE_*` variable, because Vite inlines those into the client bundle. Add every variable to its schema and to `.env.example`.
 - **Each page owns its head.** `HeadContent` keeps every `link`, so never add a canonical link in a child route. Put a preload that one page needs in that page's `head`, not the root's. A same-name `meta` pair such as `theme-color` goes in the root `shellComponent`, because `HeadContent` keeps one `meta` per name.
-- **A third-party script needs a CSP change first.** The CSP in `vite.config.ts` has no `script-src`, because hydration uses inline scripts. Add one with a nonce.
+- **A third-party script needs a CSP change first.** The CSP in `vite.config.ts` has no `script-src`, because hydration uses inline scripts. Add one with a nonce. Skullet's inline measuring script then needs the same nonce, passed to `SkulletProvider`.
 - **Leave `verbatimModuleSyntax` off and import protection at `error`.** Both keep server code out of the client bundle.
 
 To load data, put URL state in `loaderDeps`, call a server function from `src/lib/` in the route's `loader`, and return a failure as a typed result instead of throwing.

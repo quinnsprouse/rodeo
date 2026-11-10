@@ -13,6 +13,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 - Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, which loads `.env.e2e`, then tests the built server.
 - Select elements by role or text. Assert that the page threw nothing, with `trackBrowserErrors` from `e2e/helpers.ts`.
 - To reach an error that a browser API controls, stub the API with `page.addInitScript`, as the clipboard tests do.
+- To test a streamed skeleton, set a desktop browser `userAgent` on the test. TanStack Router sends bots the finished page, and headless Chromium's default user agent counts as one.
 - Add each new route to `e2e/accessibility.spec.ts`. Fix an axe violation instead of turning the rule off.
 
 **Keep guardrail tests fast.** The Stop hook reruns all of them whenever `lint/` or `.agents/hooks/` changes. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook's decisions by importing its rules module, and start the hook only to check its input and output, as `pre-tool-guard.test.ts` does.
