@@ -15,15 +15,15 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 - To reach an error that a browser API controls, stub the API with `page.addInitScript`, as the clipboard tests do.
 - Add each new route to `e2e/accessibility.spec.ts`. Fix an axe violation instead of turning the rule off.
 
-**Keep guardrail tests fast.** The Stop hook reruns all of them whenever `lint/` or `.agents/hooks/` changes. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run.
+**Keep guardrail tests fast.** The Stop hook reruns all of them whenever `lint/` or `.agents/hooks/` changes. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook's decisions by importing its rules module, and start the hook only to check its input and output, as `pre-tool-guard.test.ts` does.
 
 **The check:** change the internals without changing what a user sees. If the test fails, it tested the implementation.
 
 ## Hooks that check your work
 
-- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/` and `gui/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a destructive Git command. It matches raw command text, so even a heredoc that mentions `--no-verify` is blocked. Write that content with a file tool.
-- `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it.
-- `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail.
+- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside `docs/agents/` and `gui/`, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a command that discards uncommitted work, such as `git checkout .`, `git restore`, or `rm -rf` on files Git can't restore. It reads a command the way a shell does, so a flag inside a commit message or a quoted string doesn't count.
+- `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it, so `lint/layout.test.ts` fails `npm run check` on a doc or unit test in the wrong place.
+- `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail. In a checkout without dependencies or Git hooks, such as a new worktree, it sends you back to run `npm ci` or `npm run setup`.
 - Vite+ installs the Git hooks from `.vite-hooks/`. Pre-push runs `npm run check:push`. Don't add Husky.
 
 `npm run test:template` runs the whole starter from a clean copy of the staged files. CI runs it. Stage your changes before you run it locally.

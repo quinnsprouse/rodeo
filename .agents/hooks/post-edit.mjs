@@ -1,13 +1,10 @@
-import { spawnSync } from "node:child_process";
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, extname, isAbsolute, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { extname, isAbsolute, relative, resolve } from "node:path";
 
-const require = createRequire(import.meta.url);
-const fallbackRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
-const projectRoot = realpathSync(process.env.CLAUDE_PROJECT_DIR ?? fallbackRoot);
-const supportedExtensions = new Set([
+import { dependenciesInstalled, packageBinary, projectRoot, runTool } from "./project-tools.mjs";
+
+const formatExtensions = new Set([
+  ".cjs",
   ".css",
   ".cts",
   ".html",
@@ -33,23 +30,7 @@ const ignoredRoots = [
   "coverage",
   "node_modules",
 ];
-
-function packageBinary(packageName, binaryName) {
-  const packagePath = require.resolve(`${packageName}/package.json`);
-  const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
-  const binary =
-    typeof packageJson.bin === "string" ? packageJson.bin : packageJson.bin?.[binaryName];
-  if (!binary) throw new Error(`${packageName} does not expose ${binaryName}`);
-  return resolve(dirname(packagePath), binary);
-}
-
-function run(binary, args) {
-  return spawnSync(process.execPath, [binary, ...args], {
-    cwd: projectRoot,
-    encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" },
-  });
-}
+const skipped = { ok: true, output: "" };
 
 function report(message) {
   const additionalContext = message.length > 4_000 ? `${message.slice(0, 3_997)}...` : message;
@@ -84,55 +65,71 @@ function projectFile(filePath) {
     projectPath.startsWith("..") ||
     isAbsolute(projectPath) ||
     ignoredRoots.some((root) => projectPath === root || projectPath.startsWith(`${root}/`)) ||
-    !supportedExtensions.has(extname(target).toLowerCase())
+    !formatExtensions.has(extname(target).toLowerCase())
   ) {
     return null;
   }
   return { target, projectPath };
 }
 
-try {
-  const input = JSON.parse(readFileSync(0, "utf8"));
-  if (input.hook_event_name !== "PostToolUse") process.exit(0);
-
+function projectFiles(input) {
+  if (input.hook_event_name !== "PostToolUse") return [];
   const files = editedFiles(input.tool_name, input.tool_input)
     .map(projectFile)
     .filter((file) => file !== null);
-  if (files.length === 0) process.exit(0);
+  return [...new Map(files.map((file) => [file.target, file])).values()];
+}
 
+function withExtension(files, extensions) {
+  return files.filter(({ target }) => extensions.has(extname(target).toLowerCase()));
+}
+
+function pathList(files) {
+  return files.map(({ projectPath }) => projectPath).join(", ");
+}
+
+function pathsIn(output, files) {
+  const mentioned = files.filter(({ projectPath }) => output.includes(projectPath));
+  return pathList(mentioned.length > 0 ? mentioned : files);
+}
+
+function targetsOf(files) {
+  return files.map(({ target }) => target);
+}
+
+function problem(result, heading) {
+  return result.ok ? [] : [`${heading}\n${result.output}`];
+}
+
+async function feedbackFor(files) {
+  const lintable = withExtension(files, lintExtensions);
+  const typed = withExtension(files, typeScriptExtensions);
   const vp = packageBinary("vite-plus", "vp");
-  const feedback = [];
+  const tsc = typed.length > 0 ? packageBinary("typescript", "tsc") : null;
 
-  for (const { target, projectPath } of files) {
-    const format = run(vp, ["fmt", target]);
-    if (format.status !== 0) {
-      feedback.push(
-        `Automatic formatting failed for ${projectPath}.\n${format.stderr || format.stdout}`,
-      );
-      continue;
-    }
+  const format = await runTool(vp, ["fmt", "--no-error-on-unmatched-pattern", ...targetsOf(files)]);
+  const [lint, typecheck] = await Promise.all([
+    lintable.length > 0
+      ? runTool(vp, ["lint", "--no-error-on-unmatched-pattern", ...targetsOf(lintable)])
+      : skipped,
+    tsc ? runTool(tsc, ["-b", "--pretty", "false"]) : skipped,
+  ]);
 
-    if (lintExtensions.has(extname(target).toLowerCase())) {
-      const lint = run(vp, ["lint", target]);
-      if (lint.status !== 0) {
-        feedback.push(`Lint found an issue in ${projectPath}.\n${lint.stdout || lint.stderr}`);
-      }
-    }
+  return [
+    ...problem(format, `Automatic formatting failed for ${pathsIn(format.output, files)}.`),
+    ...problem(lint, `Lint found an issue in ${pathsIn(lint.output, lintable)}.`),
+    ...problem(typecheck, `Type checking found an issue after editing ${pathList(typed)}.`),
+  ];
+}
+
+try {
+  const files = projectFiles(JSON.parse(readFileSync(0, "utf8")));
+  if (files.length > 0 && !dependenciesInstalled()) {
+    report("Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.");
+  } else if (files.length > 0) {
+    const feedback = await feedbackFor(files);
+    if (feedback.length > 0) report(feedback.join("\n\n"));
   }
-
-  const typeScriptFile = files.find(({ target }) =>
-    typeScriptExtensions.has(extname(target).toLowerCase()),
-  );
-  if (typeScriptFile) {
-    const typecheck = run(packageBinary("typescript", "tsc"), ["-b", "--pretty", "false"]);
-    if (typecheck.status !== 0) {
-      feedback.push(
-        `Type checking found an issue after editing ${typeScriptFile.projectPath}.\n${typecheck.stdout || typecheck.stderr}`,
-      );
-    }
-  }
-
-  if (feedback.length > 0) report(feedback.join("\n\n"));
 } catch (error) {
   report(
     `Post-edit feedback could not run.\n${error instanceof Error ? error.message : String(error)}`,
