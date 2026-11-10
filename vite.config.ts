@@ -1,12 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
 
-import babel from "@rolldown/plugin-babel";
-import tailwindcss from "@tailwindcss/vite";
-import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
-import { cn as cnTables } from "cn/vite";
-import { nitro } from "nitro/vite";
-import { defineConfig } from "vite-plus";
+import { defineConfig, lazyPlugins } from "vite-plus";
 
 import { rodeoRuleExceptions, rodeoRules } from "./lint/rodeo-rules";
 
@@ -494,23 +488,45 @@ export default defineConfig({
     ignorePatterns: ["dist", ".output", "routeTree.gen.ts", "cn-tables.ts"],
   },
 
-  plugins: [
-    tanstackStart({ importProtection: { behavior: "error" } }),
-    nitro({
-      compressPublicAssets: { gzip: true, brotli: true },
-      routeRules: {
-        "/**": { headers: securityHeaders },
-        "/rationale": { redirect: { to: "/philosophy", status: 308 } },
-        "/rationale.md": { redirect: { to: "/philosophy.md", status: 308 } },
-      },
-    }),
-    react(),
-    babel({ presets: [reactCompilerPreset()] }),
-    tailwindcss(),
-    cnTables({
-      content: ["src/**/*.{ts,tsx}"],
-      out: "src/lib/cn-tables.ts",
-      css: "src/styles/app.css",
-    }),
-  ],
+  // why: vp lint and vp fmt load this file on every run only to read their own blocks. Importing
+  // the plugins there adds over a second to each agent edit, so they load only when Vite runs.
+  // lazyPlugins returns undefined on those runs, which exactOptionalPropertyTypes rejects.
+  plugins:
+    lazyPlugins(async () => {
+      const [
+        { default: babel },
+        { default: tailwindcss },
+        { tanstackStart },
+        { default: react, reactCompilerPreset },
+        { cn: cnTables },
+        { nitro },
+      ] = await Promise.all([
+        import("@rolldown/plugin-babel"),
+        import("@tailwindcss/vite"),
+        import("@tanstack/react-start/plugin/vite"),
+        import("@vitejs/plugin-react"),
+        import("cn/vite"),
+        import("nitro/vite"),
+      ]);
+
+      return [
+        tanstackStart({ importProtection: { behavior: "error" } }),
+        nitro({
+          compressPublicAssets: { gzip: true, brotli: true },
+          routeRules: {
+            "/**": { headers: securityHeaders },
+            "/rationale": { redirect: { to: "/philosophy", status: 308 } },
+            "/rationale.md": { redirect: { to: "/philosophy.md", status: 308 } },
+          },
+        }),
+        react(),
+        babel({ presets: [reactCompilerPreset()] }),
+        tailwindcss(),
+        cnTables({
+          content: ["src/**/*.{ts,tsx}"],
+          out: "src/lib/cn-tables.ts",
+          css: "src/styles/app.css",
+        }),
+      ];
+    }) ?? [],
 });
