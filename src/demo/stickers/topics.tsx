@@ -34,7 +34,7 @@ export function StaticAnalysisSticker({ className }: StickerProps) {
         strokeWidth={3}
         strokeLinejoin="round"
       />
-      <path d="M32 7 L51 14 V30 C51 42.5 43 51.5 32 57 Z" fill="#7430e6" />
+      <path d="M32 7 L51 14 V30 C51 42.5 43 51.5 32 57 Z" fill={ink.purpleShade} />
       <path
         d="M23 31.5 L29.5 38 L41.5 25"
         fill="none"

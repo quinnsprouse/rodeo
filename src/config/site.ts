@@ -1,6 +1,8 @@
 const tagline = "A free React starter for Claude Code and Codex.";
-const installCommand = "npx degit quinnsprouse/rodeo my-app";
-const repository = "https://github.com/quinnsprouse/rodeo";
+const repositorySlug = "quinnsprouse/rodeo";
+const installCommand = `npx degit ${repositorySlug} my-app`;
+const repository = `https://github.com/${repositorySlug}`;
+const mainBranchFiles = `https://raw.githubusercontent.com/${repositorySlug}/main`;
 
 export const site = {
   name: "Rodeo",
@@ -25,12 +27,12 @@ export const site = {
       { title: "Repository", url: repository, description: "the code behind this site" },
       {
         title: "README",
-        url: "https://raw.githubusercontent.com/quinnsprouse/rodeo/main/README.md",
+        url: `${mainBranchFiles}/README.md`,
         description: "setup and scripts",
       },
       {
         title: "AGENTS.md",
-        url: "https://raw.githubusercontent.com/quinnsprouse/rodeo/main/AGENTS.md",
+        url: `${mainBranchFiles}/AGENTS.md`,
         description:
           "the rules agents follow in this codebase, with links to the guides in docs/agents",
       },

@@ -35,10 +35,10 @@ export function BullSticker({ className }: StickerProps) {
         />
       ))}
       <path d={head} fill={ink.purple} />
-      <path d={shadedHalf} fill="#7430e6" />
+      <path d={shadedHalf} fill={ink.purpleShade} />
       <ellipse cx="32" cy="43" rx="11" ry="7.5" fill={ink.lilac} />
-      <ellipse cx="27.5" cy="43" rx="1.8" ry="2.4" fill="#6a1fe0" />
-      <ellipse cx="36.5" cy="43" rx="1.8" ry="2.4" fill="#6a1fe0" />
+      <ellipse cx="27.5" cy="43" rx="1.8" ry="2.4" fill={ink.purpleDeepShade} />
+      <ellipse cx="36.5" cy="43" rx="1.8" ry="2.4" fill={ink.purpleDeepShade} />
       <circle cx="25.5" cy="29" r="2.4" fill={ink.charcoal} />
       <circle cx="38.5" cy="29" r="2.4" fill={ink.charcoal} />
       <circle cx="24.8" cy="28.2" r="0.8" fill={ink.white} />

@@ -39,7 +39,7 @@ export function ScissorsSticker({ className }: StickerProps) {
       }
     >
       <path d={back} fill="#b5b5b5" />
-      <circle cx="45" cy="50" r="9" fill="#6a1fe0" />
+      <circle cx="45" cy="50" r="9" fill={ink.purpleDeepShade} />
       <circle cx="45" cy="50" r="4.2" fill={ink.white} />
       <path d={front} fill="#e6e6e6" />
       <path

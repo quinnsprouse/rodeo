@@ -152,8 +152,8 @@ export function ClaudeSticker({ className }: StickerProps) {
         <path
           d={claudeMark}
           transform="translate(0 0.6)"
-          fill="#000000"
-          stroke="#000000"
+          fill={ink.shadow}
+          stroke={ink.shadow}
           strokeWidth={3}
           opacity={0.1}
         />

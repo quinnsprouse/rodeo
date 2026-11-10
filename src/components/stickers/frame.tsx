@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 
 export const ink = {
   purple: "#863bff",
+  purpleShade: "#7430e6",
+  purpleDeepShade: "#6a1fe0",
   lilac: "#b794ff",
   lavender: "#e1ceff",
   charcoal: "#202020",
@@ -15,6 +17,7 @@ export const ink = {
   red: "#ff5263",
   green: "#76ef6b",
   white: "#ffffff",
+  shadow: "#000000",
 };
 
 export interface StickerProps {
@@ -35,8 +38,8 @@ export function Sticker({ tilt, scale = 1, outline, children, className }: Stick
       <g transform={`rotate(${tilt} 32 32) translate(${inset} ${inset}) scale(${scale})`}>
         <g
           transform="translate(0 1.5)"
-          fill="#000000"
-          stroke="#000000"
+          fill={ink.shadow}
+          stroke={ink.shadow}
           strokeWidth={8}
           strokeLinejoin="round"
           opacity={0.1}
