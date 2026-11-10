@@ -1,6 +1,8 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 
-import { axeViolations, origin, structuredData, trackBrowserErrors } from "./helpers";
+import { appOrigin as origin } from "./environment";
+import { expect, test } from "./fixtures";
+import { axeViolations, structuredData, trackBrowserErrors } from "./helpers";
 
 const lastToAppear = [
   { figure: "catch", text: "caught in the pull request" },

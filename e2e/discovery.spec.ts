@@ -1,6 +1,5 @@
-import { expect, test } from "@playwright/test";
-
-import { origin } from "./helpers";
+import { appOrigin as origin } from "./environment";
+import { expect, test } from "./fixtures";
 
 test("robots.txt points crawlers at a sitemap of every page", async ({ request }) => {
   const robots = await request.get("/robots.txt");

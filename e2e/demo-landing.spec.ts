@@ -1,6 +1,8 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { origin, structuredData, trackBrowserErrors } from "./helpers";
+import { appOrigin as origin } from "./environment";
+import { expect, test } from "./fixtures";
+import { structuredData, trackBrowserErrors } from "./helpers";
 
 const installCommand = "npx degit quinnsprouse/rodeo my-app";
 

@@ -1,5 +1,4 @@
-import { expect, test } from "@playwright/test";
-
+import { expect, notFoundResponse, test } from "./fixtures";
 import { axeViolations } from "./helpers";
 
 for (const theme of ["light", "dark"] as const) {
@@ -14,8 +13,12 @@ for (const theme of ["light", "dark"] as const) {
   });
 }
 
-test("the not-found page has no WCAG violations", async ({ page }) => {
-  await page.goto("/definitely-missing");
-  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
-  expect(await axeViolations(page)).toEqual([]);
+test.describe(() => {
+  test.use({ expectedBrowserErrors: [notFoundResponse] });
+
+  test("the not-found page has no WCAG violations", async ({ page }) => {
+    await page.goto("/definitely-missing");
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    expect(await axeViolations(page)).toEqual([]);
+  });
 });

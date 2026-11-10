@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("responses carry the baseline security headers", async ({ request }) => {
   const response = await request.get("/");

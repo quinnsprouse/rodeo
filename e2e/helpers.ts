@@ -1,8 +1,6 @@
 import { AxeBuilder } from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
-export const origin = "https://rodeo.example";
-
 export function trackBrowserErrors(page: Page) {
   const browserErrors: Error[] = [];
   page.on("pageerror", (error) => {

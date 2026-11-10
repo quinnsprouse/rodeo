@@ -1,6 +1,5 @@
-import { expect, test } from "@playwright/test";
-
-import { origin } from "./helpers";
+import { appOrigin as origin } from "./environment";
+import { expect, notFoundResponse, test } from "./fixtures";
 
 test("hashed assets ship compressed and cached for a year", async ({ page, request }) => {
   await page.goto("/");
@@ -42,13 +41,17 @@ test("each page names its own canonical URL from the configured origin", async (
   );
 });
 
-test("a missing page claims no canonical URL", async ({ page }) => {
-  await page.goto("/definitely-missing");
+test.describe(() => {
+  test.use({ expectedBrowserErrors: [notFoundResponse] });
 
-  await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
-  await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
-  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
-    "content",
-    `${origin}/og-home.png`,
-  );
+  test("a missing page claims no canonical URL", async ({ page }) => {
+    await page.goto("/definitely-missing");
+
+    await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+    await expect(page.locator('meta[property="og:url"]')).toHaveCount(0);
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      "content",
+      `${origin}/og-home.png`,
+    );
+  });
 });

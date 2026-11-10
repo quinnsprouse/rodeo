@@ -1,5 +1,4 @@
-import { expect, test } from "@playwright/test";
-
+import { expect, notFoundResponse, test } from "./fixtures";
 import { trackBrowserErrors } from "./helpers";
 
 test("the home page renders without errors", async ({ page }) => {
@@ -34,17 +33,21 @@ test("a first visit follows the system theme", async ({ page }) => {
   expect(browserErrors).toHaveLength(0);
 });
 
-test("unknown routes return a real 404 inside the application shell", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
-  const response = await page.goto("/definitely-missing");
+test.describe(() => {
+  test.use({ expectedBrowserErrors: [notFoundResponse] });
 
-  expect(response?.status()).toBe(404);
-  await expect(page).toHaveTitle("Rodeo — React starter for Claude Code and Codex");
-  await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Back home" })).toBeVisible();
-  expect(
-    browserErrors.filter(
-      (error) => !error.message.includes("server responded with a status of 404"),
-    ),
-  ).toHaveLength(0);
+  test("unknown routes return a real 404 inside the application shell", async ({ page }) => {
+    const browserErrors = trackBrowserErrors(page);
+    const response = await page.goto("/definitely-missing");
+
+    expect(response?.status()).toBe(404);
+    await expect(page).toHaveTitle("Rodeo — React starter for Claude Code and Codex");
+    await expect(page.getByRole("heading", { name: "Page not found" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Back home" })).toBeVisible();
+    expect(
+      browserErrors.filter(
+        (error) => !error.message.includes("server responded with a status of 404"),
+      ),
+    ).toHaveLength(0);
+  });
 });
