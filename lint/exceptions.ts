@@ -18,7 +18,7 @@ export const exceptions: LintException[] = [
     why: "Vite exposes VITE_* variables only on import.meta.env, so the module that parses them into clientEnv has to read it.",
   },
   {
-    files: ["src/components/stickers/**"],
+    files: ["src/components/stickers/**", "src/demo/stickers/**"],
     rules: ["shadcn/no-raw-colors"],
     why: "Stickers are fixed artwork, like an image, so their colors stay the same in light and dark mode instead of following the theme tokens.",
   },
@@ -33,7 +33,7 @@ export const exceptions: LintException[] = [
     why: "Playwright serializes the function passed to page.evaluate and runs it in the browser, so its helpers must be nested inside it to exist there.",
   },
   {
-    files: ["src/components/swap-chip-motion.tsx"],
+    files: ["src/demo/landing/swap-chip-motion.tsx"],
     rules: ["react-doctor/no-layout-property-animation"],
     why: "CSS cannot composite width, and the hero chip has to resize so the sentence reflows around each word.",
   },

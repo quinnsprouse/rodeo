@@ -1,7 +1,7 @@
 import { spring } from "motion";
 import { useLayoutEffect, useRef } from "react";
 
-import { stickerWindow, type SwapChoice } from "@/components/swap-chip-face";
+import { stickerWindow, type SwapChoice } from "@/demo/landing/swap-chip-face";
 import { cn } from "@/lib/utils";
 
 const settle = 350;

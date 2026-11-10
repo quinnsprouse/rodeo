@@ -1,9 +1,10 @@
+import { ArrowRight01Icon, Github01Icon } from "@hugeicons/core-free-icons";
 import { Link } from "@tanstack/react-router";
 
-import { ArrowRight01Icon, Github01Icon, Icon } from "@/components/icons";
-import { EditSticker, PushSticker } from "@/components/stickers/swap";
-import { StaticAnalysisSticker } from "@/components/stickers/topics";
+import { Icon } from "@/components/icon";
 import { Snippet } from "@/components/ui/snippet";
+import { EditSticker, PushSticker } from "@/demo/stickers/swap";
+import { StaticAnalysisSticker } from "@/demo/stickers/topics";
 
 const link =
   "group/link inline-flex items-center gap-xs underline-offset-4 hover:underline focus-visible:outline-primary-foreground";

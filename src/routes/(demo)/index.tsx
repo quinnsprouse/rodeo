@@ -1,23 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-import { ChecksSection } from "@/components/checks-section";
-import { ArrowDown01Icon, Icon } from "@/components/icons";
-import { OpinionsSection } from "@/components/opinions-section";
-import { PageSection } from "@/components/page-section";
-import { PyramidSection, pyramidSectionId } from "@/components/pyramid-section";
-import { StartCta } from "@/components/start-cta";
-import { BullSticker, TerminalSticker } from "@/components/stickers/hero";
-import { SwapSentence } from "@/components/swap-sentence";
+import { BullSticker } from "@/components/stickers/bull";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Snippet } from "@/components/ui/snippet";
 import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { site } from "@/config/site";
-import { useScrolledPast } from "@/hooks/use-scrolled-past";
+import { ChecksSection } from "@/demo/landing/checks-section";
+import { Hero } from "@/demo/landing/hero";
+import { OpinionsSection } from "@/demo/landing/opinions-section";
+import { PageSection } from "@/demo/landing/page-section";
+import { PyramidSection } from "@/demo/landing/pyramid-section";
+import { ScrollHint } from "@/demo/landing/scroll-hint";
+import { StartCta } from "@/demo/landing/start-cta";
 import { homeStructuredData, structuredDataScript } from "@/lib/structured-data";
-import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/(demo)/")({
   head: () => ({
     links: [preloadFont(fonts.bold), preloadFont(fonts.mono)],
     scripts: clientEnv.VITE_APP_URL
@@ -61,57 +58,6 @@ function SiteNav() {
         <ThemeToggle className="ml-xxs" />
       </nav>
     </div>
-  );
-}
-
-function Hero() {
-  return (
-    <section className="@container flex flex-1 flex-col items-center justify-center px-m py-xl sm:px-xl">
-      <h1 className="flex items-center gap-xxs font-brand text-logo font-heavy tracking-xs text-foreground">
-        <BullSticker className="size-[1.4em]" />
-        rodeo
-        <span className="sr-only">: {site.tagline}</span>
-      </h1>
-
-      <div className="mt-l w-full sm:mt-xl">
-        <SwapSentence />
-      </div>
-
-      <Snippet
-        text={site.installCommand}
-        size="lg"
-        leading={<TerminalSticker className="size-[2em]" />}
-        shimmer
-        className="mt-xl max-w-full sm:mt-xxl"
-      />
-
-      <p aria-hidden="true" className="mt-m text-center text-s text-muted-foreground sm:text-m">
-        {site.tagline}
-      </p>
-    </section>
-  );
-}
-
-function ScrollHint() {
-  const scrolled = useScrolledPast(24);
-
-  return (
-    <a
-      href={`#${pyramidSectionId}`}
-      aria-label="Scroll to how Rodeo works"
-      data-markdown="skip"
-      className={cn(
-        "mx-auto mb-m flex flex-col items-center gap-xxs px-m py-xs text-s text-muted-foreground transition duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
-        scrolled && "invisible opacity-0",
-      )}
-    >
-      Scroll
-      <Icon
-        icon={ArrowDown01Icon}
-        className={cn("size-4", !scrolled && "motion-safe:animate-nudge")}
-        aria-hidden="true"
-      />
-    </a>
   );
 }
 

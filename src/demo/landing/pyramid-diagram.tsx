@@ -1,13 +1,13 @@
 import { useState, type ComponentType, type PointerEvent, type ReactNode, type Ref } from "react";
 
 import type { StickerProps } from "@/components/stickers/frame";
+import type { Entrance } from "@/demo/landing/use-entrance";
 import {
   CodebaseSticker,
   HumanReviewSticker,
   ProseSticker,
   StaticAnalysisSticker,
-} from "@/components/stickers/topics";
-import type { Entrance } from "@/hooks/use-entrance";
+} from "@/demo/stickers/topics";
 import { cn } from "@/lib/utils";
 
 export const pyramidLayers: {

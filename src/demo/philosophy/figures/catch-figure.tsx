@@ -1,10 +1,11 @@
+import { Cancel01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { useRef, type ReactNode } from "react";
 
-import { Card, Figure } from "@/components/figures/figure";
-import { Cancel01Icon, Icon, Tick02Icon } from "@/components/icons";
-import { useBeats } from "@/hooks/use-beats";
-import { useScrollPlayback } from "@/hooks/use-scroll-playback";
-import { concealed, iconOut, iconSwap, reveal } from "@/lib/motion-classes";
+import { Icon } from "@/components/icon";
+import { concealed, iconOut, iconSwap, reveal } from "@/demo/motion-classes";
+import { Card, Figure } from "@/demo/philosophy/figures/figure";
+import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
+import { useBeats } from "@/demo/use-beats";
 import { cn } from "@/lib/utils";
 
 const stops = [

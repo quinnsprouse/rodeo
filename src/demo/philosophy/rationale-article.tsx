@@ -1,19 +1,15 @@
 import type { ComponentType, ReactNode } from "react";
 
-import { CatchFigure } from "@/components/figures/catch-figure";
-import { PyramidFigure } from "@/components/figures/pyramid-figure";
-import { RenameFigure } from "@/components/figures/rename-figure";
-import { TokenBarsFigure } from "@/components/figures/token-figure";
-import { UpkeepFigure } from "@/components/figures/upkeep-figure";
 import type { StickerProps } from "@/components/stickers/frame";
-import { HeartSticker, ScissorsSticker, TokenSticker } from "@/components/stickers/rationale";
-import {
-  CodebaseSticker,
-  HumanReviewSticker,
-  StaticAnalysisSticker,
-} from "@/components/stickers/topics";
 import { philosophyMeta } from "@/config/site";
-import { formatPublished } from "@/lib/format-date";
+import { CatchFigure } from "@/demo/philosophy/figures/catch-figure";
+import { PyramidFigure } from "@/demo/philosophy/figures/pyramid-figure";
+import { RenameFigure } from "@/demo/philosophy/figures/rename-figure";
+import { TokenBarsFigure } from "@/demo/philosophy/figures/token-figure";
+import { UpkeepFigure } from "@/demo/philosophy/figures/upkeep-figure";
+import { formatPublished } from "@/demo/philosophy/format-date";
+import { HeartSticker, ScissorsSticker, TokenSticker } from "@/demo/stickers/rationale";
+import { CodebaseSticker, HumanReviewSticker, StaticAnalysisSticker } from "@/demo/stickers/topics";
 
 export const rationaleSections = [
   { id: "teaching", title: "Teaching through the codebase" },

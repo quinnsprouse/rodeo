@@ -1,4 +1,4 @@
-import { ChecksDemo } from "@/components/checks-demo";
+import { ChecksDemo } from "@/demo/landing/checks-demo";
 
 export function ChecksSection() {
   return (

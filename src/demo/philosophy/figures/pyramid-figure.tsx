@@ -1,9 +1,9 @@
 import { useRef } from "react";
 
-import { Card, Figure } from "@/components/figures/figure";
-import { PyramidDiagram, pyramidLayers } from "@/components/pyramid-diagram";
-import { useEntrance } from "@/hooks/use-entrance";
-import { useScrollPlayback } from "@/hooks/use-scroll-playback";
+import { PyramidDiagram, pyramidLayers } from "@/demo/landing/pyramid-diagram";
+import { useEntrance } from "@/demo/landing/use-entrance";
+import { Card, Figure } from "@/demo/philosophy/figures/figure";
+import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
 
 function Sheen() {
   return (

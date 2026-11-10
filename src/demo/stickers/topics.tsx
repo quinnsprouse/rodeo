@@ -1,4 +1,4 @@
-import { ink, Sticker, type StickerProps } from "./frame";
+import { ink, Sticker, type StickerProps } from "@/components/stickers/frame";
 
 export function CodebaseSticker({ className }: StickerProps) {
   return (

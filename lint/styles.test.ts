@@ -7,7 +7,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { generatedFiles } from "#tooling/project";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const stylesDirectory = join(repoRoot, "src", "styles");
+const appDirectory = join(repoRoot, "src");
 // why: docs/agents/UI_MOTION.md tells agents to draw dividers with these utilities, so they stay
 // even before a page uses them.
 const documentedUtilities = new Set(["divider-t", "divider-b", "divider-r"]);
@@ -30,12 +30,12 @@ function declaredNames(css: string) {
   return [...utilities, ...classes];
 }
 
-const source = filesUnder(join(repoRoot, "src"), [".ts", ".tsx"])
+const source = filesUnder(appDirectory, [".ts", ".tsx"])
   .filter((file) => !isGenerated(relative(repoRoot, file)))
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 
-const declared = filesUnder(stylesDirectory, [".css"]).flatMap((file) =>
+const declared = filesUnder(appDirectory, [".css"]).flatMap((file) =>
   declaredNames(readFileSync(file, "utf8")).map((name) => ({
     name,
     file: relative(repoRoot, file),

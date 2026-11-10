@@ -1,6 +1,8 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
+import { StaticChipFace, type SwapChoice } from "@/demo/landing/swap-chip-face";
+import { usePageVisible } from "@/demo/landing/use-page-visible";
 import {
   ClaudeSticker,
   CodexSticker,
@@ -10,15 +12,13 @@ import {
   EditSticker,
   OffBrandSticker,
   PushSticker,
-} from "@/components/stickers/swap";
-import { StaticChipFace, type SwapChoice } from "@/components/swap-chip-face";
+} from "@/demo/stickers/swap";
 import { useOnScreen } from "@/hooks/use-on-screen";
-import { usePageVisible } from "@/hooks/use-page-visible";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useThemeRevealing } from "@/hooks/use-theme-revealing";
 
 const AnimatedChipFace = lazy(() =>
-  import("@/components/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),
+  import("@/demo/landing/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),
 );
 
 type Choices = readonly [SwapChoice, ...SwapChoice[]];

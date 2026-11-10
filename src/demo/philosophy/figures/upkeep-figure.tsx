@@ -1,9 +1,9 @@
 import { useRef, useState } from "react";
 
-import { Card, Figure } from "@/components/figures/figure";
-import { useScrollPlayback } from "@/hooks/use-scroll-playback";
-import { hoveredData } from "@/lib/hover";
-import { reveal } from "@/lib/motion-classes";
+import { reveal } from "@/demo/motion-classes";
+import { Card, Figure } from "@/demo/philosophy/figures/figure";
+import { hoveredData } from "@/demo/philosophy/figures/hover";
+import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
 import { cn } from "@/lib/utils";
 
 const series = [

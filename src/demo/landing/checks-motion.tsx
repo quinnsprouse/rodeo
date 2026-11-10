@@ -1,6 +1,8 @@
-import { Icon, Tick02Icon } from "@/components/icons";
-import { BullSticker } from "@/components/stickers/hero";
-import { iconOut, iconSwap, reveal } from "@/lib/motion-classes";
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+
+import { Icon } from "@/components/icon";
+import { BullSticker } from "@/components/stickers/bull";
+import { iconOut, iconSwap, reveal } from "@/demo/motion-classes";
 import { cn } from "@/lib/utils";
 
 export function StatusPill({

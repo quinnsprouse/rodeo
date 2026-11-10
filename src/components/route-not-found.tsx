@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 
-import { BullSticker } from "@/components/stickers/hero";
+import { BullSticker } from "@/components/stickers/bull";
 import { buttonVariants } from "@/components/ui/button";
 
 export function RouteNotFoundComponent() {

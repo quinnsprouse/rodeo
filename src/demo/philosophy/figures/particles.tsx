@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { CoinGlint, CoinRim, CoinShade, CoinSide } from "@/components/stickers/coin";
+import { CoinGlint, CoinRim, CoinShade, CoinSide } from "@/demo/stickers/coin";
 import { useWebAnimation, type AnimationTiming } from "@/hooks/use-web-animation";
 
 const samples = 20;

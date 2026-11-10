@@ -1,7 +1,8 @@
+import { Copy01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { cva, type VariantProps } from "class-variance-authority";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
-import { Icon, Tick02Icon, Copy01Icon } from "@/components/icons";
+import { Icon } from "@/components/icon";
 import { Button } from "@/components/ui/button";
 import { ShimmerText } from "@/components/ui/shimmer-text";
 import { useOnScreen } from "@/hooks/use-on-screen";
@@ -19,33 +20,50 @@ const snippetVariants = cva("group relative flex items-center", {
   },
 });
 
+const commandVariants = cva("block font-data whitespace-nowrap text-foreground", {
+  variants: {
+    size: {
+      default: "text-s",
+      lg: "",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+});
+
+const copyIconVariants = cva("relative", {
+  variants: {
+    size: {
+      default: "size-5",
+      lg: "size-[calc(var(--text-install)*1.1)]",
+    },
+  },
+  defaultVariants: {
+    size: "default",
+  },
+});
+
 interface SnippetProps extends VariantProps<typeof snippetVariants> {
-  text: string | string[];
-  prompt?: boolean;
+  text: string;
   leading?: ReactNode;
   shimmer?: boolean;
   className?: string;
-  onCopy?: () => void;
 }
 
 const iconMorph = "transition duration-(--motion-duration) ease-(--motion-easing)";
 const iconHidden = "opacity-0 motion-safe:scale-40 motion-safe:blur-xs";
 
-export function Snippet({
-  text,
-  prompt = true,
-  leading,
-  shimmer = false,
-  size,
-  className,
-  onCopy,
-}: SnippetProps) {
+function CommandShimmer({ text, target }: { text: string; target: RefObject<Element | null> }) {
+  const onScreen = useOnScreen(target);
+  return <ShimmerText text={text} shimmering={onScreen} />;
+}
+
+export function Snippet({ text, leading, shimmer = false, size, className }: SnippetProps) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
   const copied = status === "copied";
   const timeoutRef = useRef<number | null>(null);
   const commandRef = useRef<HTMLDivElement>(null);
-  const onScreen = useOnScreen(commandRef);
-  const lines = Array.isArray(text) ? text : [text];
 
   useEffect(() => {
     return () => {
@@ -57,13 +75,10 @@ export function Snippet({
 
   const selectCommand = () => {
     const selection = window.getSelection();
-    const commands = commandRef.current?.querySelectorAll("code");
-    const first = commands?.item(0);
-    const last = commands?.item(commands.length - 1);
-    if (!selection || !first || !last) return undefined;
+    const command = commandRef.current?.querySelector("code");
+    if (!selection || !command) return undefined;
     const range = document.createRange();
-    range.setStart(first, 0);
-    range.setEnd(last, last.childNodes.length);
+    range.selectNodeContents(command);
     selection.removeAllRanges();
     selection.addRange(range);
     return selection;
@@ -79,7 +94,6 @@ export function Snippet({
   const showCopied = () => {
     setStatus("copied");
     timeoutRef.current = window.setTimeout(() => setStatus("idle"), 1500);
-    onCopy?.();
   };
 
   const copyWithFallback = () => {
@@ -92,7 +106,6 @@ export function Snippet({
   };
 
   const handleCopy = async () => {
-    const payload = lines.join("\n");
     if (timeoutRef.current) {
       window.clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
@@ -104,7 +117,7 @@ export function Snippet({
     }
 
     try {
-      await navigator.clipboard.writeText(payload);
+      await navigator.clipboard.writeText(text);
     } catch {
       copyWithFallback();
       return;
@@ -124,20 +137,15 @@ export function Snippet({
             leading ? "pr-m" : "px-m",
           )}
         >
-          {lines.map((line) => (
-            <code
-              key={line}
-              className={cn(
-                "block font-data whitespace-nowrap text-foreground",
-                size !== "lg" && "text-s",
-                prompt &&
-                  !leading &&
-                  "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
-              )}
-            >
-              {shimmer ? <ShimmerText text={line} shimmering={onScreen} /> : line}
-            </code>
-          ))}
+          <code
+            className={cn(
+              commandVariants({ size }),
+              !leading &&
+                "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
+            )}
+          >
+            {shimmer ? <CommandShimmer text={text} target={commandRef} /> : text}
+          </code>
         </div>
 
         <Button
@@ -148,13 +156,7 @@ export function Snippet({
           className="mr-xs"
           aria-label={copied ? "Copied" : "Copy to clipboard"}
         >
-          <span
-            aria-hidden="true"
-            className={cn(
-              "relative",
-              size === "lg" ? "size-[calc(var(--text-install)*1.1)]" : "size-5",
-            )}
-          >
+          <span aria-hidden="true" className={copyIconVariants({ size })}>
             <Icon
               icon={Copy01Icon}
               className={cn("absolute inset-0 size-full", iconMorph, copied && iconHidden)}

@@ -1,10 +1,10 @@
 import { useRef, useState, type ReactNode } from "react";
 
-import { Card, Figure } from "@/components/figures/figure";
-import { useBeats } from "@/hooks/use-beats";
-import { useScrollPlayback } from "@/hooks/use-scroll-playback";
-import { hoveredData } from "@/lib/hover";
-import { concealed, reveal } from "@/lib/motion-classes";
+import { concealed, reveal } from "@/demo/motion-classes";
+import { Card, Figure } from "@/demo/philosophy/figures/figure";
+import { hoveredData } from "@/demo/philosophy/figures/hover";
+import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
+import { useBeats } from "@/demo/use-beats";
 import { cn } from "@/lib/utils";
 
 type Idea = "author" | "admin";

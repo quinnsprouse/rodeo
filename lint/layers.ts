@@ -21,7 +21,8 @@ const sharedRestrictions = {
         "@heroicons/*",
         "@tabler/icons-react",
       ],
-      message: "Icons come from @/components/icons (Hugeicons). See docs/agents/UI_MOTION.md",
+      message:
+        "Import icons from @hugeicons/core-free-icons and draw them with Icon from @/components/icon. See docs/agents/UI_MOTION.md",
     },
     {
       group: ["framer-motion"],
@@ -74,7 +75,13 @@ const nodeGlobals = ["process", "Buffer", "global", "__dirname", "__filename", "
 
 export const appFiles = "src/**";
 
-const zones: Zone[] = [
+const demoImports: ImportPattern = {
+  group: ["@/demo", "@/demo/**"],
+  message:
+    "Only src/demo and src/routes/(demo) import the demo, so deleting it leaves a working app. Move what this file needs out of src/demo, or pass it in as an argument.",
+};
+
+const kitZones: Zone[] = [
   {
     files: ["src/lib/**", "src/config/**"],
     bans: ["@/components/*", "@/hooks/*"],
@@ -89,11 +96,13 @@ const zones: Zone[] = [
   },
   {
     files: ["src/components/ui/**"],
-    bans: ["@/components/*", "!@/components/ui/*", "!@/components/icons"],
+    bans: ["@/components/*", "!@/components/ui/*", "!@/components/icon"],
     message:
       "The UI kit cannot depend on app components. Pass app content in through props or children.",
   },
 ];
+
+const demoFiles = ["src/demo/**", "src/routes/(demo)/**"];
 
 // why: Oxlint replaces a rule's options in an override instead of merging them, so each layer
 // repeats the shared restrictions.
@@ -140,11 +149,12 @@ function layerPair(
 }
 
 export function layerOverrides(): OxlintOverride[] {
-  const zoned = zones.flatMap((zone) => zone.files);
+  const zoned = [...kitZones.flatMap((zone) => zone.files), ...demoFiles];
   return [
-    ...layerPair([appFiles], zoned, []),
-    ...zones.flatMap(({ files, bans, message }) =>
-      layerPair(files, [], [{ group: bans, message }]),
+    ...layerPair([appFiles], zoned, [demoImports]),
+    ...kitZones.flatMap(({ files, bans, message }) =>
+      layerPair(files, [], [{ group: bans, message }, demoImports]),
     ),
+    ...layerPair(demoFiles, [], []),
   ];
 }

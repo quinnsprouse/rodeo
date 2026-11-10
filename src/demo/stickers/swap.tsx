@@ -1,6 +1,5 @@
+import { ink, Sticker, type StickerProps } from "@/components/stickers/frame";
 import { cn } from "@/lib/utils";
-
-import { ink, Sticker, type StickerProps } from "./frame";
 
 const blocked = (
   <>

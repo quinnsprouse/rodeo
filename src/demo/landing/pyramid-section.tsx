@@ -1,9 +1,10 @@
+import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { useRef } from "react";
 
-import { ArrowUpRight01Icon, Icon } from "@/components/icons";
-import { PageSection } from "@/components/page-section";
-import { PyramidDiagram } from "@/components/pyramid-diagram";
-import { useEntrance } from "@/hooks/use-entrance";
+import { Icon } from "@/components/icon";
+import { PageSection } from "@/demo/landing/page-section";
+import { PyramidDiagram } from "@/demo/landing/pyramid-diagram";
+import { useEntrance } from "@/demo/landing/use-entrance";
 import { usePlayOnView } from "@/hooks/use-play-on-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 

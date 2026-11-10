@@ -1,7 +1,9 @@
-import { StatusPill } from "@/components/checks-motion";
-import type { DiffLine, Scenario } from "@/components/checks-scenarios";
-import { Icon, MinusSignIcon, PlusSignIcon } from "@/components/icons";
-import { concealed, reveal } from "@/lib/motion-classes";
+import { MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
+
+import { Icon } from "@/components/icon";
+import { StatusPill } from "@/demo/landing/checks-motion";
+import type { DiffLine, Scenario } from "@/demo/landing/checks-scenarios";
+import { concealed, reveal } from "@/demo/motion-classes";
 import { cn } from "@/lib/utils";
 
 const lineDelays = [

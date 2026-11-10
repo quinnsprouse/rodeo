@@ -1,16 +1,17 @@
 import { Tabs } from "@base-ui/react/tabs";
+import { ArrowUp02Icon, Loading03Icon, PlusSignIcon, Tick02Icon } from "@hugeicons/core-free-icons";
 import { useEffect, useRef, useState } from "react";
 
-import { FileChange } from "@/components/checks-file-change";
-import { StatusPill } from "@/components/checks-motion";
-import { scenarios, type Scenario } from "@/components/checks-scenarios";
-import { ArrowUp02Icon, Icon, Loading03Icon, PlusSignIcon, Tick02Icon } from "@/components/icons";
-import { BullSticker } from "@/components/stickers/hero";
+import { Icon } from "@/components/icon";
+import { BullSticker } from "@/components/stickers/bull";
 import { ShimmerText } from "@/components/ui/shimmer-text";
-import { useBeats } from "@/hooks/use-beats";
+import { FileChange } from "@/demo/landing/checks-file-change";
+import { StatusPill } from "@/demo/landing/checks-motion";
+import { scenarios, type Scenario } from "@/demo/landing/checks-scenarios";
+import { concealed, iconOut, iconSwap, reveal } from "@/demo/motion-classes";
+import { useBeats } from "@/demo/use-beats";
 import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { concealed, iconOut, iconSwap, reveal } from "@/lib/motion-classes";
 import { cn } from "@/lib/utils";
 
 function playbackFor(reducedMotion: boolean, switched: boolean, entrance: Playback): Playback {

@@ -1,15 +1,15 @@
 import type { ComponentType } from "react";
 
-import { PageSection } from "@/components/page-section";
 import type { StickerProps } from "@/components/stickers/frame";
-import { CommentSticker } from "@/components/stickers/swap";
+import { PageSection } from "@/demo/landing/page-section";
+import { CommentSticker } from "@/demo/stickers/swap";
 import {
   BrowserTestsSticker,
   DesignSystemSticker,
   LintRulesSticker,
   OneWaySticker,
   ShortDocsSticker,
-} from "@/components/stickers/topics";
+} from "@/demo/stickers/topics";
 
 const opinions: { title: string; reason: string; Sticker: ComponentType<StickerProps> }[] = [
   {
