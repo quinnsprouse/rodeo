@@ -26,10 +26,6 @@ ROOT = PIPELINE.parents[1]
 SOURCES = PIPELINE / "sources"
 CONFIG_FILE = PIPELINE / "config.json"
 CONFIG = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-USAGE = ROOT / CONFIG["outputs"]["usage"]
-OUTPUT = ROOT / CONFIG["outputs"]["fonts"]
-STYLESHEET = ROOT / CONFIG["outputs"]["stylesheet"]
-STYLESHEET_TO_OUTPUT = Path(os.path.relpath(OUTPUT, STYLESHEET.parent)).as_posix()
 
 ASCII = set(range(0x20, 0x7F))
 LATIN_1 = set(range(0xA0, 0x100))
@@ -564,7 +560,7 @@ def plan(face: Face, usage: Usage) -> Result:
     )
 
 
-def stylesheet(results: list[Result]) -> str:
+def stylesheet(results: list[Result], font_url: str) -> str:
     rules = []
     for result in results:
         for piece in result.pieces:
@@ -574,7 +570,7 @@ def stylesheet(results: list[Result]) -> str:
                 f"  font-style: {result.face.style};\n"
                 "  font-display: swap;\n"
                 f"  font-weight: {result.css_weight};\n"
-                f'  src: url("{STYLESHEET_TO_OUTPUT}/{piece.name}.woff2") format("woff2");\n'
+                f'  src: url("{font_url}/{piece.name}.woff2") format("woff2");\n'
                 f"  unicode-range: {', '.join(unicode_ranges(piece.codepoints))};\n"
                 "}\n"
             )
@@ -601,20 +597,31 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Cut the site's fonts to the characters, weights, and features its pages use."
     )
+    parser.add_argument("--usage", type=Path, required=True, help="the usage file the audit wrote")
+    parser.add_argument(
+        "--fonts", type=Path, required=True, help="the directory to write the cut fonts to"
+    )
+    parser.add_argument(
+        "--stylesheet", type=Path, required=True, help="the @font-face stylesheet to write"
+    )
     parser.add_argument(
         "--keep-hinting", action="store_true", help="keep TrueType instructions and CFF hints"
     )
     args = parser.parse_args()
 
-    recorded = json.loads(USAGE.read_text(encoding="utf-8")) if USAGE.exists() else {"groups": []}
+    recorded = (
+        json.loads(args.usage.read_text(encoding="utf-8"))
+        if args.usage.exists()
+        else {"groups": []}
+    )
     usage = collect_usage(recorded["groups"])
     content = recorded.get("contentCharacters", {})
     for face, entry in usage.items():
         entry.content = {ord(c) for c in content.get(face.family, "")}
     results = [plan(face, usage[face]) for face in FACES]
     failures = []
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    for stale in OUTPUT.glob("*.woff2"):
+    args.fonts.mkdir(parents=True, exist_ok=True)
+    for stale in args.fonts.glob("*.woff2"):
         stale.unlink()
     for result in results:
         face = result.face
@@ -631,9 +638,10 @@ def main() -> int:
             )
             problems = verify_piece(face, piece, result, source, args.keep_hinting)
             failures += [f"{piece.name}: {problem}" for problem in problems]
-            (OUTPUT / f"{piece.name}.woff2").write_bytes(piece.data)
+            (args.fonts / f"{piece.name}.woff2").write_bytes(piece.data)
         print(describe(result, (SOURCES / face.source).stat().st_size))
-    STYLESHEET.write_text(stylesheet(results), encoding="utf-8")
+    font_url = Path(os.path.relpath(args.fonts, args.stylesheet.parent)).as_posix()
+    args.stylesheet.write_text(stylesheet(results, font_url), encoding="utf-8")
     for failure in failures:
         print(f"FAILED {failure}", file=sys.stderr)
     return 1 if failures else 0

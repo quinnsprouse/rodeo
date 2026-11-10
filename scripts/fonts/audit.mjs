@@ -1,16 +1,11 @@
-import { spawnSync } from "node:child_process";
 import { globSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { chromium } from "@playwright/test";
 
 import { generatedFiles } from "#tooling/project";
-import { startBuiltServer } from "#tooling/server";
 
-const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const config = JSON.parse(readFileSync(new URL("config.json", import.meta.url), "utf8"));
-const usagePath = join(repoRoot, config.outputs.usage);
 const families = [...new Set(config.faces.map((face) => face.family))];
 const maxScrollSteps = 2000;
 const viewports = [
@@ -234,16 +229,16 @@ async function auditSite(origin) {
   return { paths: pages, groups: [...groups.values()] };
 }
 
-function sourceCharacters() {
+function sourceCharacters(root) {
   const found = new Map();
-  const files = readdirSync(join(repoRoot, "src"), { recursive: true, encoding: "utf8" })
+  const files = readdirSync(join(root, "src"), { recursive: true, encoding: "utf8" })
     .map((file) => join("src", file))
     .filter(
       (file) =>
         /\.(tsx?|css|mdx?)$/.test(file) && !generatedPaths.some((path) => file.startsWith(path)),
     );
   for (const file of files) {
-    for (const character of readFileSync(join(repoRoot, file), "utf8")) {
+    for (const character of readFileSync(join(root, file), "utf8")) {
       if (character.codePointAt(0) > 0x7e) {
         found.set(character, [...(found.get(character) ?? []), file]);
       }
@@ -252,12 +247,12 @@ function sourceCharacters() {
   return found;
 }
 
-function contentCharacters() {
+function contentCharacters(root) {
   return new Map(
     config.contentFiles.map(({ family, files }) => {
       const characters = new Set();
-      for (const file of files.flatMap((pattern) => globSync(pattern, { cwd: repoRoot }))) {
-        for (const character of readFileSync(join(repoRoot, file), "utf8")) {
+      for (const file of files.flatMap((pattern) => globSync(pattern, { cwd: root }))) {
+        for (const character of readFileSync(join(root, file), "utf8")) {
           if (character.codePointAt(0) > 0x7e) characters.add(character);
         }
       }
@@ -274,54 +269,34 @@ function hex(character) {
   return `U+${character.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`;
 }
 
-function build() {
-  const result = spawnSync("vp", ["build", "--mode", "e2e", "--logLevel", "error"], {
-    cwd: repoRoot,
-    stdio: "inherit",
-  });
-  if (result.status !== 0) process.exit(result.status ?? 1);
-}
+export async function auditFonts({ root, origin, usageFile }) {
+  const audit = await auditSite(origin);
+  const content = contentCharacters(root);
+  const kept = new Set(Array.from(content.values(), (characters) => Array.from(characters)).flat());
+  const rendered = new Set(audit.groups.flatMap((group) => [...group.characters]));
+  const unseen = [...sourceCharacters(root)]
+    .filter(([character]) => !rendered.has(character) && !kept.has(character))
+    .map(
+      ([character, files]) => `${hex(character)} ${character} in ${[...new Set(files)].join(", ")}`,
+    );
 
-function format(path) {
-  const result = spawnSync("vp", ["fmt", path], { cwd: repoRoot, encoding: "utf8" });
-  if (result.status === 0) return;
-  process.stderr.write([result.error?.message, result.stdout, result.stderr].join("\n"));
-  process.exit(result.status ?? 1);
-}
+  const usage = {
+    pages: audit.paths,
+    viewports,
+    groups: audit.groups
+      .map((group) => Object.assign(group, { characters: sortedText(group.characters) }))
+      .toSorted((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
+    contentCharacters: Object.fromEntries(
+      Array.from(content, ([family, characters]) => [family, sortedText(characters)]),
+    ),
+    sourceCharactersNotRendered: unseen,
+  };
+  writeFileSync(join(root, usageFile), `${JSON.stringify(usage, null, 2)}\n`);
 
-build();
-const server = await startBuiltServer({ root: repoRoot });
-let audit;
-try {
-  audit = await auditSite(server.origin);
-} finally {
-  await server.stop();
-}
-
-const content = contentCharacters();
-const kept = new Set(Array.from(content.values(), (characters) => Array.from(characters)).flat());
-const rendered = new Set(audit.groups.flatMap((group) => [...group.characters]));
-const unseen = [...sourceCharacters()]
-  .filter(([character]) => !rendered.has(character) && !kept.has(character))
-  .map(
-    ([character, files]) => `${hex(character)} ${character} in ${[...new Set(files)].join(", ")}`,
-  );
-
-const usage = {
-  pages: audit.paths,
-  viewports,
-  groups: audit.groups
-    .map((group) => Object.assign(group, { characters: sortedText(group.characters) }))
-    .toSorted((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))),
-  contentCharacters: Object.fromEntries(
-    Array.from(content, ([family, characters]) => [family, sortedText(characters)]),
-  ),
-  sourceCharactersNotRendered: unseen,
-};
-writeFileSync(usagePath, `${JSON.stringify(usage, null, 2)}\n`);
-format(usagePath);
-
-console.log(`Audited ${audit.paths.length} pages at ${viewports.length} viewports.`);
-for (const line of unseen) {
-  console.log(`Not seen on any audited page, so not kept unless a font already needs it: ${line}`);
+  console.log(`Audited ${audit.paths.length} pages at ${viewports.length} viewports.`);
+  for (const line of unseen) {
+    console.log(
+      `Not seen on any audited page, so not kept unless a font already needs it: ${line}`,
+    );
+  }
 }

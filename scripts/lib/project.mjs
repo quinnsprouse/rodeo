@@ -1,16 +1,8 @@
-import { readFileSync } from "node:fs";
-
-const fontPipeline = JSON.parse(
-  readFileSync(new URL("../fonts/config.json", import.meta.url), "utf8"),
-);
-
-function fontOutput(name) {
-  const path = fontPipeline.outputs?.[name];
-  if (typeof path === "string") return path;
-  throw new Error(`Set outputs.${name} in scripts/fonts/config.json.`);
-}
-
-const fontOutputs = [fontOutput("stylesheet"), `${fontOutput("fonts")}/`, fontOutput("usage")];
+export const fontOutputs = {
+  fonts: "src/assets/fonts",
+  stylesheet: "src/styles/fonts.gen.css",
+  usage: "scripts/fonts/usage.json",
+};
 
 export const generatedFiles = [
   {
@@ -25,7 +17,7 @@ export const generatedFiles = [
     howToRegenerate:
       "Change the class names in src/ or the theme in src/styles/app.css, and dev and build regenerate it.",
   },
-  ...fontOutputs.map((path) => ({
+  ...[fontOutputs.stylesheet, `${fontOutputs.fonts}/`, fontOutputs.usage].map((path) => ({
     path,
     generator: "`npm run fonts`",
     howToRegenerate:

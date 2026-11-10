@@ -11,7 +11,7 @@
     "build": "tsc -b && vp build --logLevel error",
     "preview": "vp preview",
     "start": "node .output/server/index.mjs",
-    "fonts": "node scripts/fonts/audit.mjs && uv run --script scripts/fonts/subset.py && vp fmt src/styles/fonts.gen.css",
+    "fonts": "node scripts/fonts/generate.mjs",
     "prepare": "node scripts/setup.mjs",
     "setup": "node scripts/setup.mjs",
     "setup:skills": "vp dlx skills@1.5.15 experimental_install",

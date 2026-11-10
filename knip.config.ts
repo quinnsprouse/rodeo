@@ -44,8 +44,6 @@ export default {
     // plugins only from vite.config.ts itself.
     ...lintPluginPackages,
   ],
-  // why: npm run fonts runs its fontTools step through uv, a Python tool that npm cannot install.
-  ignoreBinaries: ["uv"],
   // why: Only the react-doctor CLI reads this file, and Knip has no plugin for it.
   ignore: ["doctor.config.ts"],
 } satisfies KnipConfig;
