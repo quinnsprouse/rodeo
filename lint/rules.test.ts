@@ -287,19 +287,54 @@ export function Probe() { return <div>{/* why: Screen readers skip this decorati
     expect(rulesHit(toolingReasons)).toEqual([]);
   });
 
+  const missingCause =
+    /names no cause.+add the name to the matching group in KNOWN_CAUSES in lint\/rules\.js/;
+
   const unnamedCauses = probe(`// why: The layout breaks when this value changes later.
 export const a = 1;
 // why: The worker isolates scenarios in random order, so one crash stays contained.
 export const b = 2;`);
-  it("requires app code why: comments to name a known cause, matching short names as whole words", () => {
+  it("requires app code why: comments to name a known cause, matching names as whole words", () => {
     const hits = lint(unnamedCauses);
-    const missingCause = /names no cause.+add the name to KNOWN_CAUSES in lint\/rules\.js/;
 
     expect(hits.map((hit) => hit.line)).toEqual([1, 3]);
     expect(hits.map((hit) => hit.message)).toEqual([
       expect.stringMatching(missingCause),
       expect.stringMatching(missingCause),
     ]);
+  });
+
+  const lookalikeCauses = Object.entries({
+    latest: "The latest release renamed this option, so the old key stays mapped.",
+    database: "The database stores amounts in cents, so the total divides by one hundred.",
+    codebase: "The codebase loads this module twice, so the setup must stay idempotent.",
+    specific: "Each specific locale needs its own message table, so the lookup falls back.",
+    special: "Special characters break the slug, so the title is normalized before saving.",
+    test: "The test fails when this runs first, so the order stays fixed.",
+    base: "The base value comes from the theme, so the offset adds to it.",
+    class: "The class name must stay stable, so the selector keeps matching it.",
+    types: "The types drift when this changes, so the schema stays the source.",
+    Slack: "Slack truncates long messages, so the summary stays under the limit.",
+  }).map(([word, reason]) => ({ word, target: probe(`// why: ${reason}\nexport const a = 1;`) }));
+  it.each(lookalikeCauses)(
+    "rejects a why: comment whose only cause candidate is $word",
+    ({ target }) => {
+      expect(lint(target).map((hit) => hit.message)).toEqual([expect.stringMatching(missingCause)]);
+    },
+  );
+
+  const namedCauses = Object.entries({
+    React: "React runs effects twice in development, so the subscription cleans up.",
+    "Vite+": "Vite+ runs this file before the app loads, so it stays pure.",
+    "Safari's": "Safari's date picker ignores the min attribute, so the value is clamped here.",
+    HTML5: "HTML5 drag events fire without coordinates, so the position comes from the pointer.",
+    "Node.js": "Node.js buffers the whole body, so large uploads stream to disk instead.",
+    Tailwind: "Tailwind scans source files for literal names, so this list spells each one out.",
+    "Base UI": "Base UI moves focus to the popup, so the trigger restores it on close.",
+    Stripe: "Stripe retries a webhook for three days, so the handler must be idempotent.",
+  }).map(([cause, reason]) => ({ cause, target: probe(`// why: ${reason}\nexport const a = 1;`) }));
+  it.each(namedCauses)("accepts $cause as the cause of an app code why: comment", ({ target }) => {
+    expect(rulesHit(target)).toEqual([]);
   });
 
   const backendCauses =

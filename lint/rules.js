@@ -3,7 +3,7 @@ import { relative } from "node:path";
 
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
-const KNOWN_CAUSES = [
+const BROWSER_AND_OS_CAUSES = [
   "browser",
   "chrome",
   "chromium",
@@ -11,64 +11,215 @@ const KNOWN_CAUSES = [
   "webkit",
   "firefox",
   "ios",
+  "ipados",
   "android",
   "macos",
   "windows",
   "linux",
-  "node",
-  "http",
+];
+const WEB_STANDARD_CAUSES = [
   "html",
   "css",
+  "dom",
+  "svg",
   "spec",
+  "specification",
   "rfc",
+  "whatwg",
+  "w3c",
+  "ecmascript",
+  "iso",
+  "ieee",
   "wcag",
   "aria",
   "csp",
   "cors",
   "unicode",
+];
+const RUNTIME_AND_HOST_CAUSES = [
+  "node",
+  "nodejs",
+  "v8",
+  "deno",
+  "bun",
+  "workerd",
   "vercel",
   "cloudflare",
-  "workerd",
+  "netlify",
+  "heroku",
+  "aws",
+  "azure",
+  "gcp",
+  "docker",
+  "kubernetes",
+  "nginx",
+];
+const DATA_STORE_CAUSES = [
   "postgres",
+  "postgresql",
   "mysql",
   "sqlite",
   "sql",
+  "redis",
+  "mongodb",
+  "mongo",
+  "dynamodb",
+  "elasticsearch",
+  "kafka",
   "s3",
+  "indexeddb",
+];
+const PROTOCOL_AND_FORMAT_CAUSES = [
+  "http",
+  "websocket",
+  "tls",
+  "ssl",
+  "dns",
+  "smtp",
   "oauth",
   "oidc",
   "jwt",
-  "tls",
-  "dns",
-  "smtp",
-  "websocket",
-  "utc",
-  "timezone",
-  "daylight",
-  "iso",
-  "ieee",
   "json",
+  "xml",
+  "yaml",
+  "csv",
   "utf",
   "posix",
 ];
-const MAX_SHORT_CAUSE_LENGTH = 3;
-const GENERIC_PACKAGE_WORDS = new Set(["api", "cli", "config", "core", "kit", "plugin", "start"]);
+const TIME_CAUSES = ["utc", "time zone", "daylight", "iana"];
+const SERVICE_CAUSES = [
+  "stripe",
+  "paypal",
+  "shopify",
+  "github",
+  "gitlab",
+  "google",
+  "apple",
+  "microsoft",
+  "supabase",
+  "firebase",
+  "auth0",
+  "okta",
+  "twilio",
+  "sendgrid",
+  "mailgun",
+  "postmark",
+  "sentry",
+  "datadog",
+  "posthog",
+  "openai",
+  "anthropic",
+  "algolia",
+  "discord",
+];
+const DEPENDENCY_DISPLAY_NAMES = ["base ui", "tailwind"];
+const KNOWN_CAUSES = [
+  ...BROWSER_AND_OS_CAUSES,
+  ...WEB_STANDARD_CAUSES,
+  ...RUNTIME_AND_HOST_CAUSES,
+  ...DATA_STORE_CAUSES,
+  ...PROTOCOL_AND_FORMAT_CAUSES,
+  ...TIME_CAUSES,
+  ...SERVICE_CAUSES,
+  ...DEPENDENCY_DISPLAY_NAMES,
+];
+const GENERIC_PACKAGE_WORDS = new Set([
+  "analytics",
+  "animate",
+  "api",
+  "app",
+  "auth",
+  "authority",
+  "base",
+  "cache",
+  "class",
+  "cli",
+  "client",
+  "common",
+  "compiler",
+  "components",
+  "config",
+  "conventional",
+  "core",
+  "data",
+  "date",
+  "dev",
+  "devtools",
+  "doctor",
+  "env",
+  "event",
+  "fast",
+  "fetch",
+  "file",
+  "font",
+  "form",
+  "format",
+  "free",
+  "hook",
+  "hooks",
+  "icon",
+  "icons",
+  "kit",
+  "library",
+  "lint",
+  "lite",
+  "loader",
+  "markdown",
+  "mono",
+  "native",
+  "next",
+  "parser",
+  "path",
+  "plugin",
+  "plus",
+  "preset",
+  "pro",
+  "query",
+  "router",
+  "runtime",
+  "sdk",
+  "server",
+  "shared",
+  "simple",
+  "start",
+  "state",
+  "store",
+  "stream",
+  "style",
+  "table",
+  "test",
+  "testing",
+  "theme",
+  "time",
+  "tools",
+  "type",
+  "types",
+  "user",
+  "utils",
+  "variable",
+  "variance",
+  "virtual",
+  "web",
+]);
+const MIN_DEPENDENCY_WORD_LENGTH = 3;
 
 function dependencyCauses() {
   const manifest = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));
   const names = Object.keys({ ...manifest.dependencies, ...manifest.devDependencies });
   return names
     .flatMap((name) => name.replace(/^@/, "").split(/[/-]/))
-    .filter((word) => word.length >= 3 && !GENERIC_PACKAGE_WORDS.has(word));
+    .filter(
+      (word) => word.length >= MIN_DEPENDENCY_WORD_LENGTH && !GENERIC_PACKAGE_WORDS.has(word),
+    );
 }
 
-function causePattern(word) {
-  const escaped = word.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (word.length <= MAX_SHORT_CAUSE_LENGTH) return `\\b${escaped}(?:s|\\d+)?\\b`;
-  return `\\b${escaped}|${escaped}\\b`;
+function causeAlternative(cause) {
+  return cause.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&").replaceAll(" ", "[\\s-]?");
 }
 
+const CAUSE_NAMES = [...new Set([...dependencyCauses(), ...KNOWN_CAUSES])];
 const OUTSIDE_CAUSE = new RegExp(
-  [...new Set([...dependencyCauses(), ...KNOWN_CAUSES])].map(causePattern).join("|"),
+  String.raw`\b(?:${CAUSE_NAMES.map(causeAlternative).join("|")})(?:s|\d+)?\b`,
   "i",
 );
 
@@ -431,7 +582,7 @@ const noComments = defineRule({
       length:
         "A `why:` comment in src/ and e2e/ is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
       cause:
-        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is real but lint does not know its name, add the name to KNOWN_CAUSES in lint/rules.js. If the cause is in this repo, fix the code instead and delete the comment.",
+        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is real but lint does not know its name, add the name to the matching group in KNOWN_CAUSES in lint/rules.js. If the cause is in this repo, fix the code instead and delete the comment.",
     },
     schema: [],
   },
