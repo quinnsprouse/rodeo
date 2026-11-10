@@ -2,6 +2,7 @@ import {
   Outlet,
   createRootRoute,
   HeadContent,
+  ScriptOnce,
   Scripts,
   rootRouteId,
   useMatches,
@@ -13,7 +14,7 @@ import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { createSiteHead } from "@/config/site";
 import { useTheme } from "@/hooks/use-theme";
-import { browserChrome, themeInitScript, type Canvas } from "@/lib/theme";
+import { canvases, themeInitScript, type Canvas } from "@/lib/theme";
 
 import appCss from "@/styles/app.css?url";
 
@@ -40,7 +41,6 @@ export const Route = createRootRoute({
         preloadFont(fonts.medium),
         { rel: "stylesheet", href: appCss },
       ],
-      scripts: [{ children: themeInitScript }],
     };
   },
   component: RootComponent,
@@ -61,7 +61,7 @@ function useCanvas(): Canvas {
 
 function BrowserChrome({ canvas }: { canvas: Canvas }) {
   const theme = useTheme();
-  return <meta name="theme-color" content={browserChrome[theme][canvas]} />;
+  return <meta name="theme-color" content={canvases[canvas].chrome[theme]} />;
 }
 
 function RootShell({ children }: { children: ReactNode }) {
@@ -70,10 +70,13 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="motion-safe:scroll-smooth" suppressHydrationWarning>
       <head>
+        {/* why: TanStack Router reruns head() in the browser, and the minified function text there
+            differs from the server's, so a head script would run twice. */}
+        <ScriptOnce>{themeInitScript}</ScriptOnce>
         <HeadContent />
         <BrowserChrome canvas={canvas} />
       </head>
-      <body className={canvas === "card" ? "bg-card" : undefined}>
+      <body className={canvases[canvas].body}>
         <a
           href="#main"
           className="fixed top-0 left-0 z-50 -translate-y-full bg-foreground px-m py-xs text-s font-medium text-background transition-transform duration-(--motion-duration) ease-(--motion-easing) focus:translate-y-0"

@@ -1,6 +1,7 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
+import { useThemeRevealing } from "@/components/theme-reveal";
 import { StaticChipFace, type SwapChoice } from "@/demo/landing/swap-chip-face";
 import { usePageVisible } from "@/demo/landing/use-page-visible";
 import {
@@ -15,7 +16,6 @@ import {
 } from "@/demo/stickers/swap";
 import { useOnScreen } from "@/hooks/use-on-screen";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
-import { useThemeRevealing } from "@/hooks/use-theme-revealing";
 
 const AnimatedChipFace = lazy(() =>
   import("@/demo/landing/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),

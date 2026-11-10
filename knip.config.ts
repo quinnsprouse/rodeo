@@ -9,13 +9,13 @@ const lintPluginPackages = lintConfig.jsPlugins
 // why: These modules are the kit API the starter ships for apps, several of them taught in
 // docs/agents/UI_MOTION.md, so Knip keeps them before an app renders them.
 const keptKit = [
+  "src/components/theme-reveal.ts",
   "src/components/theme-toggle.tsx",
   "src/components/ui/shimmer-text.tsx",
   "src/components/ui/snippet.tsx",
   "src/hooks/use-on-screen.ts",
   "src/hooks/use-play-on-view.ts",
   "src/hooks/use-prefers-reduced-motion.ts",
-  "src/hooks/use-theme-revealing.ts",
   "src/hooks/use-web-animation.ts",
 ];
 

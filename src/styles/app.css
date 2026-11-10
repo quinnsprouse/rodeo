@@ -5,12 +5,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Untitled theme. Values come from gui/themes/untitled.md. color-1 is the brand purple, and
-   Open Runde replaces GT Standard M. Each color is light-dark(light, dark). The block repeats on
-   .light and .dark because Chrome resolves light-dark() where a custom property is declared, so a
-   .dark element inside a light page needs its own declarations. Muted text uses neutral-8 in dark
-   mode, not the theme's neutral-7, which reads at APCA Lc 50 on dark surfaces against Lc 67-76
-   for neutral-7 in light mode. Borders are 10% white in dark mode, because the theme's 10% black
-   disappears on a black page. */
+   Open Runde replaces GT Standard M. The block repeats on .light and .dark because Chrome
+   resolves light-dark() where a custom property is declared, so a .dark element inside a light
+   page needs its own declarations. Muted text uses neutral-8 in dark mode, not the theme's
+   neutral-7, which reads at APCA Lc 50 on dark surfaces against Lc 67-76 for neutral-7 in light
+   mode. Borders are 10% white in dark mode, because the theme's 10% black disappears on a black
+   page. */
 :root,
 .light,
 .dark {
@@ -350,7 +350,7 @@
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 300ms;
+  animation-duration: var(--motion-large-duration);
   animation-timing-function: ease;
 }
 
@@ -379,7 +379,10 @@ html.theme-reveal *::after {
 
 html.theme-snap *,
 html.theme-snap *::before,
-html.theme-snap *::after {
+html.theme-snap *::after,
+html.theme-reveal *,
+html.theme-reveal *::before,
+html.theme-reveal *::after {
   transition: none !important;
 }
 

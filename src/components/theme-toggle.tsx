@@ -1,10 +1,28 @@
 import type { MouseEvent } from "react";
 
+import { revealTheme } from "@/components/theme-reveal";
 import { buttonVariants } from "@/components/ui/button";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useTheme } from "@/hooks/use-theme";
-import { playSound, preloadSounds } from "@/lib/sound";
 import { setTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
+
+let clickSound: HTMLAudioElement | undefined;
+
+function preloadClick() {
+  if (clickSound) return clickSound;
+  clickSound = new Audio("/sounds/click.wav");
+  clickSound.preload = "auto";
+  return clickSound;
+}
+
+function playClick() {
+  const audio = preloadClick();
+  audio.currentTime = 0;
+  // why: play() rejects when the browser's autoplay policy blocks sound, and the toggle should
+  // still switch silently.
+  void audio.play().catch(() => undefined);
+}
 
 const rayAngles = [0, 45, 90, 135, 180, 225, 270, 315];
 const rays = rayAngles.map((degrees) => {
@@ -42,22 +60,21 @@ const iconLayer =
 
 export function ThemeToggle({ className }: { className?: string | undefined }) {
   const theme = useTheme();
+  const reducedMotion = usePrefersReducedMotion();
   const isDark = theme === "dark";
 
   function toggle(event: MouseEvent<HTMLButtonElement>) {
-    void playSound("click");
+    playClick();
     const box = event.currentTarget.getBoundingClientRect();
-    setTheme(isDark ? "light" : "dark", {
-      x: box.left + box.width / 2,
-      y: box.top + box.height / 2,
-    });
+    const origin = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    setTheme(isDark ? "light" : "dark", (next) => revealTheme(next, origin, reducedMotion));
   }
 
   return (
     <button
       type="button"
       onClick={toggle}
-      onPointerEnter={() => preloadSounds(["click"])}
+      onPointerEnter={preloadClick}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       className={cn(
         buttonVariants({ variant: "ghost", size: "icon" }),
