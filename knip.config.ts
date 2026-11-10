@@ -1,13 +1,19 @@
 import type { KnipConfig } from "knip";
 
+import { lintConfig } from "./lint/config";
+
+const lintPluginPackages = lintConfig.jsPlugins
+  .map(({ specifier }) => specifier)
+  .filter((specifier) => !specifier.startsWith("."));
+
 export default {
   // why: Knip cannot see files that tools load by path or by convention: hook and script
   // commands, the lint plugin specifier, route files, and src/start.ts.
   entry: [
-    ".agents/hooks/*.mjs",
+    ".agents/hooks/{pre-tool-guard,post-edit,stop-check}.mjs",
     "lint/rules.js",
     "e2e/**/*.ts",
-    "scripts/**/*.mjs",
+    "scripts/*.mjs",
     "src/routes/**/*.{ts,tsx}",
     "src/start.ts",
   ],
@@ -20,6 +26,9 @@ export default {
     "torph",
     "skullet",
     "glimm",
+    // why: Oxlint loads these plugins by package name from lint/config.ts, and Knip reads lint
+    // plugins only from vite.config.ts itself.
+    ...lintPluginPackages,
   ],
   // why: npm run fonts runs its fontTools step through uv, a Python tool that npm cannot install.
   ignoreBinaries: ["uv"],

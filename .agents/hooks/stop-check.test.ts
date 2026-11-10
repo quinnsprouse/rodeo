@@ -1,23 +1,26 @@
-import { execFileSync, spawn } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { devNull, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { execFileSync } from "node:child_process";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { afterAll, beforeAll, describe, it } from "vite-plus/test";
+import { afterAll, beforeAll, describe, it, vi } from "vite-plus/test";
 
-const hook = join(dirname(fileURLToPath(import.meta.url)), "stop-check.mjs");
-const envWithoutGitOverrides = {
-  ...Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith("GIT_"))),
-  GIT_CONFIG_GLOBAL: devNull,
-  GIT_CONFIG_NOSYSTEM: "1",
-};
+import { hermeticGitEnv, hermeticGitSettings } from "#tooling/git-env";
+import { run } from "#tooling/run";
 
-type StopOutput = {
-  decision: string | undefined;
-  reason: string | undefined;
-  systemMessage: string | undefined;
-};
+import { stopCheck } from "./stop-check.mjs";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const gitEnv = hermeticGitEnv();
 
 let fixtures = "";
 const fixture = (name: string) => join(fixtures, name);
@@ -25,7 +28,7 @@ const fixture = (name: string) => join(fixtures, name);
 function git(cwd: string, ...args: string[]) {
   execFileSync("git", ["-c", "user.name=Rodeo Test", "-c", "user.email=test@localhost", ...args], {
     cwd,
-    env: envWithoutGitOverrides,
+    env: gitEnv,
     stdio: "ignore",
   });
 }
@@ -46,84 +49,81 @@ function createRepo(name: string, { changed }: { changed: boolean }) {
   return root;
 }
 
-function runStop(projectDir: string, stopHookActive: boolean) {
-  return new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(process.execPath, [hook], {
-      env: { ...envWithoutGitOverrides, CLAUDE_PROJECT_DIR: projectDir },
+function copyHooks(root: string) {
+  for (const path of [join(".agents", "hooks"), "scripts", "package.json"]) {
+    cpSync(join(repoRoot, path), join(root, path), {
+      recursive: true,
+      filter: (source) => !source.endsWith(".test.ts"),
     });
-    let stdout = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (status) =>
-      status === 0
-        ? resolvePromise(stdout)
-        : reject(new Error(`The hook exited ${String(status)}`)),
-    );
-    child.stdin.end(JSON.stringify({ hook_event_name: "Stop", stop_hook_active: stopHookActive }));
-  });
-}
-
-function textField(output: object, key: keyof StopOutput) {
-  const value: unknown = Reflect.get(output, key);
-  return typeof value === "string" ? value : undefined;
-}
-
-async function stop(projectDir: string, stopHookActive: boolean): Promise<StopOutput> {
-  const stdout = await runStop(projectDir, stopHookActive);
-  const output: unknown = JSON.parse(stdout);
-  if (typeof output !== "object" || output === null) {
-    throw new Error(`Unexpected stop hook output: ${stdout}`);
   }
-  return {
-    decision: textField(output, "decision"),
-    reason: textField(output, "reason"),
-    systemMessage: textField(output, "systemMessage"),
-  };
+}
+
+function stopEvent(stopHookActive: boolean) {
+  return { hook_event_name: "Stop", stop_hook_active: stopHookActive };
+}
+
+function stop(name: string, stopHookActive: boolean) {
+  return stopCheck(stopEvent(stopHookActive), { root: fixture(name) });
 }
 
 beforeAll(() => {
-  fixtures = mkdtempSync(join(tmpdir(), "rodeo-stop-check-"));
+  for (const name of Object.keys(process.env).filter((key) => key.startsWith("GIT_"))) {
+    vi.stubEnv(name, undefined);
+  }
+  for (const [name, value] of Object.entries(hermeticGitSettings)) vi.stubEnv(name, value);
+  fixtures = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-stop-check-")));
   createRepo("unchanged", { changed: false });
   createRepo("no-dependencies", { changed: true });
+  copyHooks(createRepo("hook-copy", { changed: true }));
   mkdirSync(join(createRepo("no-git-hooks", { changed: true }), "node_modules", "vite-plus"), {
     recursive: true,
   });
 });
 
 afterAll(() => {
+  vi.unstubAllEnvs();
   rmSync(fixtures, { recursive: true, force: true });
 });
 
 describe.concurrent("stop check in a checkout that is not set up", { timeout: 30_000 }, () => {
   it("passes when nothing changed", async ({ expect }) => {
-    expect(await runStop(fixture("unchanged"), false)).toBe("");
+    expect(await stop("unchanged", false)).toBeNull();
   });
 
   it("sends the agent back to install dependencies", async ({ expect }) => {
-    const output = await stop(fixture("no-dependencies"), false);
-    expect(output.decision).toBe("block");
-    expect(output.reason).toContain("`npm ci`");
+    const output = await stop("no-dependencies", false);
+    expect(output).toHaveProperty("decision", "block");
+    expect(output).toHaveProperty("reason", expect.stringContaining("`npm ci`"));
     expect(existsSync(join(fixture("no-dependencies"), "node_modules"))).toBe(false);
   });
 
   it("tells the human on the retry so the turn can end", async ({ expect }) => {
-    const output = await stop(fixture("no-dependencies"), true);
-    expect(output.decision).toBeUndefined();
-    expect(output.systemMessage).toContain("`npm ci`");
+    const output = await stop("no-dependencies", true);
+    expect(output).not.toHaveProperty("decision");
+    expect(output).toHaveProperty("systemMessage", expect.stringContaining("`npm ci`"));
   });
 
   it("sends the agent back to install the Git hooks", async ({ expect }) => {
-    const output = await stop(fixture("no-git-hooks"), false);
-    expect(output.decision).toBe("block");
-    expect(output.reason).toContain("`npm run setup`");
+    const output = await stop("no-git-hooks", false);
+    expect(output).toHaveProperty("decision", "block");
+    expect(output).toHaveProperty("reason", expect.stringContaining("`npm run setup`"));
+  });
+
+  it("prints its verdict on stdout when it runs as a process", async ({ expect }) => {
+    const result = await run(
+      process.execPath,
+      [join(fixture("hook-copy"), ".agents", "hooks", "stop-check.mjs")],
+      { env: gitEnv, input: JSON.stringify(stopEvent(false)) },
+    );
+    expect({ status: result.status, stdout: result.stdout }).toEqual({
+      status: 0,
+      stdout: `${JSON.stringify(await stop("no-dependencies", false))}\n`,
+    });
   });
 
   it("tells the human when the Git hooks are still missing", async ({ expect }) => {
-    const output = await stop(fixture("no-git-hooks"), true);
-    expect(output.decision).toBeUndefined();
-    expect(output.systemMessage).toContain("`npm run setup`");
+    const output = await stop("no-git-hooks", true);
+    expect(output).not.toHaveProperty("decision");
+    expect(output).toHaveProperty("systemMessage", expect.stringContaining("`npm run setup`"));
   });
 });

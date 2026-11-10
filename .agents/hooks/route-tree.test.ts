@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import {
   cpSync,
   mkdirSync,
@@ -17,9 +16,14 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, it } from "vite-plus/test";
 
+import { run } from "#tooling/run";
+
+import { postEditFeedback } from "./post-edit.mjs";
+
 const hooks = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(hooks, "..", "..");
 const routeTreeScript = join("scripts", "generate-route-tree.mjs");
+const routeTreeModule = join("scripts", "lib", "route-tree.mjs");
 const routeTreeFile = join("src", "routeTree.gen.ts");
 
 let fixture = "";
@@ -29,33 +33,14 @@ function routeModule(path: string) {
   return `import { createFileRoute } from "@tanstack/react-router";\n\nexport const Route = createFileRoute("${path}")({});\n`;
 }
 
-function runNode(args: string[], input = "") {
-  return new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(process.execPath, args, {
-      cwd: fixture,
-      env: { ...process.env, CLAUDE_PROJECT_DIR: fixture },
-    });
-    let stdout = "";
-    let stderr = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.stderr.setEncoding("utf8");
-    child.stderr.on("data", (chunk: string) => {
-      stderr += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (status) =>
-      status === 0
-        ? resolvePromise(stdout)
-        : reject(new Error(`node ${args.join(" ")} exited ${String(status)}\n${stderr}`)),
-    );
-    child.stdin.end(input);
+async function generate() {
+  const { status, stdout, stderr } = await run(process.execPath, [routeTreeScript], {
+    cwd: fixture,
   });
+  if (status !== 0) throw new Error(`node ${routeTreeScript} exited ${String(status)}\n${stderr}`);
+  return stdout;
 }
 
-const generate = () => runNode([routeTreeScript]);
 const routeTree = () => readFileSync(inFixture(routeTreeFile), "utf8");
 
 function linkDependencies() {
@@ -70,9 +55,10 @@ function linkDependencies() {
 beforeAll(async () => {
   fixture = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-route-tree-")));
   mkdirSync(inFixture(join("src", "routes")), { recursive: true });
-  mkdirSync(inFixture("scripts"));
+  mkdirSync(inFixture(join("scripts", "lib")), { recursive: true });
   linkDependencies();
   cpSync(join(repoRoot, routeTreeScript), inFixture(routeTreeScript));
+  cpSync(join(repoRoot, routeTreeModule), inFixture(routeTreeModule));
   writeFileSync(inFixture("package.json"), '{ "name": "route-tree-fixture", "type": "module" }\n');
   writeFileSync(
     inFixture("tsconfig.json"),
@@ -96,15 +82,15 @@ afterAll(() => {
 describe("route tree regeneration", { timeout: 30_000 }, () => {
   it("lists a route that an edit tool adds, so the agent sees no errors", async ({ expect }) => {
     writeFileSync(inFixture("src/routes/about.tsx"), routeModule("/about"));
-    const feedback = await runNode(
-      [join(hooks, "post-edit.mjs")],
-      JSON.stringify({
+    const feedback = await postEditFeedback(
+      {
         hook_event_name: "PostToolUse",
         tool_name: "Write",
         tool_input: { file_path: inFixture("src/routes/about.tsx") },
-      }),
+      },
+      { root: fixture },
     );
-    expect(feedback).toBe("");
+    expect(feedback).toBeNull();
     expect(routeTree()).toContain("from './routes/about'");
     expect(routeTree()).toContain("declare module '@tanstack/react-start'");
   });

@@ -1,41 +1,28 @@
-import { readFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
 import { bashVerdict, editVerdict } from "./guard-rules.mjs";
+import { runHook } from "./hook-io.mjs";
 
-const projectRoot = resolve(
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", ".."),
-);
+export const event = "PreToolUse";
+export const shellTool = "Bash";
 
-function bashInputVerdict(input) {
+function toolVerdict(input, root) {
   const command = input.tool_input?.command;
-  if (input.tool_name !== "Bash" || typeof command !== "string") return null;
-  const cwd = typeof input.cwd === "string" ? input.cwd : undefined;
-  return bashVerdict(command, { projectRoot, cwd });
+  if (input.tool_name === shellTool && typeof command === "string") {
+    const cwd = typeof input.cwd === "string" ? input.cwd : undefined;
+    return bashVerdict(command, { projectRoot: root, cwd });
+  }
+  return editVerdict(input.tool_name, input.tool_input, { projectRoot: root });
 }
 
-function toolVerdict(input) {
-  if (input.hook_event_name !== "PreToolUse") return null;
-  return editVerdict(input.tool_name, input.tool_input, { projectRoot }) ?? bashInputVerdict(input);
+export function preToolDecision(input, { root }) {
+  const verdict = toolVerdict(input, root);
+  if (!verdict) return null;
+  return {
+    hookSpecificOutput: {
+      hookEventName: event,
+      permissionDecision: verdict.decision,
+      permissionDecisionReason: verdict.reason,
+    },
+  };
 }
 
-function printDecision({ decision, reason }) {
-  process.stdout.write(
-    `${JSON.stringify({
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: decision,
-        permissionDecisionReason: reason,
-      },
-    })}\n`,
-  );
-}
-
-try {
-  const verdict = toolVerdict(JSON.parse(readFileSync(0, "utf8")));
-  if (verdict) printDecision(verdict);
-} catch {
-  // why: A guard that cannot parse its input must not block the agent.
-}
-process.exit(0);
+if (import.meta.main) await runHook(preToolDecision, { event, name: "pre-tool guard" });

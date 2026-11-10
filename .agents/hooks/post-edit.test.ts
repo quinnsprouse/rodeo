@@ -1,53 +1,25 @@
-import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, it } from "vite-plus/test";
 
+import { run } from "#tooling/run";
+
+import { event, postEditFeedback } from "./post-edit.mjs";
+
 const hook = join(dirname(fileURLToPath(import.meta.url)), "post-edit.mjs");
 
 let fixtures = "";
 const projectDir = () => join(fixtures, "no-dependencies");
 
-function runPostEdit(filePath: string) {
-  return new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(process.execPath, [hook], {
-      env: { ...process.env, CLAUDE_PROJECT_DIR: projectDir() },
-    });
-    let stdout = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (status) =>
-      status === 0
-        ? resolvePromise(stdout)
-        : reject(new Error(`The hook exited ${String(status)}`)),
-    );
-    child.stdin.end(
-      JSON.stringify({
-        hook_event_name: "PostToolUse",
-        tool_name: "Edit",
-        tool_input: { file_path: filePath },
-      }),
-    );
-  });
-}
-
-function objectField(value: unknown, key: string): unknown {
-  return typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
-}
-
-async function additionalContext(filePath: string) {
-  const output: unknown = JSON.parse(await runPostEdit(filePath));
-  return objectField(objectField(output, "hookSpecificOutput"), "additionalContext");
+function editEvent(filePath: string) {
+  return { hook_event_name: event, tool_name: "Edit", tool_input: { file_path: filePath } };
 }
 
 beforeAll(() => {
-  fixtures = mkdtempSync(join(tmpdir(), "rodeo-post-edit-"));
+  fixtures = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-post-edit-")));
   mkdirSync(join(projectDir(), "src"), { recursive: true });
   writeFileSync(join(projectDir(), "src", "probe.ts"), "export const probe = 1;\n");
   writeFileSync(join(fixtures, "outside.ts"), "export const outside = 1;\n");
@@ -59,12 +31,22 @@ afterAll(() => {
 
 describe.concurrent("post-edit feedback in a checkout without dependencies", () => {
   it("says to install dependencies in one line", async ({ expect }) => {
-    expect(await additionalContext(join(projectDir(), "src", "probe.ts"))).toBe(
-      "Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.",
-    );
+    const feedback = await postEditFeedback(editEvent(join(projectDir(), "src", "probe.ts")), {
+      root: projectDir(),
+    });
+    expect(feedback).toEqual({
+      hookSpecificOutput: {
+        hookEventName: "PostToolUse",
+        additionalContext:
+          "Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.",
+      },
+    });
   });
 
   it("stays quiet about files outside the project", async ({ expect }) => {
-    expect(await runPostEdit(join(fixtures, "outside.ts"))).toBe("");
+    const result = await run(process.execPath, [hook], {
+      input: JSON.stringify(editEvent(join(fixtures, "outside.ts"))),
+    });
+    expect({ status: result.status, stdout: result.stdout }).toEqual({ status: 0, stdout: "" });
   });
 });

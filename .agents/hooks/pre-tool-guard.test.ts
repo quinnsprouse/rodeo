@@ -1,4 +1,4 @@
-import { execFileSync, spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -6,20 +6,18 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, it, vi } from "vite-plus/test";
 
+import { hermeticGitEnv, hermeticGitSettings } from "#tooling/git-env";
+import { run as runProcess } from "#tooling/run";
+
+import { bashVerdict, editVerdict } from "./guard-rules.mjs";
+import { preToolDecision, shellTool } from "./pre-tool-guard.mjs";
+
 const hooksDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(hooksDir, "..", "..");
 const guard = join(hooksDir, "pre-tool-guard.mjs");
-const rulesPath = join(hooksDir, "guard-rules.mjs");
-
-const userGitVariables = Object.keys(process.env).filter((name) => name.startsWith("GIT_"));
-const hermeticGitSettings = { GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" };
-const hermeticGitEnv = {
-  ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))),
-  ...hermeticGitSettings,
-};
+const gitEnv = hermeticGitEnv();
 
 type Decision = "allow" | "ask" | "deny";
-type Verdict = { decision: "ask" | "deny"; reason: string };
 type ToolInput = Record<string, string>;
 type ToolCall = {
   toolName: string;
@@ -27,56 +25,12 @@ type ToolCall = {
   project?: string;
   cwd?: string;
 };
-type BashRule = (
-  command: string,
-  location: { projectRoot: string; cwd: string | undefined },
-) => unknown;
-type EditRule = (
-  toolName: string,
-  toolInput: ToolInput,
-  location: { projectRoot: string },
-) => unknown;
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function isBashRule(value: unknown): value is BashRule {
-  return typeof value === "function";
-}
-
-function isEditRule(value: unknown): value is EditRule {
-  return typeof value === "function";
-}
-
-function guardRules(rulesModule: unknown) {
-  if (!isRecord(rulesModule)) throw new Error(`${rulesPath} did not load as a module`);
-  const { bashVerdict, editVerdict } = rulesModule;
-  if (isBashRule(bashVerdict) && isEditRule(editVerdict)) return { bashVerdict, editVerdict };
-  throw new Error(`${rulesPath} no longer exports bashVerdict and editVerdict`);
-}
-
-const rulesModule: unknown = await import(rulesPath);
-const rules = guardRules(rulesModule);
-
-function asVerdict(value: unknown): Verdict | null {
-  if (value === null) return null;
-  if (isRecord(value)) {
-    const { decision, reason } = value;
-    if ((decision === "ask" || decision === "deny") && typeof reason === "string") {
-      return { decision, reason };
-    }
-  }
-  throw new Error(`Unexpected guard verdict: ${JSON.stringify(value)}`);
-}
 
 function verdict({ toolName, toolInput, project = repoRoot, cwd }: ToolCall) {
   const { command } = toolInput;
-  return asVerdict(
-    toolName === "Bash" && command !== undefined
-      ? rules.bashVerdict(command, { projectRoot: project, cwd })
-      : rules.editVerdict(toolName, toolInput, { projectRoot: project }),
-  );
+  return toolName === shellTool && command !== undefined
+    ? bashVerdict(command, { projectRoot: project, cwd })
+    : editVerdict(toolName, toolInput, { projectRoot: project });
 }
 
 function label(call: ToolCall) {
@@ -97,45 +51,53 @@ function sameVerdicts(pairs: [typed: string, routed: string][]) {
   };
 }
 
-function runGuard(stdin: string, project = repoRoot) {
-  return new Promise<{ status: number | null; stdout: string }>((resolvePromise, reject) => {
-    const child = spawn(process.execPath, [guard], {
-      env: { ...hermeticGitEnv, CLAUDE_PROJECT_DIR: project },
-    });
-    let stdout = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", (status) => resolvePromise({ status, stdout }));
-    child.stdin.end(stdin);
+async function runGuard(stdin: string) {
+  const { status, stdout } = await runProcess(process.execPath, [guard], {
+    env: gitEnv,
+    input: stdin,
   });
+  return { status, stdout };
 }
 
-function hookInput({ toolName, toolInput, cwd }: ToolCall) {
+function hookEvent({ toolName, toolInput, cwd }: ToolCall) {
   const event = { hook_event_name: "PreToolUse", tool_name: toolName, tool_input: toolInput };
-  return JSON.stringify(cwd === undefined ? event : { ...event, cwd });
+  return cwd === undefined ? event : { ...event, cwd };
 }
 
 function hookOutput(call: ToolCall, decision: Decision) {
-  if (decision === "allow") return "";
-  const hookSpecificOutput = {
-    hookEventName: "PreToolUse",
-    permissionDecision: decision,
-    permissionDecisionReason: verdict(call)?.reason,
+  if (decision === "allow") return null;
+  return {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: decision,
+      permissionDecisionReason: verdict(call)?.reason,
+    },
   };
-  return `${JSON.stringify({ hookSpecificOutput })}\n`;
+}
+
+function stdoutFor(call: ToolCall, decision: Decision) {
+  const output = hookOutput(call, decision);
+  return output === null ? "" : `${JSON.stringify(output)}\n`;
 }
 
 async function hookRuns(cases: [ToolCall, Decision][]) {
-  const runs = await Promise.all(cases.map(([call]) => runGuard(hookInput(call), call.project)));
+  const runs = await Promise.all(cases.map(([call]) => runGuard(JSON.stringify(hookEvent(call)))));
   return {
     actual: cases.map(([call], index) => [label(call), runs[index]]),
     expected: cases.map(([call, decision]) => [
       label(call),
-      { status: 0, stdout: hookOutput(call, decision) },
+      { status: 0, stdout: stdoutFor(call, decision) },
     ]),
+  };
+}
+
+function handlerRuns(cases: [ToolCall, Decision][]) {
+  return {
+    actual: cases.map(([call]) => [
+      label(call),
+      preToolDecision(hookEvent(call), { root: call.project ?? repoRoot }),
+    ]),
+    expected: cases.map(([call, decision]) => [label(call), hookOutput(call, decision)]),
   };
 }
 
@@ -185,6 +147,7 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
   it("denies edits to generated and tool-owned files", ({ expect }) => {
     const { actual, expected } = decisions([
       [edit("src/routeTree.gen.ts"), "deny"],
+      [edit("src/lib/cn-tables.ts"), "deny"],
       [edit("src/styles/fonts.gen.css"), "deny"],
       [edit("src/assets/fonts/open-runde-400-core.woff2"), "deny"],
       [edit("scripts/fonts/usage.json"), "deny"],
@@ -494,7 +457,7 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
   let fixture = "";
 
   function git(...args: string[]) {
-    execFileSync("git", args, { cwd: fixture, env: hermeticGitEnv, stdio: "ignore" });
+    execFileSync("git", args, { cwd: fixture, env: gitEnv, stdio: "ignore" });
   }
 
   function writeFixture(path: string, content = "export {};\n") {
@@ -509,7 +472,9 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
   });
 
   beforeAll(() => {
-    for (const name of userGitVariables) vi.stubEnv(name, undefined);
+    for (const name of Object.keys(process.env).filter((key) => key.startsWith("GIT_"))) {
+      vi.stubEnv(name, undefined);
+    }
     for (const [name, value] of Object.entries(hermeticGitSettings)) vi.stubEnv(name, value);
     fixture = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-guard-")));
     writeFixture(".gitignore", "node_modules/\n.output/\ndist/\n");
@@ -555,8 +520,8 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
     expect(actual).toEqual(expected);
   });
 
-  it("resolves rm targets from the hook input's cwd", async ({ expect }) => {
-    const { actual, expected } = await hookRuns([[rm("rm -rf ../drafts", "lib"), "ask"]]);
+  it("resolves rm targets from the hook input's cwd", ({ expect }) => {
+    const { actual, expected } = handlerRuns([[rm("rm -rf ../drafts", "lib"), "ask"]]);
     expect(actual).toEqual(expected);
   });
 

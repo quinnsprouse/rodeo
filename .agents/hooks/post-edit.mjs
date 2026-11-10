@@ -1,33 +1,19 @@
-import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, realpathSync } from "node:fs";
 import { extname, isAbsolute, relative, resolve } from "node:path";
 
+import { checkableExtensions, lintableExtensions, typedExtensions } from "#tooling/project";
+
+import { editTargets } from "./edit-targets.mjs";
+import { runHook, truncate } from "./hook-io.mjs";
 import {
   dependenciesInstalled,
   packageBinary,
-  projectRoot,
   refreshRouteTree,
   runTool,
 } from "./project-tools.mjs";
 
-const formatExtensions = new Set([
-  ".cjs",
-  ".css",
-  ".cts",
-  ".html",
-  ".js",
-  ".json",
-  ".jsonc",
-  ".jsx",
-  ".md",
-  ".mjs",
-  ".mts",
-  ".ts",
-  ".tsx",
-  ".yaml",
-  ".yml",
-]);
-const typeScriptExtensions = new Set([".cts", ".mts", ".ts", ".tsx"]);
-const lintExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"]);
+export const event = "PostToolUse";
+
 const ignoredRoots = [
   ".git",
   ".output",
@@ -38,50 +24,44 @@ const ignoredRoots = [
 ];
 const skipped = { ok: true, output: "" };
 
-function report(message) {
-  const additionalContext = message.length > 4_000 ? `${message.slice(0, 3_997)}...` : message;
-  process.stdout.write(
-    `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
-  );
+function feedback(message) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: event,
+      additionalContext: truncate(message, { keep: "start" }),
+    },
+  };
 }
 
-function editedFiles(toolName, toolInput) {
-  if (toolName === "apply_patch" && typeof toolInput?.command === "string") {
-    return [
-      ...toolInput.command.matchAll(/^\*\*\* (?:Add|Update) File: (.+)$|^\*\*\* Move to: (.+)$/gm),
-    ].map((match) => (match[1] ?? match[2]).trim());
-  }
-  if (
-    ["Edit", "Write", "MultiEdit"].includes(toolName) &&
-    typeof toolInput?.file_path === "string"
-  ) {
-    return [toolInput.file_path];
-  }
-  return [];
+function writtenPaths(toolName, toolInput) {
+  return editTargets(toolName, toolInput)
+    .filter((target) => !target.deleted)
+    .map((target) => target.path);
 }
 
-function projectFile(filePath) {
-  const candidate = isAbsolute(filePath) ? filePath : resolve(projectRoot, filePath);
+function projectFile(filePath, root) {
+  const candidate = isAbsolute(filePath) ? filePath : resolve(root, filePath);
   if (!existsSync(candidate) || !lstatSync(candidate).isFile()) return null;
 
   const target = realpathSync(candidate);
-  const projectPath = relative(projectRoot, target);
+  const projectPath = relative(root, target);
   if (
     projectPath === "" ||
     projectPath.startsWith("..") ||
     isAbsolute(projectPath) ||
-    ignoredRoots.some((root) => projectPath === root || projectPath.startsWith(`${root}/`)) ||
-    !formatExtensions.has(extname(target).toLowerCase())
+    ignoredRoots.some(
+      (ignored) => projectPath === ignored || projectPath.startsWith(`${ignored}/`),
+    ) ||
+    !checkableExtensions.has(extname(target).toLowerCase())
   ) {
     return null;
   }
   return { target, projectPath };
 }
 
-function projectFiles(input) {
-  if (input.hook_event_name !== "PostToolUse") return [];
-  const files = editedFiles(input.tool_name, input.tool_input)
-    .map(projectFile)
+function projectFiles(input, root) {
+  const files = writtenPaths(input.tool_name, input.tool_input)
+    .map((path) => projectFile(path, root))
     .filter((file) => file !== null);
   return [...new Map(files.map((file) => [file.target, file])).values()];
 }
@@ -102,19 +82,26 @@ function problem(result, heading) {
   return result.ok ? [] : [`${heading}\n${result.output}`];
 }
 
-async function feedbackFor(files) {
-  const lintable = withExtension(files, lintExtensions);
-  const typed = withExtension(files, typeScriptExtensions);
-  const vp = packageBinary("vite-plus", "vp");
-  const tsc = typed.length > 0 ? packageBinary("typescript", "tsc") : null;
+async function problemsIn(files, root) {
+  const lintable = withExtension(files, lintableExtensions);
+  const typed = withExtension(files, typedExtensions);
+  const vp = packageBinary(root, "vite-plus", "vp");
+  const tsc = typed.length > 0 ? packageBinary(root, "typescript", "tsc") : null;
 
-  const routeTree = await refreshRouteTree(files.map(({ projectPath }) => projectPath));
-  const format = await runTool(vp, ["fmt", "--no-error-on-unmatched-pattern", ...targetsOf(files)]);
+  const routeTree = await refreshRouteTree(
+    root,
+    files.map(({ projectPath }) => projectPath),
+  );
+  const format = await runTool(root, vp, [
+    "fmt",
+    "--no-error-on-unmatched-pattern",
+    ...targetsOf(files),
+  ]);
   const [lint, typecheck] = await Promise.all([
     lintable.length > 0
-      ? runTool(vp, ["lint", "--no-error-on-unmatched-pattern", ...targetsOf(lintable)])
+      ? runTool(root, vp, ["lint", "--no-error-on-unmatched-pattern", ...targetsOf(lintable)])
       : skipped,
-    tsc ? runTool(tsc, ["-b", "--pretty", "false"]) : skipped,
+    tsc ? runTool(root, tsc, ["-b", "--pretty", "false"]) : skipped,
   ]);
 
   return [
@@ -125,16 +112,16 @@ async function feedbackFor(files) {
   ];
 }
 
-try {
-  const files = projectFiles(JSON.parse(readFileSync(0, "utf8")));
-  if (files.length > 0 && !dependenciesInstalled()) {
-    report("Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.");
-  } else if (files.length > 0) {
-    const feedback = await feedbackFor(files);
-    if (feedback.length > 0) report(feedback.join("\n\n"));
+export async function postEditFeedback(input, { root }) {
+  const files = projectFiles(input, root);
+  if (files.length === 0) return null;
+  if (!dependenciesInstalled(root)) {
+    return feedback(
+      "Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.",
+    );
   }
-} catch (error) {
-  report(
-    `Post-edit feedback could not run.\n${error instanceof Error ? error.message : String(error)}`,
-  );
+  const problems = await problemsIn(files, root);
+  return problems.length > 0 ? feedback(problems.join("\n\n")) : null;
 }
+
+if (import.meta.main) await runHook(postEditFeedback, { event, name: "post-edit feedback" });

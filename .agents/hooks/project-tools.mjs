@@ -1,31 +1,30 @@
-import { spawn } from "node:child_process";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import { stripVTControlCharacters } from "node:util";
 
-function resolveProjectRoot() {
-  const root =
-    process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-  return existsSync(root) ? realpathSync(root) : root;
+import { gitHooksDirectory } from "#tooling/project";
+import { isRouteFile, routeTreeIsCurrent } from "#tooling/route-tree";
+import { run } from "#tooling/run";
+
+const routeTreeGenerator = join("scripts", "generate-route-tree.mjs");
+
+export function dependenciesInstalled(root) {
+  return existsSync(join(root, "node_modules", "vite-plus"));
 }
 
-export const projectRoot = resolveProjectRoot();
-
-const requireFromProject = createRequire(join(projectRoot, "package.json"));
-const routeTreeScript = join(projectRoot, "scripts", "generate-route-tree.mjs");
-
-export function dependenciesInstalled() {
-  return existsSync(join(projectRoot, "node_modules", "vite-plus"));
+export async function gitHooksInstalled(root) {
+  const { stdout } = await run("git", ["config", "--get", "core.hooksPath"], { cwd: root });
+  const configured = stdout.trim();
+  // why: Git worktrees share core.hooksPath, but the directory it names is generated per checkout,
+  // and Git runs no hooks when that directory is missing.
+  return configured === `${gitHooksDirectory}/_` && existsSync(join(root, configured));
 }
 
-export function gitHooksInstalled() {
-  return existsSync(join(projectRoot, ".vite-hooks", "_", "h"));
-}
-
-export function packageBinary(packageName, binaryName) {
-  const packagePath = requireFromProject.resolve(`${packageName}/package.json`);
+export function packageBinary(root, packageName, binaryName) {
+  const packagePath = createRequire(join(root, "package.json")).resolve(
+    `${packageName}/package.json`,
+  );
   const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
   const binary =
     typeof packageJson.bin === "string" ? packageJson.bin : packageJson.bin?.[binaryName];
@@ -33,7 +32,7 @@ export function packageBinary(packageName, binaryName) {
   return resolve(dirname(packagePath), binary);
 }
 
-export function clean(text) {
+function clean(text) {
   return stripVTControlCharacters(text)
     .split("\n")
     .filter((line) => !line.startsWith("note: You are running `vp"))
@@ -42,27 +41,21 @@ export function clean(text) {
     .trimEnd();
 }
 
-export function runTool(binary, args, env = {}) {
-  return new Promise((resolvePromise) => {
-    const child = spawn(process.execPath, [binary, ...args], {
-      cwd: projectRoot,
+export async function runTool(root, binary, args, env = {}) {
+  try {
+    const { status, output } = await run(process.execPath, [binary, ...args], {
+      cwd: root,
       env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1", ...env },
     });
-    let output = "";
-    const collect = (chunk) => {
-      output += chunk;
-    };
-    child.stdout.setEncoding("utf8").on("data", collect);
-    child.stderr.setEncoding("utf8").on("data", collect);
-    child.on("error", (error) => resolvePromise({ ok: false, output: String(error) }));
-    child.on("close", (code) => resolvePromise({ ok: code === 0, output: clean(output) }));
-  });
+    return { ok: status === 0, output: clean(output) };
+  } catch (error) {
+    return { ok: false, output: String(error) };
+  }
 }
 
-export async function refreshRouteTree(changedPaths) {
-  const { isRouteFile, routeTreeIsCurrent } = await import(pathToFileURL(routeTreeScript).href);
-  if (!changedPaths.some(isRouteFile) || routeTreeIsCurrent(projectRoot)) {
-    return { ok: true, output: "" };
+export async function refreshRouteTree(root, changedPaths) {
+  if (!changedPaths.some(isRouteFile) || routeTreeIsCurrent(root)) {
+    return { ran: false, ok: true, output: "" };
   }
-  return runTool(routeTreeScript, []);
+  return { ran: true, ...(await runTool(root, join(root, routeTreeGenerator), [])) };
 }
