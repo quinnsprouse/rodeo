@@ -40,6 +40,7 @@ const kitEdits = [
     ),
     replace: "",
   },
+  { file: "README.md", section: "### Remove the demo", replace: "" },
 ];
 
 const starterHome = {
@@ -98,12 +99,25 @@ function occurrences(text, find) {
   return text.split(find).length - 1;
 }
 
+function sectionText(file, heading) {
+  const text = read(file);
+  const start = text.indexOf(`\n${heading}\n`) + 1;
+  if (start === 0) return heading;
+  const nextHeading = text.indexOf("\n## ", start);
+  return text.slice(start, nextHeading === -1 ? text.length : nextHeading + 1);
+}
+
+function textToFind({ file, find, section }) {
+  return section === undefined ? find : sectionText(file, section);
+}
+
 function editProblems() {
   return kitEdits
     .filter(
-      ({ file, find }) => !existsSync(join(root, file)) || occurrences(read(file), find) !== 1,
+      (edit) =>
+        !existsSync(join(root, edit.file)) || occurrences(read(edit.file), textToFind(edit)) !== 1,
     )
-    .map(({ file, find }) => `${file}: expected this text exactly once:\n${find}`);
+    .map((edit) => `${edit.file}: expected this text exactly once:\n${edit.find ?? edit.section}`);
 }
 
 function preflightProblems() {
@@ -117,10 +131,10 @@ function preflightProblems() {
 }
 
 function applyKitEdits() {
-  for (const { file, find, replace } of kitEdits) {
+  for (const edit of kitEdits) {
     writeFileSync(
-      join(root, file),
-      read(file).replace(find, () => replace),
+      join(root, edit.file),
+      read(edit.file).replace(textToFind(edit), () => edit.replace),
     );
   }
 }
