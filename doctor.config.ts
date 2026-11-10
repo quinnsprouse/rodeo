@@ -6,9 +6,10 @@ export default {
   plugins: ["./lint/rules.js"],
   rules: rodeoRules,
   ignore: {
-    // why: React Doctor does not read Oxlint's ignorePatterns. Without .output here, a scan after
-    // `npm run build` reports issues in bundled dependencies.
-    files: ["src/routeTree.gen.ts", ".output/**", "dist/**"],
+    // why: React Doctor does not read Oxlint's ignorePatterns or .gitignore. Without .output here,
+    // a scan after `npm run build` reports issues in bundled dependencies, and without .scratch it
+    // scans local experiments.
+    files: ["src/routeTree.gen.ts", ".output/**", "dist/**", ".scratch/**"],
     overrides: [
       ...rodeoRuleExceptions,
       {
