@@ -22,8 +22,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        # React Doctor compares against the base branch to report only new issues, and a shallow
+        # checkout has no merge base to compare with.
         with:
           persist-credentials: false
+          fetch-depth: 0
 
       # The scan uses the react-doctor version from package.json, the same one `npm run doctor` uses.
       - name: Read React Doctor version
