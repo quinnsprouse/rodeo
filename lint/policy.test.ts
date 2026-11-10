@@ -300,6 +300,31 @@ it("parses", () => { expect(Number("2")).toBe(2); });`,
     source: `import { Route } from "@/routes/index";\nexport const route = Route;`,
   },
   {
+    name: "a server module in src/lib importing a component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/lib",
+    file: "component-import.server.ts",
+    source: `import { Wordmark } from "@/components/wordmark";\nexport const mark = Wordmark;`,
+  },
+  {
+    name: "classic Zod imports in src/lib",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/lib",
+    source: `import { z } from "zod";
+export const schema = z.object({ id: z.string() });`,
+  },
+  {
+    name: "browser tests importing test and expect from @playwright/test",
+    rule: "eslint(no-restricted-imports)",
+    layer: "e2e",
+    file: "base-test.ts",
+    source: `import { expect, test } from "@playwright/test";
+test("loads the home page", async ({ page }) => {
+  await page.goto("/");
+  await expect(page).toHaveTitle("Rodeo");
+});`,
+  },
+  {
     name: "Node built-ins in client code",
     rule: "eslint(no-restricted-imports)",
     layer: "src/lib",
@@ -512,11 +537,18 @@ export function PlanCard() {
 ];
 
 // why: Path-scoped overrides match from the repository root, so a probe for src/lib must sit in
-// src/lib. A dot directory keeps it out of TypeScript's include globs and Git.
+// src/lib. TypeScript's include globs skip its dot directory, and .gitignore lists it.
 function probePath({ name, layer, file }: Probe) {
   const directory = layer === undefined ? sandbox : join(repoRoot, layer, layerProbeName);
   return join(directory, file ?? `${name.replaceAll(/[^a-z0-9]+/gi, "-")}.tsx`);
 }
+
+const allowedFiles = [
+  {
+    name: "the e2e fixtures module extending the base test from @playwright/test",
+    path: join(repoRoot, "e2e", "fixtures.ts"),
+  },
+];
 
 const probes = [...rejected, ...allowed];
 const probeDirectories = [
@@ -589,7 +621,12 @@ beforeAll(async () => {
     `import { probeValue } from "./cycle-probe";\nexport const partnerValue = probeValue + 1;\n`,
   );
   for (const probe of probes) writeFileSync(probePath(probe), probe.source);
-  diagnostics = codesByFile(await lint(probes.map((probe) => probePath(probe))));
+  diagnostics = codesByFile(
+    await lint([
+      ...probes.map((probe) => probePath(probe)),
+      ...allowedFiles.map(({ path }) => path),
+    ]),
+  );
 }, 60_000);
 
 afterAll(() => {
@@ -605,5 +642,9 @@ describe("Lint policy", () => {
 
   it.for(allowed)("allows $name", (probe, { expect }) => {
     expect(codesFor(probePath(probe))).toEqual([]);
+  });
+
+  it.for(allowedFiles)("allows the repository file $name", ({ path }, { expect }) => {
+    expect(codesFor(path)).toEqual([]);
   });
 });

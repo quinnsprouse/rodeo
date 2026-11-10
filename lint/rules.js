@@ -1,5 +1,4 @@
 import { readFileSync } from "node:fs";
-import { relative } from "node:path";
 
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
@@ -232,12 +231,14 @@ const BROWSER_GLOBALS = new Set([
   "location",
 ]);
 const DISABLE_DIRECTIVE = /^\s*((?:oxlint|eslint)-disable(?:-next-line|-line)?)/;
-const INITIAL_PROP = /^(?:default|initial)[A-Z_]/;
+const INITIAL_PROP_PREFIXES = ["default", "initial"];
+const INITIAL_PROP = new RegExp(String.raw`^(?:${INITIAL_PROP_PREFIXES.join("|")})[A-Z_]`);
 const WHY_MARKER = /^why:/;
-const MIN_REASON_WORDS = 3;
-const APP_CODE = /^(?:src|e2e)\//;
-const APP_REASON_WORDS = { min: 6, max: 30 };
-const VITE_BUILT_IN_ENV = new Set(["BASE_URL", "DEV", "MODE", "PROD", "SSR"]);
+const VITE_BUILT_IN_ENV = new Set(["DEV", "PROD", "SSR", "MODE", "BASE_URL"]);
+
+export const pluginName = "rodeo";
+
+export const defaultCommentOptions = { cause: "required", minWords: 6, maxWords: 30 };
 
 function isFunction(node) {
   return (
@@ -314,11 +315,11 @@ const noDisableDirectives = defineRule({
     type: "problem",
     docs: {
       description:
-        "Ban inline oxlint-disable and eslint-disable comments; exceptions belong in lint.overrides in vite.config.ts.",
+        "Ban inline oxlint-disable and eslint-disable comments; exceptions belong in lint/exceptions.ts.",
     },
     messages: {
       directive:
-        "Line {{line}} has an inline lint suppression ({{directive}}). Fix the code, or add a reviewed file-scoped exception under lint.overrides in vite.config.ts.",
+        "Line {{line}} has an inline lint suppression ({{directive}}). Fix the code, or add a file-scoped exception with a `why:` to lint/exceptions.ts.",
     },
     schema: [],
   },
@@ -401,7 +402,7 @@ const noStateFromProps = defineRule({
         "useState seeded from a prop silently desyncs when the prop changes; derive the value, lift the state, or remount with key.",
     },
     messages: {
-      prop: "useState is seeded from prop `{{name}}`, which will not update when the prop changes. Derive it during render, lift the state to the parent, or pass key= to remount. Props named default*/initial* are exempt. See docs/agents/REACT_PATTERNS.md",
+      prop: "useState is seeded from prop `{{name}}`, which will not update when the prop changes. Derive it during render, lift the state to the parent, or pass key= to remount. Props named {{exempt}} are exempt. See docs/agents/REACT_PATTERNS.md",
     },
     schema: [],
   },
@@ -438,7 +439,8 @@ const noStateFromProps = defineRule({
           propName = initial.property.name;
         }
         if (propName && !INITIAL_PROP.test(propName)) {
-          context.report({ node: initial, messageId: "prop", data: { name: propName } });
+          const exempt = INITIAL_PROP_PREFIXES.map((prefix) => `${prefix}*`).join("/");
+          context.report({ node: initial, messageId: "prop", data: { name: propName, exempt } });
         }
       },
     };
@@ -580,38 +582,45 @@ const noComments = defineRule({
       reason:
         "A `why:` comment needs a reason of at least {{min}} words that names the cause outside the code. If you cannot name one, delete the comment.",
       length:
-        "A `why:` comment in src/ and e2e/ is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
+        "A `why:` comment in this file is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
       cause:
         "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is real but lint does not know its name, add the name to the matching group in KNOWN_CAUSES in lint/rules.js. If the cause is in this repo, fix the code instead and delete the comment.",
     },
-    schema: [],
+    schema: [
+      {
+        type: "object",
+        properties: {
+          cause: { enum: ["optional", "required"] },
+          minWords: { type: "integer", minimum: 1 },
+          maxWords: { type: "integer", minimum: 1 },
+        },
+        required: ["cause", "minWords"],
+        additionalProperties: false,
+      },
+    ],
   },
   create(context) {
-    const appCode = APP_CODE.test(relative(context.cwd, context.filename).replaceAll("\\", "/"));
+    const { cause, minWords, maxWords } = context.options[0] ?? defaultCommentOptions;
+    function reasonProblem(reason) {
+      const words = reason.split(/\s+/).length;
+      if (maxWords === undefined) {
+        if (words < minWords) return { messageId: "reason", data: { min: String(minWords) } };
+      } else if (words < minWords || words > maxWords) {
+        return { messageId: "length", data: { min: String(minWords), max: String(maxWords) } };
+      }
+      if (cause === "required" && !OUTSIDE_CAUSE.test(reason)) return { messageId: "cause" };
+      return null;
+    }
     return {
       Program() {
         for (const group of commentGroups(context.sourceCode.getAllComments())) {
           const text = group.map(commentText).join(" ");
           if (isGovernedElsewhere(text)) continue;
           const loc = { start: group[0].loc.start, end: group.at(-1).loc.end };
-          if (!WHY_MARKER.test(text)) {
-            context.report({ loc, messageId: "comment" });
-            continue;
-          }
-          const reason = text.replace(WHY_MARKER, "").trim();
-          const words = reason.split(/\s+/).length;
-          if (!appCode) {
-            if (words < MIN_REASON_WORDS) {
-              context.report({ loc, messageId: "reason", data: { min: String(MIN_REASON_WORDS) } });
-            }
-            continue;
-          }
-          if (words < APP_REASON_WORDS.min || words > APP_REASON_WORDS.max) {
-            const data = { min: String(APP_REASON_WORDS.min), max: String(APP_REASON_WORDS.max) };
-            context.report({ loc, messageId: "length", data });
-          } else if (!OUTSIDE_CAUSE.test(reason)) {
-            context.report({ loc, messageId: "cause" });
-          }
+          const problem = WHY_MARKER.test(text)
+            ? reasonProblem(text.replace(WHY_MARKER, "").trim())
+            : { messageId: "comment" };
+          if (problem) context.report({ loc, ...problem });
         }
       },
     };
@@ -661,38 +670,38 @@ const noImportMetaEnv = defineRule({
         "Read VITE_* variables through clientEnv, which validates them at startup, not from import.meta.env.",
     },
     messages: {
-      env: "Read environment variables from clientEnv in @/config/env, which validates them when the app starts. Vite's built-in flags (DEV, PROD, SSR, MODE, BASE_URL) may be read directly. To add a variable, add it to the schema in src/config/env.ts and to .env.example.",
+      env: "Read environment variables from clientEnv in @/config/env, which validates them when the app starts. Vite's built-in flags ({{builtIns}}) may be read directly. To add a variable, add it to the schema in src/config/env.ts and to .env.example.",
     },
     schema: [],
   },
   create(context) {
+    const data = { builtIns: [...VITE_BUILT_IN_ENV].join(", ") };
     return {
       MetaProperty(node) {
         if (!isImportMeta(node)) return;
         const { parent } = node;
         if (parent?.type === "MemberExpression" && parent.object === node) {
           if (isPropertyNamed(parent, "env") && !readsBuiltInEnv(parent)) {
-            context.report({ node: parent, messageId: "env" });
+            context.report({ node: parent, messageId: "env", data });
           }
           return;
         }
         if (parent?.type === "VariableDeclarator" && destructuresEnv(parent.id)) {
-          context.report({ node: parent, messageId: "env" });
+          context.report({ node: parent, messageId: "env", data });
         }
       },
     };
   },
 });
 
-export default definePlugin({
-  meta: { name: "rodeo" },
-  rules: {
-    "no-disable-directives": noDisableDirectives,
-    "no-comments": noComments,
-    "no-import-meta-env": noImportMetaEnv,
-    "server-fn-requires-validator": serverFnRequiresValidator,
-    "no-state-from-props": noStateFromProps,
-    "no-module-scope-browser-globals": noModuleScopeBrowserGlobals,
-    "no-window-navigation": noWindowNavigation,
-  },
-});
+export const rules = {
+  "no-disable-directives": noDisableDirectives,
+  "no-comments": noComments,
+  "no-import-meta-env": noImportMetaEnv,
+  "server-fn-requires-validator": serverFnRequiresValidator,
+  "no-state-from-props": noStateFromProps,
+  "no-module-scope-browser-globals": noModuleScopeBrowserGlobals,
+  "no-window-navigation": noWindowNavigation,
+};
+
+export default definePlugin({ meta: { name: pluginName }, rules });

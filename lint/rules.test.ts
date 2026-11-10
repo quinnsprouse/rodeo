@@ -7,11 +7,17 @@ import { fileURLToPath } from "node:url";
 
 import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 
-import { rodeoRuleNames, type RodeoRuleName } from "./rodeo-rules";
+import {
+  commentScopes,
+  isRodeoRuleName,
+  pluginName,
+  rodeoPlugin,
+  rodeoRules,
+  type RodeoRuleName,
+} from "./rodeo-rules";
 
 const require = createRequire(import.meta.url);
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const pluginPath = join(repoRoot, "lint", "rules.js");
 // why: oxlint is a dependency of vite-plus, not of this project, so it resolves from there instead
 // of relying on npm hoisting a transitive package.
 const requireFromVitePlus = createRequire(require.resolve("vite-plus/package.json"));
@@ -19,10 +25,6 @@ const oxlintBinary = resolve(
   dirname(requireFromVitePlus.resolve("oxlint/package.json")),
   "bin/oxlint",
 );
-
-function isRuleName(value: string): value is RodeoRuleName {
-  return (rodeoRuleNames as readonly string[]).includes(value);
-}
 
 type Diagnostic = { rule: RodeoRuleName; line: number; message: string };
 type Probe = { file: string; source: string };
@@ -52,8 +54,8 @@ function parseDiagnostic(entry: unknown): [string, Diagnostic] {
   ) {
     throw new Error(`Unexpected diagnostic: ${JSON.stringify(entry)}`);
   }
-  const rule = entry.code.replace(/^rodeo\((.+)\)$/, "$1");
-  if (!isRuleName(rule)) throw new Error(`Unexpected rule id: ${entry.code}`);
+  const rule = entry.code.replace(new RegExp(String.raw`^${pluginName}\((.+)\)$`), "$1");
+  if (!isRodeoRuleName(rule)) throw new Error(`Unexpected rule id: ${entry.code}`);
   const label: unknown = Array.isArray(entry.labels) ? entry.labels[0] : undefined;
   const span = isRecord(label) && isRecord(label.span) ? label.span : undefined;
   const file = relative(sandbox, realpathSync(resolve(sandbox, entry.filename)));
@@ -87,9 +89,10 @@ beforeAll(() => {
   writeFileSync(
     join(sandbox, ".oxlintrc.json"),
     JSON.stringify({
-      jsPlugins: [{ name: "rodeo", specifier: pluginPath }],
+      jsPlugins: [{ ...rodeoPlugin, specifier: join(repoRoot, rodeoPlugin.specifier) }],
       categories: { correctness: "off" },
-      rules: Object.fromEntries(rodeoRuleNames.map((name) => [`rodeo/${name}`, "error"])),
+      rules: { ...rodeoRules, ...commentScopes.rules },
+      overrides: commentScopes.overrides,
     }),
   );
   for (const { file, source } of probes) {
@@ -128,7 +131,9 @@ export { a, b };`);
     const hits = lint(directives);
     expect(hits.map((hit) => hit.line)).toEqual([1, 1, 1, 1]);
     expect(hits.map((hit) => hit.message)).toEqual([
-      expect.stringContaining("Line 1 has an inline lint suppression (oxlint-disable)"),
+      expect.stringMatching(
+        /Line 1 has an inline lint suppression \(oxlint-disable\).+lint\/exceptions\.ts/,
+      ),
       expect.stringContaining("Line 2 has an inline lint suppression (oxlint-disable-next-line)"),
       expect.stringContaining("Line 4 has an inline lint suppression (eslint-disable)"),
       expect.stringContaining("Line 5 has an inline lint suppression (oxlint-disable-line)"),
@@ -173,7 +178,12 @@ import { useState } from "react";
 export function A({ value }: { value: number }) { const [v] = useState(value); return v; }
 export function B(props: { count: number }) { const [c] = useState(props.count); return c; }`);
   it("reports state seeded from a destructured or dotted prop", () => {
-    expect(rulesHit(seededFromProps)).toEqual(["no-state-from-props", "no-state-from-props"]);
+    const hits = lint(seededFromProps);
+
+    expect(hits.map((hit) => hit.rule)).toEqual(["no-state-from-props", "no-state-from-props"]);
+    expect(hits.map((hit) => hit.message)).toEqual(
+      Array<unknown>(2).fill(expect.stringContaining("Props named default*/initial* are exempt")),
+    );
   });
 
   const seededFromDefaults = probe(`
@@ -231,23 +241,6 @@ export function go() {
   const locationRead = probe(`export const path = () => window.location.pathname;`);
   it("allows reading location", () => {
     expect(rulesHit(locationRead)).toEqual([]);
-  });
-});
-
-function pluginRuleNames(pluginModule: unknown) {
-  if (!isRecord(pluginModule) || !isRecord(pluginModule.default)) {
-    throw new Error("lint/rules.js has no default export");
-  }
-  const { rules } = pluginModule.default;
-  if (!isRecord(rules)) throw new Error("lint/rules.js exports no rules");
-  return Object.keys(rules);
-}
-
-describe("registration", () => {
-  it("registers every rule the plugin defines with Oxlint and React Doctor", async () => {
-    const pluginModule: unknown = await import(pluginPath);
-
-    expect(pluginRuleNames(pluginModule).toSorted()).toEqual(rodeoRuleNames.toSorted());
   });
 });
 
@@ -399,7 +392,14 @@ export const c = import.meta["env"].VITE_KEY;
 const { env } = import.meta;
 export const d = env;`);
   it("reports VITE_* reads and whole-object reads", () => {
-    expect(rulesHit(envReads)).toEqual(Array<RodeoRuleName>(5).fill("no-import-meta-env"));
+    const hits = lint(envReads);
+
+    expect(hits.map((hit) => hit.rule)).toEqual(Array<RodeoRuleName>(5).fill("no-import-meta-env"));
+    expect(hits.map((hit) => hit.message)).toEqual(
+      Array<unknown>(5).fill(
+        expect.stringContaining("Vite's built-in flags (DEV, PROD, SSR, MODE, BASE_URL)"),
+      ),
+    );
   });
 
   const builtInFlags = probe(`export const moduleUrl = import.meta.url;

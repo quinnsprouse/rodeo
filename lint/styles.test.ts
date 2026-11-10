@@ -4,9 +4,10 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vite-plus/test";
 
+import { generatedFiles } from "#tooling/project";
+
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const stylesDirectory = join(repoRoot, "src", "styles");
-const generatedFiles = new Set(["src/lib/cn-tables.ts"]);
 // why: docs/agents/UI_MOTION.md tells agents to draw dividers with these utilities, so they stay
 // even before a page uses them.
 const documentedUtilities = new Set(["divider-t", "divider-b", "divider-r"]);
@@ -17,6 +18,12 @@ function filesUnder(directory: string, extensions: readonly string[]): string[] 
     .map((file) => join(directory, file));
 }
 
+function isGenerated(file: string) {
+  return generatedFiles.some(({ path }) =>
+    path.endsWith("/") ? file.startsWith(path) : file === path,
+  );
+}
+
 function declaredNames(css: string) {
   const utilities = [...css.matchAll(/@utility\s+([\w-]+)/g)].map((match) => match[1] ?? "");
   const classes = [...css.matchAll(/^\.([\w-]+)[\s,:{]/gm)].map((match) => match[1] ?? "");
@@ -24,7 +31,7 @@ function declaredNames(css: string) {
 }
 
 const source = filesUnder(join(repoRoot, "src"), [".ts", ".tsx"])
-  .filter((file) => !generatedFiles.has(relative(repoRoot, file)))
+  .filter((file) => !isGenerated(relative(repoRoot, file)))
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 
