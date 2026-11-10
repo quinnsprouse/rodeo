@@ -123,20 +123,26 @@ export default defineConfig({
     tasks: {
       "verify:fast": {
         command: ["node scripts/check-toolchain.mjs", "vp check", "vp test run"],
-        input: verificationInputs,
-        env: ["VITE_*", "NODE_ENV"],
+        cache: {
+          input: verificationInputs,
+          env: ["VITE_*", "NODE_ENV"],
+        },
       },
       "verify:build": {
         command: ["tsc -b", "vp build --mode e2e --logLevel error"],
         dependsOn: ["verify:fast"],
-        input: verificationInputs,
-        output: [".output/**"],
-        env: ["VITE_*", "NODE_ENV"],
+        cache: {
+          input: verificationInputs,
+          output: [".output/**"],
+          env: ["VITE_*", "NODE_ENV"],
+        },
       },
       "verify:dead-code": {
         command: "knip --reporter compact",
         dependsOn: ["verify:build"],
-        input: verificationInputs,
+        cache: {
+          input: verificationInputs,
+        },
       },
       "verify:push": {
         command: "playwright test",

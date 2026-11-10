@@ -9,10 +9,14 @@ const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.ur
 const packageJson = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
 const { version: vitePlusVersion } = require("vite-plus/package.json");
 const { versions } = require("vite-plus/versions");
+const vitestPin = packageJson.overrides.vitest;
 
 assert.equal(packageJson.devDependencies["vite-plus"], vitePlusVersion);
-assert.equal(packageJson.overrides.vitest, versions.vitest);
 assert.equal(packageJson.overrides.vite, `npm:@voidzero-dev/vite-plus-core@${vitePlusVersion}`);
+assert.ok(
+  vitestPin === undefined || vitestPin === versions.vitest,
+  `The vitest override must pin the Vitest that Vite+ bundles, ${versions.vitest}. Run vp migrate to re-pin or remove it.`,
+);
 assert.equal(
   packageJson.devDependencies["@oxlint/plugins"],
   undefined,
