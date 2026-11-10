@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { stripVTControlCharacters } from "node:util";
 
 function resolveProjectRoot() {
@@ -14,6 +14,7 @@ function resolveProjectRoot() {
 export const projectRoot = resolveProjectRoot();
 
 const requireFromProject = createRequire(join(projectRoot, "package.json"));
+const routeTreeScript = join(projectRoot, "scripts", "generate-route-tree.mjs");
 
 export function dependenciesInstalled() {
   return existsSync(join(projectRoot, "node_modules", "vite-plus"));
@@ -56,4 +57,12 @@ export function runTool(binary, args, env = {}) {
     child.on("error", (error) => resolvePromise({ ok: false, output: String(error) }));
     child.on("close", (code) => resolvePromise({ ok: code === 0, output: clean(output) }));
   });
+}
+
+export async function refreshRouteTree(changedPaths) {
+  const { isRouteFile, routeTreeIsCurrent } = await import(pathToFileURL(routeTreeScript).href);
+  if (!changedPaths.some(isRouteFile) || routeTreeIsCurrent(projectRoot)) {
+    return { ok: true, output: "" };
+  }
+  return runTool(routeTreeScript, []);
 }

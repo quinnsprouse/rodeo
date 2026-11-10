@@ -1,7 +1,13 @@
 import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
 import { extname, isAbsolute, relative, resolve } from "node:path";
 
-import { dependenciesInstalled, packageBinary, projectRoot, runTool } from "./project-tools.mjs";
+import {
+  dependenciesInstalled,
+  packageBinary,
+  projectRoot,
+  refreshRouteTree,
+  runTool,
+} from "./project-tools.mjs";
 
 const formatExtensions = new Set([
   ".cjs",
@@ -102,6 +108,7 @@ async function feedbackFor(files) {
   const vp = packageBinary("vite-plus", "vp");
   const tsc = typed.length > 0 ? packageBinary("typescript", "tsc") : null;
 
+  const routeTree = await refreshRouteTree(files.map(({ projectPath }) => projectPath));
   const format = await runTool(vp, ["fmt", "--no-error-on-unmatched-pattern", ...targetsOf(files)]);
   const [lint, typecheck] = await Promise.all([
     lintable.length > 0
@@ -111,6 +118,7 @@ async function feedbackFor(files) {
   ]);
 
   return [
+    ...problem(routeTree, `Route tree generation failed after editing ${pathList(files)}.`),
     ...problem(format, `Automatic formatting failed for ${pathList(files)}.`),
     ...problem(lint, `Lint found an issue in ${pathList(lintable)}.`),
     ...problem(typecheck, `Type checking found an issue after editing ${pathList(typed)}.`),

@@ -8,6 +8,7 @@ import {
   gitHooksInstalled,
   packageBinary,
   projectRoot,
+  refreshRouteTree,
   runTool,
 } from "./project-tools.mjs";
 
@@ -68,9 +69,12 @@ function baseRevision() {
   return head.status === 0 ? "HEAD" : gitEmptyTree;
 }
 
+function changedPaths(base, untracked) {
+  return [...new Set([...lines(git(["diff", "--name-only", base])), ...untracked])];
+}
+
 function changedFiles(base, untracked) {
-  const paths = [...lines(git(["diff", "--name-only", base])), ...untracked];
-  return [...new Set(paths)].filter((path) => existsSync(join(projectRoot, path)));
+  return changedPaths(base, untracked).filter((path) => existsSync(join(projectRoot, path)));
 }
 
 function fingerprint(base, files, untracked) {
@@ -151,10 +155,14 @@ try {
 
   const base = baseRevision();
   const untracked = lines(git(["ls-files", "--others", "--exclude-standard"]));
-  const files = changedFiles(base, untracked);
-  if (files.length === 0) process.exit(0);
+  const changed = changedPaths(base, untracked);
+  if (changed.length === 0) process.exit(0);
 
   requireSetup(input.stop_hook_active === true);
+
+  const routeTree = { label: "Route tree generation", ...(await refreshRouteTree(changed)) };
+  const files = changedFiles(base, untracked);
+  if (files.length === 0 && routeTree.ok) process.exit(0);
 
   const state = readState();
   const current = fingerprint(base, files, untracked);
@@ -168,7 +176,7 @@ try {
     });
   }
 
-  const failures = (await runChecks(base, files)).filter((result) => !result.ok);
+  const failures = [routeTree, ...(await runChecks(base, files))].filter((result) => !result.ok);
   if (failures.length === 0) {
     writeState({ ...state, passed: current });
     process.exit(0);

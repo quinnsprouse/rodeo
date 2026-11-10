@@ -10,6 +10,7 @@ export default defineConfig({
       "**/{vitest,vite}.config.*/**",
       "lint/**",
       ".agents/hooks/**",
+      "scripts/generate-route-tree.mjs",
     ],
     include: ["lint/**/*.test.ts", ".agents/hooks/*.test.ts"],
   },

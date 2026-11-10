@@ -137,9 +137,15 @@ export default defineConfig({
   run: {
     tasks: {
       "verify:fast": {
-        command: ["node scripts/check-toolchain.mjs", "vp check", "vp test run"],
+        command: [
+          "node scripts/check-toolchain.mjs",
+          "node scripts/generate-route-tree.mjs",
+          "vp check",
+          "vp test run",
+        ],
         cache: {
           input: verificationInputs,
+          output: ["src/routeTree.gen.ts"],
           env: ["VITE_*", "NODE_ENV"],
         },
       },
