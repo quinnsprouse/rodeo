@@ -1,5 +1,3 @@
 vp staged
-# Advisory React health scan of staged files; the full CI profile blocks regressions.
-react-doctor --staged --blocking warning || {
-  echo "React Doctor found staged regressions. Run 'npm run doctor' to inspect and fix." >&2
-}
+# why: React Doctor refuses a staged scan while a config file such as package.json has unstaged changes, and exits 1 even with --blocking none.
+react-doctor --staged --blocking none || true

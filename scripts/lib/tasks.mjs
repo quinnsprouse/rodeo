@@ -45,7 +45,7 @@ export const tasks = {
     cache: false,
   },
   "verify:doctor": {
-    command: "react-doctor --verbose --blocking warning",
+    command: "react-doctor",
     cache: false,
   },
   "verify:ci": {

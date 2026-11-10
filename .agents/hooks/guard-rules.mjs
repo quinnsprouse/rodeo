@@ -107,7 +107,7 @@ const verdicts = {
   downloadedTool: {
     decision: "deny",
     reason:
-      "Use the project commands: `vp lint`, `vp fmt`, `npm run test`. One-off tool downloads can bypass the project's pinned versions.",
+      "Use the project commands: `vp lint`, `vp fmt`, `vp test`. One-off tool downloads can bypass the project's pinned versions.",
   },
 };
 

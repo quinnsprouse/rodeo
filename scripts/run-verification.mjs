@@ -3,10 +3,10 @@ import { spawn } from "node:child_process";
 const TASK_COMMUNICATION_FAILURE = "Failed to set up task communication";
 const OUTPUT_TAIL_LIMIT = 8_192;
 
-const task = process.argv[2];
+const taskAndFlags = process.argv.slice(2);
 
-if (!task) {
-  console.error("Usage: node scripts/run-verification.mjs <verification-task>");
+if (!taskAndFlags.some((argument) => !argument.startsWith("-"))) {
+  console.error("Usage: node scripts/run-verification.mjs [vp run flags] <verification-task>");
   process.exit(2);
 }
 
@@ -32,11 +32,11 @@ function run(args) {
   });
 }
 
-let result = await run(["run", task]);
+let result = await run(["run", ...taskAndFlags]);
 
 if (result.code !== 0 && result.outputTail.includes(TASK_COMMUNICATION_FAILURE)) {
   console.warn("Vite Task communication is unavailable; retrying this profile without cache.");
-  result = await run(["run", "--no-cache", task]);
+  result = await run(["run", "--no-cache", ...taskAndFlags]);
 }
 
 if (result.signal) {

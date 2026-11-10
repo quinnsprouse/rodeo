@@ -10,6 +10,8 @@ function asGlob(path: string) {
 }
 
 export default {
+  blocking: "warning",
+  verbose: true,
   plugins: [rodeoPlugin.specifier],
   rules: rodeoRules,
   ignore: {
