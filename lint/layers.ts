@@ -18,7 +18,7 @@ const sharedRestrictions = {
         "lucide-react",
         "react-icons",
         "react-icons/*",
-        "@heroicons/*",
+        "@heroicons/**",
         "@tabler/icons-react",
       ],
       message:
@@ -44,7 +44,7 @@ const sharedRestrictions = {
         "glimm/next is the Next.js adapter, and this app uses TanStack Router. Import GlimmProvider and useGlimm from glimm/react and navigate inside sweep(). See docs/agents/UI_MOTION.md",
     },
     {
-      group: ["@/routes/*"],
+      group: ["@/routes/**"],
       message:
         "Route modules are entry points that only the router imports. Move the shared code into src/components, src/hooks, or src/lib.",
     },
@@ -58,7 +58,7 @@ const testApis: ImportPattern = {
 };
 
 const nodeBuiltins: ImportPattern = {
-  group: ["node:*"],
+  group: ["node:*", "node:*/**"],
   message:
     "Node built-ins exist only on the server. Use them in a *.server.ts module, which TanStack Start keeps out of the client bundle, and call that module from a server function.",
 };
@@ -84,19 +84,19 @@ const demoImports: ImportPattern = {
 const kitZones: Zone[] = [
   {
     files: ["src/lib/**", "src/config/**"],
-    bans: ["@/components/*", "@/hooks/*"],
+    bans: ["@/components/**", "@/hooks/**"],
     message:
       "src/lib and src/config sit below components and hooks and cannot import them. Move the shared code into src/lib, or pass it in as an argument.",
   },
   {
     files: ["src/hooks/**"],
-    bans: ["@/components/*"],
+    bans: ["@/components/**"],
     message:
       "Hooks sit below components and cannot import them. Move the shared code into src/hooks or src/lib.",
   },
   {
     files: ["src/components/ui/**"],
-    bans: ["@/components/*", "!@/components/ui/*", "!@/components/icon"],
+    bans: ["@/components/**", "!@/components/ui/**", "!@/components/icon"],
     message:
       "The UI kit cannot depend on app components. Pass app content in through props or children.",
   },

@@ -166,6 +166,12 @@ export function Probe() { return <Button type="button" className="bg-brand">Save
 export const schema = z.object({ id: z.string() });`,
   },
   {
+    name: "icon libraries other than Hugeicons, at any import depth",
+    rule: "eslint(no-restricted-imports)",
+    source: `import { CheckIcon } from "@heroicons/react/24/outline";
+export function Probe() { return <CheckIcon aria-hidden="true" />; }`,
+  },
+  {
     name: "skeleton libraries other than skullet",
     rule: "eslint(no-restricted-imports)",
     source: `import LoadingSkeleton from "react-loading-skeleton";
@@ -305,6 +311,55 @@ it("parses", () => { expect(Number("2")).toBe(2); });`,
     layer: "src/lib",
     file: "component-import.server.ts",
     source: `import { Wordmark } from "@/components/wordmark";\nexport const mark = Wordmark;`,
+  },
+  {
+    name: "src/lib importing a nested kit component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/lib",
+    source: `import { Button } from "@/components/ui/button";\nexport const button = Button;`,
+  },
+  {
+    name: "src/config importing a nested app component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/config",
+    source: `import { BullSticker } from "@/components/stickers/bull";\nexport const sticker = BullSticker;`,
+  },
+  {
+    name: "src/config importing a nested hook module",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/config",
+    source: `import { useTheme } from "@/hooks/theme/use-theme";\nexport const theme = useTheme;`,
+  },
+  {
+    name: "src/hooks importing a nested kit component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/hooks",
+    source: `import { Button } from "@/components/ui/button";\nexport const button = Button;`,
+  },
+  {
+    name: "the UI kit importing a nested app component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/components/ui",
+    source: `import { BullSticker } from "@/components/stickers/bull";\nexport const sticker = BullSticker;`,
+  },
+  {
+    name: "a server module in src/lib importing a nested kit component",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/lib",
+    file: "nested-component-import.server.ts",
+    source: `import { Button } from "@/components/ui/button";\nexport const button = Button;`,
+  },
+  {
+    name: "importing a nested route module",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/components",
+    source: `import { Route } from "@/routes/(demo)/philosophy";\nexport const route = Route;`,
+  },
+  {
+    name: "nested Node built-in paths in client code",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/lib",
+    source: `import { readFile } from "node:fs/promises";\nexport const read = readFile;`,
   },
   {
     name: "classic Zod imports in src/lib",
@@ -453,11 +508,32 @@ export const region = process.env.REGION;`,
     source: `export function Probe() { return <svg aria-hidden="true"><path fill="#863bff" d="M0 0h4v4z" /></svg>; }`,
   },
   {
-    name: "kit imports inside the kit",
+    name: "kit and Icon imports inside the kit",
     layer: "src/components/ui",
-    source: `import { Button } from "@/components/ui/button";
+    source: `import { Copy01Icon } from "@hugeicons/core-free-icons";
+import { Icon } from "@/components/icon";
+import { Button } from "@/components/ui/button";
 export function Probe() {
-  return <Button type="button">Copy</Button>;
+  return (
+    <Button type="button">
+      <Icon icon={Copy01Icon} />
+      Copy
+    </Button>
+  );
+}`,
+  },
+  {
+    name: "nested kit and app component imports in an app component",
+    layer: "src/components",
+    source: `import { BullSticker } from "@/components/stickers/bull";
+import { Button } from "@/components/ui/button";
+export function Probe() {
+  return (
+    <Button type="button">
+      <BullSticker />
+      Save
+    </Button>
+  );
 }`,
   },
   {
