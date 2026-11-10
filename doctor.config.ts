@@ -6,10 +6,21 @@ export default {
   plugins: ["./lint/rules.js"],
   rules: rodeoRules,
   ignore: {
-    // why: React Doctor does not read Oxlint's ignorePatterns or .gitignore. Without .output here,
-    // a scan after `npm run build` reports issues in bundled dependencies, and without .scratch it
-    // scans local experiments.
-    files: ["src/routeTree.gen.ts", ".output/**", "dist/**", ".scratch/**"],
+    // why: React Doctor reads neither Oxlint's ignorePatterns nor .gitignore, so build output and
+    // local experiments are listed here. Its changed-files scan also reaches the Node tooling,
+    // where its React and server rules do not apply: a hook that formats a file before it lints
+    // that file is not making a user wait twice.
+    files: [
+      "src/routeTree.gen.ts",
+      ".output/**",
+      "dist/**",
+      ".scratch/**",
+      ".agents/**",
+      "scripts/**",
+      "lint/**",
+      "e2e/**",
+      "*.config.ts",
+    ],
     overrides: [
       ...rodeoRuleExceptions,
       {
@@ -17,12 +28,6 @@ export default {
         // reflows around each word.
         files: ["src/components/swap-chip-motion.tsx"],
         rules: ["react-doctor/no-layout-property-animation"],
-      },
-      {
-        // why: oxfmt rewrites the edited files in place, so lint and tsc must not start reading
-        // them until it exits. The two awaits are sequential on purpose.
-        files: [".agents/hooks/post-edit.mjs"],
-        rules: ["react-doctor/server-sequential-independent-await"],
       },
     ],
   },
