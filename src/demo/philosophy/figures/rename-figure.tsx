@@ -1,17 +1,13 @@
-import { useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { concealed, reveal } from "@/demo/motion-classes";
-import { Card, Figure } from "@/demo/philosophy/figures/figure";
-import { hoveredData } from "@/demo/philosophy/figures/hover";
-import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
-import { useBeats } from "@/demo/use-beats";
+import { Figure, timeline, useFigure } from "@/demo/philosophy/figures/figure";
+import { useHoveredData } from "@/demo/use-hovered-data";
 import { cn } from "@/lib/utils";
 
 type Idea = "author" | "admin";
 
-const beats = [500, 650, 450, 300];
-const rodeoBeat = 1;
-const namedBeat: Record<Idea, number> = { author: 2, admin: 3 };
+const beats = timeline({ withoutRodeo: 500, rodeo: 650, author: 450, admin: 300 });
 
 function Mark({ idea, lit, children }: { idea: Idea; lit: boolean; children: ReactNode }) {
   return (
@@ -60,59 +56,55 @@ function Row({ label, shown, children }: { label: string; shown: boolean; childr
 }
 
 export function RenameFigure() {
-  const card = useRef<HTMLDivElement>(null);
-  const playback = useScrollPlayback(card);
-  const beat = useBeats(beats, playback);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const named = (idea: Idea) => (hovered === null ? beat >= namedBeat[idea] : hovered === idea);
+  const figure = useFigure(beats);
+  const { beat } = figure;
+  const { hovered, handlers } = useHoveredData("idea");
+  const named = (idea: Idea) => (hovered === null ? beat >= beats.at(idea) : hovered === idea);
   const spelledOut = (idea: Idea) => hovered === idea;
 
   return (
     <Figure
+      figure={figure}
       caption="a better name does the comment's job, and that's what the next agent copies."
-      waiting={playback === "waiting"}
     >
-      <Card ref={card}>
-        <div
-          onPointerOver={(event) => setHovered(hoveredData(event, "idea"))}
-          onPointerLeave={() => setHovered(null)}
-          className="grid items-center gap-x-m gap-y-xs sm:grid-cols-[112px_1fr] sm:gap-y-m"
-        >
-          <Row label="without rodeo" shown={beat >= 0}>
-            <span className="text-muted-foreground">
-              {"// only "}
-              <Mark idea="author" lit={named("author")}>
-                authors
-              </Mark>
-              {" and "}
-              <Mark idea="admin" lit={named("admin")}>
-                admins
-              </Mark>
-              {" can edit"}
-            </span>
-            {"\nif ("}
-            <Mark idea="author" lit={spelledOut("author")}>
-              user.id === post.authorId
-            </Mark>
-            {" ||\n    "}
-            <Mark idea="admin" lit={spelledOut("admin")}>
-              user.role === "admin"
-            </Mark>
-            {") {"}
-          </Row>
-          <Row label="rodeo" shown={beat >= rodeoBeat}>
-            {"if ("}
+      <div
+        {...handlers}
+        className="grid items-center gap-x-m gap-y-xs sm:grid-cols-[112px_1fr] sm:gap-y-m"
+      >
+        <Row label="without rodeo" shown={beat >= beats.at("withoutRodeo")}>
+          <span className="text-muted-foreground">
+            {"// only "}
             <Mark idea="author" lit={named("author")}>
-              isAuthor
+              authors
             </Mark>
-            {"(user, post) ||\n    "}
+            {" and "}
             <Mark idea="admin" lit={named("admin")}>
-              isAdmin
+              admins
             </Mark>
-            {"(user)) {"}
-          </Row>
-        </div>
-      </Card>
+            {" can edit"}
+          </span>
+          {"\nif ("}
+          <Mark idea="author" lit={spelledOut("author")}>
+            user.id === post.authorId
+          </Mark>
+          {" ||\n    "}
+          <Mark idea="admin" lit={spelledOut("admin")}>
+            user.role === "admin"
+          </Mark>
+          {") {"}
+        </Row>
+        <Row label="rodeo" shown={beat >= beats.at("rodeo")}>
+          {"if ("}
+          <Mark idea="author" lit={named("author")}>
+            isAuthor
+          </Mark>
+          {"(user, post) ||\n    "}
+          <Mark idea="admin" lit={named("admin")}>
+            isAdmin
+          </Mark>
+          {"(user)) {"}
+        </Row>
+      </div>
     </Figure>
   );
 }

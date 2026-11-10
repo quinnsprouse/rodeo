@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { site } from "@/config/site";
+import { ExternalLink } from "@/demo/external-link";
 import { ChecksSection } from "@/demo/landing/checks-section";
 import { Hero } from "@/demo/landing/hero";
 import { OpinionsSection } from "@/demo/landing/opinions-section";
@@ -12,6 +13,7 @@ import { PageSection } from "@/demo/landing/page-section";
 import { PyramidSection } from "@/demo/landing/pyramid-section";
 import { ScrollHint } from "@/demo/landing/scroll-hint";
 import { StartCta } from "@/demo/landing/start-cta";
+import { links } from "@/demo/links";
 import { homeStructuredData, structuredDataScript } from "@/lib/structured-data";
 
 export const Route = createFileRoute("/(demo)/")({
@@ -25,12 +27,12 @@ export const Route = createFileRoute("/(demo)/")({
 });
 
 const stack = [
-  { name: "Vite+", href: "https://viteplus.dev" },
-  { name: "TanStack Start", href: "https://tanstack.com/start" },
-  { name: "React 19", href: "https://react.dev" },
-  { name: "Tailwind v4", href: "https://tailwindcss.com" },
-  { name: "shadcn/ui", href: "https://ui.shadcn.com" },
-  { name: "Nitro", href: "https://nitro.build" },
+  { name: "Vite+", href: links.vitePlus },
+  { name: "TanStack Start", href: links.tanstackStart },
+  { name: "React 19", href: links.react },
+  { name: "Tailwind v4", href: links.tailwind },
+  { name: "shadcn/ui", href: links.shadcn },
+  { name: "Nitro", href: links.nitro },
 ];
 
 const footerLink =
@@ -47,14 +49,9 @@ function SiteNav() {
         <Link to="/philosophy" className={navLink}>
           Philosophy
         </Link>
-        <a
-          href="https://github.com/quinnsprouse/rodeo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={navLink}
-        >
+        <ExternalLink href={site.repository} className={navLink}>
           GitHub
-        </a>
+        </ExternalLink>
         <ThemeToggle className="ml-xxs" />
       </nav>
     </div>
@@ -87,7 +84,7 @@ function Home() {
         <ChecksSection />
 
         <PageSection>
-          <StartCta installCommand={site.installCommand} />
+          <StartCta />
         </PageSection>
       </main>
 
@@ -102,37 +99,22 @@ function Home() {
               <Link to="/philosophy" className={footerLink}>
                 Philosophy
               </Link>
-              <a
-                href="https://github.com/quinnsprouse/rodeo"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={footerLink}
-              >
+              <ExternalLink href={site.repository} className={footerLink}>
                 GitHub
-              </a>
+              </ExternalLink>
             </nav>
           </div>
           <p className="text-xs text-muted-foreground">
             Made by{" "}
-            <a
-              href="https://github.com/quinnsprouse"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={inlineLink}
-            >
-              Quinn Sprouse
-            </a>
+            <ExternalLink href={site.author.url} className={inlineLink}>
+              {site.author.name}
+            </ExternalLink>
             . Built on{" "}
             {stack.map((tool, index) => (
               <span key={tool.name}>
-                <a
-                  href={tool.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={inlineLink}
-                >
+                <ExternalLink href={tool.href} className={inlineLink}>
                   {tool.name}
-                </a>
+                </ExternalLink>
                 {index < stack.length - 1 ? ", " : "."}
               </span>
             ))}

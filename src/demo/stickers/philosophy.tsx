@@ -1,15 +1,13 @@
 import { ink, Sticker, type StickerProps } from "@/components/stickers/frame";
+import { gold, star } from "@/demo/stickers/gold";
 
 export function TokenSticker({ className }: StickerProps) {
   return (
     <Sticker tilt={-10} className={className} outline={<circle cx="33" cy="33.5" r="23.5" />}>
-      <circle cx="34.5" cy="35" r="22" fill="#d6930f" />
-      <circle cx="32" cy="32" r="22" fill="#f7c33f" />
-      <circle cx="32" cy="32" r="16" fill="none" stroke="#e3a51e" strokeWidth={2.5} />
-      <path
-        d="M32 22 C33 29 35 31 42 32 C35 33 33 35 32 42 C31 35 29 33 22 32 C29 31 31 29 32 22 Z"
-        fill="#e3a51e"
-      />
+      <circle cx="34.5" cy="35" r="22" fill={gold.drop} />
+      <circle cx="32" cy="32" r="22" fill={gold.face} />
+      <circle cx="32" cy="32" r="16" fill="none" stroke={gold.rim} strokeWidth={2.5} />
+      <path d={star} fill={gold.rim} />
       <path
         d="M16 27 A16.5 16.5 0 0 1 26 15.5"
         fill="none"

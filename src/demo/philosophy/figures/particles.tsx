@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 
+import { overhead } from "@/demo/philosophy/figures/token-parts";
 import { CoinGlint, CoinRim, CoinShade, CoinSide } from "@/demo/stickers/coin";
 import { useWebAnimation, type AnimationTiming } from "@/hooks/use-web-animation";
 
@@ -9,7 +10,6 @@ const light = [-0.48, -0.36, 0.8] as const;
 const faceDepth = 1.75;
 const rimDepths = [-1.5, -1, -0.5, 0, 0.5, 1, 1.5];
 const softRimDepths = [-1, 1];
-const spillSizes = [4, 6, 4];
 
 type Random = () => number;
 
@@ -50,7 +50,7 @@ const glintFor = (lit: number) => round(0.35 * clamp((lit - 0.86) / 0.14));
 
 function makeToss(random: Random, spill: number, slot: number, launch: number) {
   const range = (min: number, max: number) => min + random() * (max - min);
-  const lastSpill = spill === spillSizes.length - 1;
+  const lastSpill = spill === overhead.length - 1;
   const rise = range(6, 40);
   const fall = range(2, 58);
   const drift = lastSpill ? range(-28, 4) : range(-26, 26);
@@ -116,9 +116,9 @@ function shuffled<T>(items: T[]) {
     .map(({ item }) => item);
 }
 
-const spills = spillSizes.map((count, spill) => {
-  const launches = shuffled(spread(count));
-  return spread(count).map((slot, index) => makeToss(random, spill, slot, launches[index] ?? 0));
+const spills = overhead.map(({ coins }, spill) => {
+  const launches = shuffled(spread(coins));
+  return spread(coins).map((slot, index) => makeToss(random, spill, slot, launches[index] ?? 0));
 });
 
 const rims = rimDepths.map((z) => ({ z, place: placer(`translateZ(${z}px)`) }));

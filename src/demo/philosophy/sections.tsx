@@ -1,37 +1,25 @@
 import type { ComponentType, ReactNode } from "react";
 
 import type { StickerProps } from "@/components/stickers/frame";
-import { philosophyMeta } from "@/config/site";
+import { ExternalLink } from "@/demo/external-link";
+import { links } from "@/demo/links";
 import { CatchFigure } from "@/demo/philosophy/figures/catch-figure";
 import { PyramidFigure } from "@/demo/philosophy/figures/pyramid-figure";
 import { RenameFigure } from "@/demo/philosophy/figures/rename-figure";
 import { TokenBarsFigure } from "@/demo/philosophy/figures/token-figure";
 import { UpkeepFigure } from "@/demo/philosophy/figures/upkeep-figure";
-import { formatPublished } from "@/demo/philosophy/format-date";
-import { HeartSticker, ScissorsSticker, TokenSticker } from "@/demo/stickers/rationale";
+import { HeartSticker, ScissorsSticker, TokenSticker } from "@/demo/stickers/philosophy";
 import { CodebaseSticker, HumanReviewSticker, StaticAnalysisSticker } from "@/demo/stickers/topics";
 
-export const rationaleSections = [
-  { id: "teaching", title: "Teaching through the codebase" },
-  { id: "catching", title: "Catching mistakes where they happen" },
-  { id: "tokens", title: "Spending tokens on signal" },
-  { id: "review", title: "You review what matters" },
-  { id: "change", title: "This will change" },
-  { id: "thanks", title: "Acknowledgements" },
-] as const;
-
-type SectionId = (typeof rationaleSections)[number]["id"];
-
-const potetoPost = "https://x.com/poteto/status/2111133080526495985";
 const pocockSkills = "https://github.com/mattpocock/skills";
 const stack = [
-  { name: "vite+", href: "https://viteplus.dev" },
-  { name: "tanstack start", href: "https://tanstack.com/start" },
-  { name: "react", href: "https://react.dev" },
-  { name: "tailwind", href: "https://tailwindcss.com" },
-  { name: "shadcn/ui", href: "https://ui.shadcn.com" },
-  { name: "base ui", href: "https://base-ui.com" },
-  { name: "nitro", href: "https://nitro.build" },
+  { name: "vite+", href: links.vitePlus },
+  { name: "tanstack start", href: links.tanstackStart },
+  { name: "react", href: links.react },
+  { name: "tailwind", href: links.tailwind },
+  { name: "shadcn/ui", href: links.shadcn },
+  { name: "base ui", href: links.baseUi },
+  { name: "nitro", href: links.nitro },
 ];
 
 function stackSeparator(index: number) {
@@ -41,82 +29,27 @@ function stackSeparator(index: number) {
 const link =
   "text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground";
 
-interface SectionProps {
-  id: SectionId;
-  Sticker: ComponentType<StickerProps>;
-  children: ReactNode;
-}
-
-function Section({ id, Sticker, children }: SectionProps) {
-  const title = rationaleSections.find((section) => section.id === id)?.title;
-  return (
-    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-xl pt-xxl">
-      <div className="flex items-center gap-s pb-s">
-        <Sticker className="size-[30px]" />
-        <h2 id={`${id}-title`} className="font-medium text-foreground">
-          {title}
-        </h2>
-        <span className="h-px min-w-m grow bg-border" aria-hidden="true" />
-      </div>
-      <div className="space-y-m">{children}</div>
-    </section>
-  );
-}
-
 function Subheading({ children }: { children: ReactNode }) {
   return <h3 className="pt-m font-medium text-foreground">{children}</h3>;
 }
 
-export function RationaleArticle() {
-  return (
-    <article className="text-foreground">
-      <header className="pb-xl">
-        <h1 className="font-medium">Rodeo Philosophy</h1>
-        <p className="text-muted-foreground">
-          <time dateTime={philosophyMeta.published}>
-            {formatPublished(philosophyMeta.published)}
-          </time>
-        </p>
-      </header>
-
-      <div className="space-y-m">
-        <p>
-          rodeo is the react starter i built for myself to work with agents. as agents got better, i
-          started building more and more web apps with them, and i needed a solid foundation to
-          build all of them off of.
-        </p>
-        <p>
-          and the better agents got, the more i had to change how i worked, mostly because i was
-          tired of waiting forever on an agent and then not trusting what it wrote.
-        </p>
-        <p>
-          the thing i kept running into is that agents are really good at copying whatever's already
-          in your codebase.
-        </p>
-        <p>
-          rodeo is where all of that ended up. it's the starting place i wanted for any web app.
-        </p>
-        <p>
-          this isn't a setup guide. it's more about how i think about building with agents, and it's
-          opinionated.
-        </p>
-        <p>
-          everything in rodeo comes back to three ideas: teach with the codebase, catch mistakes
-          where they happen, and spend tokens on signal.
-        </p>
-        <p>none of them are new honestly. agents just made them matter a lot more.</p>
-        <p>
-          you'll probably disagree with some of it, and that's fine. it's a starter. rip out
-          whatever doesn't work for you.
-        </p>
-      </div>
-
-      <Section id="teaching" Sticker={CodebaseSticker}>
+export const sections: {
+  id: string;
+  title: string;
+  Sticker: ComponentType<StickerProps>;
+  body: ReactNode;
+}[] = [
+  {
+    id: "teaching",
+    title: "Teaching through the codebase",
+    Sticker: CodebaseSticker,
+    body: (
+      <>
         <p>
           this part comes straight from{" "}
-          <a href={potetoPost} target="_blank" rel="noopener noreferrer" className={link}>
+          <ExternalLink href={links.potetoPost} className={link}>
             a post by poteto
-          </a>{" "}
+          </ExternalLink>{" "}
           on x. the idea is you want most of your effort at the top, on the codebase itself. then
           static analysis. then prose. human review goes last because it's the thing that scales the
           worst.
@@ -132,9 +65,15 @@ export function RationaleArticle() {
           function checks its input with a schema.
         </p>
         <PyramidFigure />
-      </Section>
-
-      <Section id="catching" Sticker={StaticAnalysisSticker}>
+      </>
+    ),
+  },
+  {
+    id: "catching",
+    title: "Catching mistakes where they happen",
+    Sticker: StaticAnalysisSticker,
+    body: (
+      <>
         <p>
           an agent is at its best right after it writes something. the file's open, the context is
           fresh, and fixing it costs one more edit. the same mistake caught in a pull request costs
@@ -160,9 +99,15 @@ export function RationaleArticle() {
           it sounds small, but you stop finding the same mistake in every review, because the agent
           already heard about it the second it wrote it.
         </p>
-      </Section>
-
-      <Section id="tokens" Sticker={TokenSticker}>
+      </>
+    ),
+  },
+  {
+    id: "tokens",
+    title: "Spending tokens on signal",
+    Sticker: TokenSticker,
+    body: (
+      <>
         <p>
           agents read everything you give them: comments, tests, docs. all of it costs context they
           could be spending on the actual task.
@@ -206,18 +151,30 @@ export function RationaleArticle() {
           docs in most of the repo, because docs go stale and agents trust them anyway.
         </p>
         <p>if something can be a lint rule, it's a lint rule.</p>
-      </Section>
-
-      <Section id="review" Sticker={HumanReviewSticker}>
+      </>
+    ),
+  },
+  {
+    id: "review",
+    title: "You review what matters",
+    Sticker: HumanReviewSticker,
+    body: (
+      <>
         <p>
           i still want to read what the agent wrote and decide whether the feature makes sense. i
           just don't want to spend that time pointing out the same random colors or missing input
           checks.
         </p>
         <p>after a week in a rodeo app i hope you trust your agents a little more.</p>
-      </Section>
-
-      <Section id="change" Sticker={ScissorsSticker}>
+      </>
+    ),
+  },
+  {
+    id: "change",
+    title: "This will change",
+    Sticker: ScissorsSticker,
+    body: (
+      <>
         <p>
           none of this is set in stone. models keep getting smarter, and some of these guardrails
           are going to stop pulling their weight.
@@ -230,21 +187,27 @@ export function RationaleArticle() {
           the goal is to keep rodeo as small as it can be. it's free, and ideally it saves you some
           tokens and some review time.
         </p>
-      </Section>
-
-      <Section id="thanks" Sticker={HeartSticker}>
+      </>
+    ),
+  },
+  {
+    id: "thanks",
+    title: "Acknowledgements",
+    Sticker: HeartSticker,
+    body: (
+      <>
         <p>
           huge thanks to poteto. the pyramid comes from{" "}
-          <a href={potetoPost} target="_blank" rel="noopener noreferrer" className={link}>
+          <ExternalLink href={links.potetoPost} className={link}>
             their post on x
-          </a>
+          </ExternalLink>
           , and so does the idea of killing comments.
         </p>
         <p>
           thanks to matt pocock too.{" "}
-          <a href={pocockSkills} target="_blank" rel="noopener noreferrer" className={link}>
+          <ExternalLink href={pocockSkills} className={link}>
             his skills
-          </a>{" "}
+          </ExternalLink>{" "}
           and his focus on what matters now that agents write the code helped me narrow rodeo down a
           lot.
         </p>
@@ -252,15 +215,15 @@ export function RationaleArticle() {
           rodeo is built on{" "}
           {stack.map((tool, index) => (
             <span key={tool.name}>
-              <a href={tool.href} target="_blank" rel="noopener noreferrer" className={link}>
+              <ExternalLink href={tool.href} className={link}>
                 {tool.name}
-              </a>
+              </ExternalLink>
               {stackSeparator(index)}
             </span>
           ))}{" "}
           thank you all.
         </p>
-      </Section>
-    </article>
-  );
-}
+      </>
+    ),
+  },
+];

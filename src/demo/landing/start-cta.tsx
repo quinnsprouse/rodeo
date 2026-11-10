@@ -3,13 +3,15 @@ import { Link } from "@tanstack/react-router";
 
 import { Icon } from "@/components/icon";
 import { Snippet } from "@/components/ui/snippet";
+import { site } from "@/config/site";
+import { ExternalLink } from "@/demo/external-link";
 import { EditSticker, PushSticker } from "@/demo/stickers/swap";
 import { StaticAnalysisSticker } from "@/demo/stickers/topics";
 
 const link =
   "group/link inline-flex items-center gap-xs underline-offset-4 hover:underline focus-visible:outline-primary-foreground";
 
-export function StartCta({ installCommand }: { installCommand: string }) {
+export function StartCta() {
   return (
     <div className="group/cta relative rounded-l bg-primary p-l text-primary-foreground sm:p-xl">
       <div className="pointer-events-none" aria-hidden="true">
@@ -26,18 +28,13 @@ export function StartCta({ installCommand }: { installCommand: string }) {
         TanStack Start, React 19, Tailwind v4, and shadcn/ui come set up.
       </p>
 
-      <Snippet text={installCommand} className="mt-xl w-full" />
+      <Snippet text={site.installCommand} className="mt-xl w-full" />
 
       <div className="mt-l flex flex-wrap items-center gap-l text-s font-medium">
-        <a
-          href="https://github.com/quinnsprouse/rodeo"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={link}
-        >
+        <ExternalLink href={site.repository} className={link}>
           <Icon icon={Github01Icon} className="size-4" aria-hidden="true" />
           GitHub
-        </a>{" "}
+        </ExternalLink>{" "}
         <Link to="/philosophy" className={link}>
           Read the philosophy
           <Icon

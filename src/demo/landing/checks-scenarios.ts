@@ -9,13 +9,13 @@ export interface DiffLine {
 export interface Scenario {
   value: string;
   label: string;
-  shortLabel: string;
+  shortLabel?: string;
   prompt: string;
   stepsBefore: string[];
   caught: { title: string; detail: string };
   stepsAfter: string[];
   result: string;
-  file: { path: string; summary: string; lines: DiffLine[] };
+  file: { path: string; lines: DiffLine[] };
   status: string;
 }
 
@@ -23,7 +23,6 @@ export const scenarios: Scenario[] = [
   {
     value: "edit",
     label: "Every edit",
-    shortLabel: "Every edit",
     prompt: "Add a pricing page with live prices from Stripe.",
     stepsBefore: ["Read AGENTS.md", "Edit src/routes/pricing.tsx"],
     caught: {
@@ -35,7 +34,6 @@ export const scenarios: Scenario[] = [
     result: "Your pricing page is ready.",
     file: {
       path: "src/routes/pricing.tsx",
-      summary: "−3 +2",
       lines: [
         {
           number: 1,
@@ -66,7 +64,6 @@ export const scenarios: Scenario[] = [
   {
     value: "push",
     label: "Every push",
-    shortLabel: "Every push",
     prompt: "Commit this and push it.",
     stepsBefore: ['Commit "feat(pricing): add a pricing page"', "Run git push"],
     caught: {
@@ -77,7 +74,6 @@ export const scenarios: Scenario[] = [
     result: "Pushed to origin/pricing-page.",
     file: {
       path: "src/lib/format.ts",
-      summary: "−4",
       lines: [
         { number: 1, kind: "context", code: "export function formatInterval(yearly: boolean) {" },
         { number: 2, kind: "context", code: '  return yearly ? "per year" : "per month";' },
@@ -104,7 +100,6 @@ export const scenarios: Scenario[] = [
     result: "Pull request #12 is ready for review.",
     file: {
       path: "src/lib/prices.server.ts",
-      summary: "+10",
       lines: [
         { number: 1, kind: "added", code: 'import Stripe from "stripe";' },
         { number: 2, kind: "added", code: 'import * as z from "zod/mini";' },

@@ -97,7 +97,11 @@ function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
 }
 
 export function SwapSentence() {
-  const [state, setState] = useState<SwapState>({ picks: [0, 0, 0], next: 0, moved: false });
+  const [state, setState] = useState<SwapState>({
+    picks: slots.map(() => 0),
+    next: 0,
+    moved: false,
+  });
   const [held, setHeld] = useState(false);
   const reducedMotion = usePrefersReducedMotion();
   const visible = usePageVisible();
@@ -116,8 +120,9 @@ export function SwapSentence() {
     return () => window.clearTimeout(timer);
   }, [autoplay, state]);
 
-  const chip = (slot: number, choices: Choices) => (
+  const [checkpointChip, catchChip, agentChip] = slots.map((choices, slot) => (
     <Chip
+      key={choices[0].word}
       choices={choices}
       pick={state.picks[slot] ?? 0}
       animate={!reducedMotion}
@@ -125,7 +130,7 @@ export function SwapSentence() {
       onSwap={() => setState((current) => advance(current, slot))}
       onHold={setHeld}
     />
-  );
+  ));
 
   return (
     <>
@@ -134,13 +139,13 @@ export function SwapSentence() {
         className="text-center text-display font-heavy tracking-xs text-foreground md:text-display-wide"
       >
         <span className="block">
-          Checks every <span className="whitespace-nowrap">{chip(0, checkpoints)},</span>
+          Checks every <span className="whitespace-nowrap">{checkpointChip},</span>
         </span>{" "}
         <span className="block">
-          catches <span className="whitespace-nowrap">{chip(1, catches)},</span>
+          catches <span className="whitespace-nowrap">{catchChip},</span>
         </span>{" "}
         <span className="block">
-          and keeps {chip(2, agents)}
+          and keeps {agentChip}
           <br className="md:hidden" /> <span className="whitespace-nowrap">on track.</span>
         </span>
       </p>

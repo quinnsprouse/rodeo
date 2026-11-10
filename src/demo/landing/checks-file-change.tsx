@@ -1,8 +1,8 @@
 import { MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
 
 import { Icon } from "@/components/icon";
-import { StatusPill } from "@/demo/landing/checks-motion";
 import type { DiffLine, Scenario } from "@/demo/landing/checks-scenarios";
+import { StatusPill } from "@/demo/landing/status-pill";
 import { concealed, reveal } from "@/demo/motion-classes";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,13 @@ const lineDelays = [
   "delay-320",
   "delay-360",
 ];
+
+function diffSummary(lines: DiffLine[]) {
+  const count = (kind: DiffLine["kind"]) => lines.filter((line) => line.kind === kind).length;
+  const removed = count("removed");
+  const added = count("added");
+  return [removed > 0 && `−${removed}`, added > 0 && `+${added}`].filter(Boolean).join(" ");
+}
 
 export function FileChange({
   scenario,
@@ -38,7 +45,7 @@ export function FileChange({
         )}
       >
         <span className="truncate">{scenario.file.path}</span>
-        <span className="text-muted-foreground">{scenario.file.summary}</span>
+        <span className="text-muted-foreground">{diffSummary(scenario.file.lines)}</span>
       </p>
       <div className="py-s font-data text-xs leading-6">
         {scenario.file.lines.map((line, index) => (

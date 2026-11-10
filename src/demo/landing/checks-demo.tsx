@@ -1,15 +1,16 @@
 import { Tabs } from "@base-ui/react/tabs";
 import { ArrowUp02Icon, Loading03Icon, PlusSignIcon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import { BullSticker } from "@/components/stickers/bull";
 import { ShimmerText } from "@/components/ui/shimmer-text";
 import { FileChange } from "@/demo/landing/checks-file-change";
-import { StatusPill } from "@/demo/landing/checks-motion";
 import { scenarios, type Scenario } from "@/demo/landing/checks-scenarios";
+import { StatusPill } from "@/demo/landing/status-pill";
 import { concealed, iconOut, iconSwap, reveal } from "@/demo/motion-classes";
 import { useBeats } from "@/demo/use-beats";
+import { useFollowActiveRow } from "@/demo/use-follow-active-row";
 import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { cn } from "@/lib/utils";
@@ -22,7 +23,7 @@ function playbackFor(reducedMotion: boolean, switched: boolean, entrance: Playba
 export function ChecksDemo({ className }: { className?: string }) {
   const reducedMotion = usePrefersReducedMotion();
   const windowRef = useRef<HTMLDivElement>(null);
-  const entrance = usePlayOnView(windowRef, !reducedMotion);
+  const entrance = usePlayOnView(windowRef);
   const [switched, setSwitched] = useState(false);
   const playback = playbackFor(reducedMotion, switched, entrance);
 
@@ -96,7 +97,7 @@ const tabFace = "flex h-9 items-center rounded-full px-s text-s font-medium sm:p
 function TabLabel({ scenario }: { scenario: Scenario }) {
   return (
     <>
-      <span className="xs:hidden">{scenario.shortLabel}</span>
+      <span className="xs:hidden">{scenario.shortLabel ?? scenario.label}</span>
       <span className="max-xs:hidden">{scenario.label}</span>
     </>
   );
@@ -120,8 +121,6 @@ function storyline(scenario: Scenario) {
 
 type Storyline = ReturnType<typeof storyline>;
 type StepState = "hidden" | "working" | "done";
-
-const focusInset = 4;
 
 function isWorking(story: Storyline, beat: number) {
   const before = beat >= 1 && beat < story.caught;
@@ -156,17 +155,8 @@ function Conversation({
   beat: number;
 }) {
   const steps = useRef<HTMLUListElement>(null);
-  const focus = useRef<HTMLSpanElement>(null);
   const working = isWorking(story, beat);
-  const activeStep = working ? beat : -1;
-
-  useEffect(() => {
-    const row = steps.current?.querySelector<HTMLElement>(`[data-step="${activeStep}"]`);
-    const highlight = focus.current;
-    if (!row || !highlight) return;
-    highlight.style.setProperty("--row-top", `${row.offsetTop - focusInset}px`);
-    highlight.style.setProperty("--row-height", `${row.offsetHeight + focusInset * 2}px`);
-  }, [activeStep]);
+  const focus = useFollowActiveRow(steps, working ? beat : undefined, "data-step");
 
   return (
     <div className="flex flex-col gap-m p-m lg:divider-r">

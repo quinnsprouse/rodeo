@@ -1,11 +1,9 @@
 import { Cancel01Icon, Tick02Icon } from "@hugeicons/core-free-icons";
-import { useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { Icon } from "@/components/icon";
 import { concealed, iconOut, iconSwap, reveal } from "@/demo/motion-classes";
-import { Card, Figure } from "@/demo/philosophy/figures/figure";
-import { useScrollPlayback } from "@/demo/philosophy/figures/use-scroll-playback";
-import { useBeats } from "@/demo/use-beats";
+import { Figure, timeline, useFigure } from "@/demo/philosophy/figures/figure";
 import { cn } from "@/lib/utils";
 
 const stops = [
@@ -15,10 +13,10 @@ const stops = [
 ];
 const rodeoStopDelays = ["delay-0", "delay-700", "delay-1300"];
 
-const beats = [500, 1700, 300];
-const spotted = 0;
-const handled = 1;
-const arrived = 2;
+const beats = timeline({ spotted: 500, handled: 1700, arrived: 300 });
+const spotted = beats.at("spotted");
+const handled = beats.at("handled");
+const arrived = beats.at("arrived");
 
 const dot = "absolute top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full";
 const marker = "absolute top-1/2 left-0 size-5 -translate-x-1/2 -translate-y-1/2";
@@ -65,97 +63,98 @@ function Outcome({
 }
 
 export function CatchFigure() {
-  const card = useRef<HTMLDivElement>(null);
-  const playback = useScrollPlayback(card);
-  const beat = useBeats(beats, playback);
+  const figure = useFigure(beats);
+  const { beat } = figure;
 
   return (
-    <Figure caption="the same mistake, and where it gets caught." waiting={playback === "waiting"}>
-      <Card ref={card} className="overflow-x-clip">
-        <div className="grid items-center gap-x-m gap-y-xxs text-s sm:grid-cols-[112px_1fr] sm:gap-y-s">
-          <span className="hidden sm:block" />
-          <div className="relative h-4 px-2.5 text-xs text-muted-foreground">
-            <div className="relative h-full">
-              {stops.map(({ label, at, align }) => (
-                <span key={label} className={cn("absolute top-0 whitespace-nowrap", at, align)}>
-                  {label}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          <span className="mt-s self-start pt-0.5 text-foreground sm:mt-0">without rodeo</span>
-          <div className="px-2.5">
-            <Track>
-              {stops.map(({ label, at }) => (
-                <span key={label} className={cn(dot, at, "bg-neutral-4")} />
-              ))}
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute inset-0 transition-transform duration-1600 ease-in-out",
-                  beat >= handled && "translate-x-full",
-                )}
-              >
-                <span className={marker}>
-                  <Mistake shown={beat >= spotted && beat < arrived} />
-                  <span
-                    className={cn(
-                      badge,
-                      "bg-destructive text-destructive-foreground",
-                      iconSwap,
-                      beat < arrived && iconOut,
-                    )}
-                  >
-                    <Icon icon={Cancel01Icon} size={12} aria-hidden="true" />
-                  </span>
-                </span>
+    <Figure
+      figure={figure}
+      caption="the same mistake, and where it gets caught."
+      cardClassName="overflow-x-clip"
+    >
+      <div className="grid items-center gap-x-m gap-y-xxs text-s sm:grid-cols-[112px_1fr] sm:gap-y-s">
+        <span className="hidden sm:block" />
+        <div className="relative h-4 px-2.5 text-xs text-muted-foreground">
+          <div className="relative h-full">
+            {stops.map(({ label, at, align }) => (
+              <span key={label} className={cn("absolute top-0 whitespace-nowrap", at, align)}>
+                {label}
               </span>
-            </Track>
-            <Outcome shown={beat >= arrived} className="text-right">
-              caught in the pull request
-            </Outcome>
+            ))}
           </div>
+        </div>
 
-          <span className="mt-s self-start pt-0.5 text-foreground sm:mt-0">rodeo</span>
-          <div className="px-2.5">
-            <Track>
-              <span
-                className={cn(
-                  "absolute inset-x-0 top-1/2 h-0.5 origin-left -translate-y-1/2 rounded-full bg-primary transition-transform delay-200 duration-1400 ease-in-out",
-                  beat < handled && "scale-x-0",
-                )}
-              />
-              {stops.map(({ label, at }, index) => (
-                <span
-                  key={label}
-                  className={cn(
-                    dot,
-                    at,
-                    "transition-colors duration-300",
-                    rodeoStopDelays[index],
-                    beat >= handled ? "bg-primary" : "bg-neutral-4",
-                  )}
-                />
-              ))}
-              <span aria-hidden="true" className={marker}>
-                <Mistake shown={beat >= spotted && beat < handled} />
+        <span className="mt-s self-start pt-0.5 text-foreground sm:mt-0">without rodeo</span>
+        <div className="px-2.5">
+          <Track>
+            {stops.map(({ label, at }) => (
+              <span key={label} className={cn(dot, at, "bg-neutral-4")} />
+            ))}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute inset-0 transition-transform duration-1600 ease-in-out",
+                beat >= handled && "translate-x-full",
+              )}
+            >
+              <span className={marker}>
+                <Mistake shown={beat >= spotted && beat < arrived} />
                 <span
                   className={cn(
                     badge,
-                    "bg-primary text-primary-foreground",
+                    "bg-destructive text-destructive-foreground",
                     iconSwap,
-                    beat < handled && iconOut,
+                    beat < arrived && iconOut,
                   )}
                 >
-                  <Icon icon={Tick02Icon} size={12} aria-hidden="true" />
+                  <Icon icon={Cancel01Icon} size={12} aria-hidden="true" />
                 </span>
               </span>
-            </Track>
-            <Outcome shown={beat >= handled}>fixed on the edit</Outcome>
-          </div>
+            </span>
+          </Track>
+          <Outcome shown={beat >= arrived} className="text-right">
+            caught in the pull request
+          </Outcome>
         </div>
-      </Card>
+
+        <span className="mt-s self-start pt-0.5 text-foreground sm:mt-0">rodeo</span>
+        <div className="px-2.5">
+          <Track>
+            <span
+              className={cn(
+                "absolute inset-x-0 top-1/2 h-0.5 origin-left -translate-y-1/2 rounded-full bg-primary transition-transform delay-200 duration-1400 ease-in-out",
+                beat < handled && "scale-x-0",
+              )}
+            />
+            {stops.map(({ label, at }, index) => (
+              <span
+                key={label}
+                className={cn(
+                  dot,
+                  at,
+                  "transition-colors duration-300",
+                  rodeoStopDelays[index],
+                  beat >= handled ? "bg-primary" : "bg-neutral-4",
+                )}
+              />
+            ))}
+            <span aria-hidden="true" className={marker}>
+              <Mistake shown={beat >= spotted && beat < handled} />
+              <span
+                className={cn(
+                  badge,
+                  "bg-primary text-primary-foreground",
+                  iconSwap,
+                  beat < handled && iconOut,
+                )}
+              >
+                <Icon icon={Tick02Icon} size={12} aria-hidden="true" />
+              </span>
+            </span>
+          </Track>
+          <Outcome shown={beat >= handled}>fixed on the edit</Outcome>
+        </div>
+      </div>
     </Figure>
   );
 }

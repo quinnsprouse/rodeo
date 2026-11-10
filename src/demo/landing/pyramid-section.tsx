@@ -2,18 +2,17 @@ import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
 import { useRef } from "react";
 
 import { Icon } from "@/components/icon";
+import { ExternalLink } from "@/demo/external-link";
 import { PageSection } from "@/demo/landing/page-section";
 import { PyramidDiagram } from "@/demo/landing/pyramid-diagram";
-import { useEntrance } from "@/demo/landing/use-entrance";
+import { links } from "@/demo/links";
 import { usePlayOnView } from "@/hooks/use-play-on-view";
-import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
 export const pyramidSectionId = "how-it-works";
 
 export function PyramidSection() {
-  const reducedMotion = usePrefersReducedMotion();
   const figure = useRef<HTMLDivElement>(null);
-  const entrance = useEntrance(usePlayOnView(figure, !reducedMotion), 700);
+  const playback = usePlayOnView(figure);
 
   return (
     <PageSection id={pyramidSectionId}>
@@ -27,14 +26,12 @@ export function PyramidSection() {
         codebase and saves human review for what nothing else catches.
       </p>
 
-      <PyramidDiagram ref={figure} size="section" entrance={entrance} className="mt-xl" />
+      <PyramidDiagram ref={figure} size="full" playback={playback} className="mt-xl" />
 
       <p className="mt-xl text-s text-muted-foreground">
         Adapted from{" "}
-        <a
-          href="https://x.com/poteto/status/2111133080526495985"
-          target="_blank"
-          rel="noopener noreferrer"
+        <ExternalLink
+          href={links.potetoPost}
           className="group/link inline-flex items-center gap-xxs text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground"
         >
           poteto's post on X
@@ -43,7 +40,7 @@ export function PyramidSection() {
             className="size-3 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 motion-safe:transition-transform motion-safe:duration-(--motion-duration) motion-safe:ease-(--motion-easing)"
             aria-hidden="true"
           />
-        </a>
+        </ExternalLink>
       </p>
     </PageSection>
   );

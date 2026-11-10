@@ -1,16 +1,20 @@
-import { useState, type ComponentType, type PointerEvent, type ReactNode, type Ref } from "react";
+import { useEffect, useState, type ComponentType, type Ref } from "react";
 
 import type { StickerProps } from "@/components/stickers/frame";
-import type { Entrance } from "@/demo/landing/use-entrance";
 import {
   CodebaseSticker,
   HumanReviewSticker,
   ProseSticker,
   StaticAnalysisSticker,
 } from "@/demo/stickers/topics";
+import { useHoveredData } from "@/demo/use-hovered-data";
+import type { Playback } from "@/hooks/use-play-on-view";
 import { cn } from "@/lib/utils";
 
-export const pyramidLayers: {
+const pyramidWidth = 320;
+const viewBox = `0 0 ${pyramidWidth} 252`;
+
+const pyramidLayers: {
   name: string;
   detail: string;
   shape: string;
@@ -52,12 +56,28 @@ export const pyramidLayers: {
 ];
 
 const layerSteps = ["delay-0", "delay-90", "delay-180", "delay-270"];
+const entranceDuration = 700;
+
+type Entrance = "waiting" | "entering" | "settled";
+
+function useEntrance(playback: Playback): Entrance {
+  const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    if (playback !== "playing") return;
+    const timer = window.setTimeout(() => setFinished(true), entranceDuration);
+    return () => window.clearTimeout(timer);
+  }, [playback]);
+
+  if (playback === "waiting") return "waiting";
+  return playback === "playing" && !finished ? "entering" : "settled";
+}
 
 const focusMotion =
   "motion-safe:transition motion-safe:duration-(--motion-large-duration) motion-safe:ease-(--motion-large-easing)";
 
 const sizes = {
-  section: {
+  full: {
     root: "flex flex-col gap-xl sm:flex-row sm:items-start",
     pyramid: "w-full max-w-[320px]",
     list: "gap-m",
@@ -66,7 +86,7 @@ const sizes = {
     name: "font-medium",
     detail: "text-s",
   },
-  figure: {
+  compact: {
     root: "flex flex-col items-center gap-l sm:flex-row sm:items-start sm:justify-center",
     pyramid: "w-[224px]",
     list: "gap-s sm:gap-[11.2px]",
@@ -82,39 +102,58 @@ function entranceStyle(entrance: Entrance, index: number, hidden: string) {
   return entrance === "entering" ? layerSteps[index] : undefined;
 }
 
-function layerUnder(event: PointerEvent) {
-  if (event.pointerType === "touch" || !(event.target instanceof Element)) return undefined;
-  return event.target.closest("[data-layer]")?.getAttribute("data-layer") ?? undefined;
+function Sheen() {
+  return (
+    <svg
+      viewBox={viewBox}
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 size-full text-background dark:text-foreground"
+    >
+      <defs>
+        <clipPath id="pyramid-sheen-clip">
+          {pyramidLayers.map((layer) => (
+            <path key={layer.name} d={layer.shape} />
+          ))}
+        </clipPath>
+        <linearGradient id="pyramid-sheen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="currentColor" stopOpacity={0} />
+          <stop offset="0.5" stopColor="currentColor" stopOpacity={0.5} />
+          <stop offset="1" stopColor="currentColor" stopOpacity={0} />
+        </linearGradient>
+      </defs>
+      <g clipPath="url(#pyramid-sheen-clip)">
+        <rect
+          width={pyramidWidth}
+          height="100"
+          fill="url(#pyramid-sheen)"
+          className="sheen-sweep"
+        />
+      </g>
+    </svg>
+  );
 }
 
 export function PyramidDiagram({
   ref,
   size,
-  entrance,
-  overlay,
+  playback,
+  sheen = false,
   className,
 }: {
   ref?: Ref<HTMLDivElement> | undefined;
   size: keyof typeof sizes;
-  entrance: Entrance;
-  overlay?: ReactNode;
+  playback: Playback;
+  sheen?: boolean;
   className?: string | undefined;
 }) {
-  const [focused, setFocused] = useState<string | null>(null);
+  const entrance = useEntrance(playback);
+  const { hovered: focused, handlers } = useHoveredData("layer", { keepOnGap: true });
   const style = sizes[size];
 
   return (
-    <div
-      ref={ref}
-      onPointerOver={(event) => {
-        const layer = layerUnder(event);
-        if (layer) setFocused(layer);
-      }}
-      onPointerLeave={() => setFocused(null)}
-      className={cn(style.root, className)}
-    >
+    <div ref={ref} {...handlers} className={cn(style.root, className)}>
       <div className={cn("relative shrink-0", style.pyramid)}>
-        <svg viewBox="0 0 320 252" aria-hidden="true" className="w-full">
+        <svg viewBox={viewBox} aria-hidden="true" className="w-full">
           {pyramidLayers.map((layer, index) => (
             <path
               key={layer.name}
@@ -130,7 +169,7 @@ export function PyramidDiagram({
             />
           ))}
         </svg>
-        {overlay}
+        {sheen && playback === "playing" && entrance === "settled" && <Sheen />}
       </div>
 
       <ol className={cn("flex flex-col", style.list)}>

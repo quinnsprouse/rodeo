@@ -1,25 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
-import { rationaleSections } from "@/demo/philosophy/rationale-article";
+import { sections } from "@/demo/philosophy/sections";
 import { useActiveSection } from "@/demo/philosophy/use-active-section";
+import { useFollowActiveRow } from "@/demo/use-follow-active-row";
 import { cn } from "@/lib/utils";
 
-const sectionIds = rationaleSections.map((section) => section.id);
+const sectionIds = sections.map((section) => section.id);
 
 export function Contents() {
   const active = useActiveSection(sectionIds);
   const contents = useRef<HTMLOListElement>(null);
-  const marker = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const item = contents.current?.querySelector<HTMLElement>(`[data-section="${active}"]`);
-    const line = marker.current;
-    if (!item || !line) return;
-    line.style.setProperty("--row-top", `${item.offsetTop}px`);
-    line.style.setProperty("--row-height", `${item.offsetHeight}px`);
-  }, [active]);
+  const marker = useFollowActiveRow(contents, active, "data-section");
 
   return (
     <aside className="xl:sticky xl:top-[88px] xl:self-start xl:justify-self-end">
@@ -35,7 +28,7 @@ export function Contents() {
         </div>
         <div className="relative mt-xxl hidden text-s xl:block">
           <ol ref={contents} className="space-y-s">
-            {rationaleSections.map((section) => (
+            {sections.map((section) => (
               <li key={section.id} data-section={section.id}>
                 <a
                   href={`#${section.id}`}
