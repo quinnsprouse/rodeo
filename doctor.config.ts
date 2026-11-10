@@ -18,6 +18,12 @@ export default {
         files: ["src/components/swap-chip-motion.tsx"],
         rules: ["react-doctor/no-layout-property-animation"],
       },
+      {
+        // why: oxfmt rewrites the edited files in place, so lint and tsc must not start reading
+        // them until it exits. The two awaits are sequential on purpose.
+        files: [".agents/hooks/post-edit.mjs"],
+        rules: ["react-doctor/server-sequential-independent-await"],
+      },
     ],
   },
 } satisfies ReactDoctorConfig;

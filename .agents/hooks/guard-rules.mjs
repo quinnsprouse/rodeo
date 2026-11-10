@@ -152,14 +152,15 @@ function parseArgs(args, valueFlags) {
 }
 
 function shortLetters(flag, valueLetters) {
-  if (flag.startsWith("--")) return "";
-  const letters = flag.slice(1);
-  const valueAt = [...letters].findIndex((letter) => valueLetters.includes(letter));
-  return valueAt === -1 ? letters : letters.slice(0, valueAt + 1);
+  if (flag.startsWith("--")) return new Set();
+  const letters = Array.from(flag.slice(1));
+  const takesValue = new Set(valueLetters);
+  const valueAt = letters.findIndex((letter) => takesValue.has(letter));
+  return new Set(valueAt === -1 ? letters : letters.slice(0, valueAt + 1));
 }
 
 function hasShort(flags, letter, valueLetters = "") {
-  return flags.some((flag) => shortLetters(flag, valueLetters).includes(letter));
+  return flags.some((flag) => shortLetters(flag, valueLetters).has(letter));
 }
 
 function isWithin(path, base) {

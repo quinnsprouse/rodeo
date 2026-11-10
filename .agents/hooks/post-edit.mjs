@@ -88,11 +88,6 @@ function pathList(files) {
   return files.map(({ projectPath }) => projectPath).join(", ");
 }
 
-function pathsIn(output, files) {
-  const mentioned = files.filter(({ projectPath }) => output.includes(projectPath));
-  return pathList(mentioned.length > 0 ? mentioned : files);
-}
-
 function targetsOf(files) {
   return files.map(({ target }) => target);
 }
@@ -116,8 +111,8 @@ async function feedbackFor(files) {
   ]);
 
   return [
-    ...problem(format, `Automatic formatting failed for ${pathsIn(format.output, files)}.`),
-    ...problem(lint, `Lint found an issue in ${pathsIn(lint.output, lintable)}.`),
+    ...problem(format, `Automatic formatting failed for ${pathList(files)}.`),
+    ...problem(lint, `Lint found an issue in ${pathList(lintable)}.`),
     ...problem(typecheck, `Type checking found an issue after editing ${pathList(typed)}.`),
   ];
 }
