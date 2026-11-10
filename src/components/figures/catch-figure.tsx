@@ -70,7 +70,7 @@ export function CatchFigure() {
 
   return (
     <Figure caption="the same mistake, and where it gets caught." waiting={playback === "waiting"}>
-      <Card ref={card}>
+      <Card ref={card} className="overflow-x-clip">
         <div className="grid items-center gap-x-m gap-y-xxs text-s sm:grid-cols-[112px_1fr] sm:gap-y-s">
           <span className="hidden sm:block" />
           <div className="relative h-4 px-2.5 text-xs text-muted-foreground">
