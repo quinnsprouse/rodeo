@@ -9,7 +9,8 @@ import {
   isAllowedDoc,
   isAppUnitTest,
   isMarkdown,
-} from "./doc-policy.mjs";
+} from "#tooling/project";
+
 import { isFlag, simpleCommands } from "./shell-words.mjs";
 
 function isNewDoc(path, projectRoot) {

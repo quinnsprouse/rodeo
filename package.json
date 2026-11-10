@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "imports": {
+    "#tooling/*": "./scripts/lib/*.mjs"
+  },
   "scripts": {
     "dev": "vp dev",
     "build": "tsc -b && vp build --logLevel error",
