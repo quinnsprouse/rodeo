@@ -13,6 +13,7 @@ import { useBeats } from "@/demo/use-beats";
 import { useFollowActiveRow } from "@/demo/use-follow-active-row";
 import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
 import { cn } from "@/lib/utils";
 
 function playbackFor(reducedMotion: boolean, switched: boolean, entrance: Playback): Playback {
@@ -58,7 +59,7 @@ export function ChecksDemo({ className }: { className?: string }) {
 
       <Tabs.List
         aria-label="When Rodeo checks"
-        data-markdown="skip"
+        {...excludeFromMarkdown}
         className="relative flex rounded-full bg-muted p-xxs"
       >
         {scenarios.map((scenario) => (

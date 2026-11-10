@@ -3,6 +3,7 @@ import { Tick02Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@/components/icon";
 import { BullSticker } from "@/components/stickers/bull";
 import { iconOut, iconSwap, reveal } from "@/demo/motion-classes";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
 import { cn } from "@/lib/utils";
 
 export function StatusPill({
@@ -16,7 +17,7 @@ export function StatusPill({
 }) {
   return (
     <p
-      data-markdown="skip"
+      {...excludeFromMarkdown}
       className={cn(
         "dark flex w-fit items-center gap-s rounded-full bg-card py-xxs pr-m pl-xs text-s text-card-foreground ring ring-border",
         reveal,

@@ -1,4 +1,11 @@
+import { appOrigin } from "./environment";
 import { expect, test } from "./fixtures";
+
+function linkedOrigins(headers: { name: string; value: string }[]) {
+  return headers
+    .filter(({ name }) => name.toLowerCase() === "link")
+    .map(({ value }) => new URL(value.slice(value.indexOf("<") + 1, value.indexOf(">"))).origin);
+}
 
 test("responses carry the baseline security headers", async ({ request }) => {
   const response = await request.get("/");
@@ -15,6 +22,16 @@ test("the trailing-slash redirect never leaves the site", async ({ baseURL, requ
 
   expect(response.status()).toBe(308);
   expect(response.headers().location).toBe("/evil.example");
+});
+
+test("a Markdown page never names another site as its canonical URL", async ({
+  baseURL,
+  request,
+}) => {
+  const response = await request.get(`${baseURL}//evil.example/.md`, { maxRedirects: 0 });
+
+  const elsewhere = linkedOrigins(response.headersArray()).filter((origin) => origin !== appOrigin);
+  expect(elsewhere).toEqual([]);
 });
 
 test("server functions reject cross-site requests", async ({ request }) => {

@@ -24,57 +24,6 @@ const kitEdits = [
     replace: "",
   },
   {
-    file: "src/config/site.ts",
-    find: lines(
-      "export const philosophyMeta = {",
-      '  path: "/philosophy",',
-      '  title: "Rodeo Philosophy",',
-      "  description:",
-      '    "how i think about building with agents, and why rodeo drops code comments, unit tests, and long docs.",',
-      "  image: {",
-      '    path: "/og-rationale.png",',
-      '    alt: "Rodeo Philosophy: how i think about building with agents. With coin, scissors, and codebase stickers.",',
-      "  },",
-      '  published: "2026-10-17",',
-      "} satisfies PageMeta & { published: string };",
-      "",
-      "export const sitePages: PageMeta[] = [homeMeta, philosophyMeta];",
-    ),
-    replace: "export const sitePages: PageMeta[] = [homeMeta];",
-  },
-  {
-    file: "src/config/site.ts",
-    find: "export function pageMeta(",
-    replace: "function pageMeta(",
-  },
-  {
-    file: "src/lib/structured-data.ts",
-    find: 'import { absoluteUrl, homeMeta, philosophyMeta, site } from "@/config/site";',
-    replace: 'import { absoluteUrl, homeMeta, site } from "@/config/site";',
-  },
-  {
-    file: "src/lib/structured-data.ts",
-    find: lines(
-      "export function philosophyStructuredData(origin: string) {",
-      "  const url = absoluteUrl(philosophyMeta.path, origin);",
-      "  return {",
-      '    "@context": "https://schema.org",',
-      '    "@type": "Article",',
-      "    headline: philosophyMeta.title,",
-      "    description: philosophyMeta.description,",
-      "    url,",
-      "    mainEntityOfPage: url,",
-      "    image: absoluteUrl(philosophyMeta.image.path, origin),",
-      "    datePublished: philosophyMeta.published,",
-      "    author,",
-      "  };",
-      "}",
-      "",
-      "",
-    ),
-    replace: "",
-  },
-  {
     file: "lint/exceptions.ts",
     find: 'files: ["src/components/stickers/**", "src/demo/stickers/**"],',
     replace: 'files: ["src/components/stickers/**"],',
@@ -99,17 +48,24 @@ const starterHome = {
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Snippet } from "@/components/ui/snippet";
-import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { site } from "@/config/site";
-import { homeStructuredData, structuredDataScript } from "@/lib/structured-data";
 
 export const Route = createFileRoute("/")({
+  staticData: {
+    page: {
+      structuredData: ({ url, description }) => ({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": \`\${url}#website\`,
+        url,
+        name: site.name,
+        description,
+      }),
+    },
+  },
   head: () => ({
     links: [preloadFont(fonts.bold), preloadFont(fonts.mono)],
-    scripts: clientEnv.VITE_APP_URL
-      ? [structuredDataScript(homeStructuredData(clientEnv.VITE_APP_URL))]
-      : [],
   }),
   component: Home,
 });

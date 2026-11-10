@@ -91,8 +91,6 @@ export default defineConfig({
           compressPublicAssets: { gzip: true, brotli: true },
           routeRules: {
             "/**": { headers: securityHeaders },
-            "/rationale": { redirect: { to: "/philosophy", status: 308 } },
-            "/rationale.md": { redirect: { to: "/philosophy.md", status: 308 } },
           },
         }),
         react(),

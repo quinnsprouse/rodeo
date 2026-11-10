@@ -3,6 +3,7 @@ import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@/components/icon";
 import { pyramidSectionId } from "@/demo/landing/pyramid-section";
 import { useScrolledPast } from "@/demo/landing/use-scrolled-past";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
 import { cn } from "@/lib/utils";
 
 export function ScrollHint() {
@@ -12,7 +13,7 @@ export function ScrollHint() {
     <a
       href={`#${pyramidSectionId}`}
       aria-label="Scroll to how Rodeo works"
-      data-markdown="skip"
+      {...excludeFromMarkdown}
       className={cn(
         "mx-auto mb-m flex flex-col items-center gap-xxs px-m py-xs text-s text-muted-foreground transition duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
         scrolled && "invisible opacity-0",

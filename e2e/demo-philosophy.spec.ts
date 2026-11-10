@@ -135,6 +135,18 @@ test("the old /rationale URL redirects permanently to /philosophy", async ({ req
   expect(markdown.headers().location).toBe("/philosophy.md");
 });
 
+test("the /rationale redirects keep the query string and the security headers", async ({
+  request,
+}) => {
+  const page = await request.get("/rationale?ref=x", { maxRedirects: 0 });
+  expect(page.headers().location).toBe("/philosophy?ref=x");
+  expect(page.headers()["x-content-type-options"]).toBe("nosniff");
+
+  const markdown = await request.get("/rationale.md?ref=x", { maxRedirects: 0 });
+  expect(markdown.headers().location).toBe("/philosophy.md?ref=x");
+  expect(markdown.headers()["x-content-type-options"]).toBe("nosniff");
+});
+
 for (const theme of ["light", "dark"] as const) {
   test(`the philosophy page has no WCAG violations in the ${theme} theme`, async ({ page }) => {
     await page.addInitScript((stored) => localStorage.setItem("rodeo-theme", stored), theme);

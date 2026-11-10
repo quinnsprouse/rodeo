@@ -1,9 +1,11 @@
 import { NodeHtmlMarkdown } from "node-html-markdown";
 import { parse } from "node-html-parser";
 
+import { excludeFromMarkdown } from "@/lib/page-markdown";
+
 const leftOut = [
   "[aria-hidden='true']",
-  "[data-markdown='skip']",
+  ...Object.entries(excludeFromMarkdown).map(([name, value]) => `[${name}='${value}']`),
   "[hidden]",
   "svg",
   "script",
@@ -11,11 +13,6 @@ const leftOut = [
   "template",
   "noscript",
 ].join(", ");
-
-export function pagePathForMarkdown(pathname: string) {
-  if (pathname === "/index.md") return "/";
-  return pathname.endsWith(".md") ? pathname.slice(0, -".md".length) : undefined;
-}
 
 function quality(accept: string, mediaType: string) {
   for (const range of accept.split(",")) {

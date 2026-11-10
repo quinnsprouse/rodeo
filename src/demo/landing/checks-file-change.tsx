@@ -4,6 +4,7 @@ import { Icon } from "@/components/icon";
 import type { DiffLine, Scenario } from "@/demo/landing/checks-scenarios";
 import { StatusPill } from "@/demo/landing/status-pill";
 import { concealed, reveal } from "@/demo/motion-classes";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
 import { cn } from "@/lib/utils";
 
 const lineDelays = [
@@ -36,7 +37,7 @@ export function FileChange({
   finished: boolean;
 }) {
   return (
-    <div data-markdown="skip" className="hidden min-w-0 flex-col lg:flex">
+    <div {...excludeFromMarkdown} className="hidden min-w-0 flex-col lg:flex">
       <p
         className={cn(
           "flex items-center gap-xs px-m py-s font-data text-xs text-foreground divider-b",

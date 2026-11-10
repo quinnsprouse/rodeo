@@ -14,6 +14,7 @@ import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as demoIndexRouteImport } from './routes/(demo)/index'
 import { Route as demoPhilosophyRouteImport } from './routes/(demo)/philosophy'
+import { Route as demoRationaleRouteImport } from './routes/(demo)/rationale'
 
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
@@ -40,12 +41,18 @@ const demoPhilosophyRoute = demoPhilosophyRouteImport.update({
   path: '/philosophy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const demoRationaleRoute = demoRationaleRouteImport.update({
+  id: '/(demo)/rationale',
+  path: '/rationale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/llms.txt': typeof LlmsDottxtRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/philosophy': typeof demoPhilosophyRoute
+  '/rationale': typeof demoRationaleRoute
   '/': typeof demoIndexRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/philosophy': typeof demoPhilosophyRoute
+  '/rationale': typeof demoRationaleRoute
   '/': typeof demoIndexRoute
 }
 export interface FileRoutesById {
@@ -61,19 +69,33 @@ export interface FileRoutesById {
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/(demo)/philosophy': typeof demoPhilosophyRoute
+  '/(demo)/rationale': typeof demoRationaleRoute
   '/(demo)/': typeof demoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/llms.txt' | '/robots.txt' | '/sitemap.xml' | '/philosophy' | '/'
+  fullPaths:
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/philosophy'
+    | '/rationale'
+    | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/llms.txt' | '/robots.txt' | '/sitemap.xml' | '/philosophy' | '/'
+  to:
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/philosophy'
+    | '/rationale'
+    | '/'
   id:
     | '__root__'
     | '/llms.txt'
     | '/robots.txt'
     | '/sitemap.xml'
     | '/(demo)/philosophy'
+    | '/(demo)/rationale'
     | '/(demo)/'
   fileRoutesById: FileRoutesById
 }
@@ -82,6 +104,7 @@ export interface RootRouteChildren {
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   demoPhilosophyRoute: typeof demoPhilosophyRoute
+  demoRationaleRoute: typeof demoRationaleRoute
   demoIndexRoute: typeof demoIndexRoute
 }
 
@@ -122,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof demoPhilosophyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(demo)/rationale': {
+      id: '/(demo)/rationale'
+      path: '/rationale'
+      fullPath: '/rationale'
+      preLoaderRoute: typeof demoRationaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -130,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   demoPhilosophyRoute: demoPhilosophyRoute,
+  demoRationaleRoute: demoRationaleRoute,
   demoIndexRoute: demoIndexRoute,
 }
 export const routeTree = rootRouteImport

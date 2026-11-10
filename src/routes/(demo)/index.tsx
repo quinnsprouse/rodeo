@@ -2,26 +2,23 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { BullSticker } from "@/components/stickers/bull";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
 import { site } from "@/config/site";
 import { ExternalLink } from "@/demo/external-link";
 import { ChecksSection } from "@/demo/landing/checks-section";
 import { Hero } from "@/demo/landing/hero";
 import { OpinionsSection } from "@/demo/landing/opinions-section";
+import { homePage } from "@/demo/landing/page";
 import { PageSection } from "@/demo/landing/page-section";
 import { PyramidSection } from "@/demo/landing/pyramid-section";
 import { ScrollHint } from "@/demo/landing/scroll-hint";
 import { StartCta } from "@/demo/landing/start-cta";
 import { links } from "@/demo/links";
-import { homeStructuredData, structuredDataScript } from "@/lib/structured-data";
 
 export const Route = createFileRoute("/(demo)/")({
+  staticData: { page: homePage },
   head: () => ({
     links: [preloadFont(fonts.bold), preloadFont(fonts.mono)],
-    scripts: clientEnv.VITE_APP_URL
-      ? [structuredDataScript(homeStructuredData(clientEnv.VITE_APP_URL))]
-      : [],
   }),
   component: Home,
 });

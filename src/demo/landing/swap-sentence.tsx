@@ -16,6 +16,7 @@ import {
 } from "@/demo/stickers/swap";
 import { useOnScreen } from "@/hooks/use-on-screen";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
 
 const AnimatedChipFace = lazy(() =>
   import("@/demo/landing/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),
@@ -149,7 +150,7 @@ export function SwapSentence() {
           <br className="md:hidden" /> <span className="whitespace-nowrap">on track.</span>
         </span>
       </p>
-      <span id={hintId} data-markdown="skip" className="sr-only">
+      <span id={hintId} {...excludeFromMarkdown} className="sr-only">
         Select a highlighted word to see another example.
       </span>
     </>

@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { clientEnv } from "@/config/env";
-import { pageMeta, philosophyMeta } from "@/config/site";
 import { PhilosophyArticle } from "@/demo/philosophy/article";
 import { Contents } from "@/demo/philosophy/contents";
-import { philosophyStructuredData, structuredDataScript } from "@/lib/structured-data";
+import { philosophyPage } from "@/demo/philosophy/page";
 
 export const Route = createFileRoute("/(demo)/philosophy")({
-  staticData: { canvas: "card" },
-  head: () => ({
-    meta: pageMeta(philosophyMeta),
-    scripts: clientEnv.VITE_APP_URL
-      ? [structuredDataScript(philosophyStructuredData(clientEnv.VITE_APP_URL))]
-      : [],
-  }),
+  staticData: { canvas: "card", page: philosophyPage },
   component: Philosophy,
 });
 

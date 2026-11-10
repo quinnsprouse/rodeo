@@ -4,7 +4,6 @@ import {
   HeadContent,
   ScriptOnce,
   Scripts,
-  rootRouteId,
   useMatches,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -12,28 +11,25 @@ import type { ReactNode } from "react";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
-import { createSiteHead } from "@/config/site";
+import { currentPage, pageHead } from "@/config/pages";
 import { useTheme } from "@/hooks/use-theme";
+import { publicOrigin } from "@/lib/page-url";
 import { canvases, themeInitScript, type Canvas } from "@/lib/theme";
 
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
   head: ({ matches }) => {
-    // why: With notFoundMode "root", TanStack Router matches an unknown URL only to the root route,
-    // so a page whose deepest match is the root is a 404.
-    const page = matches.at(-1);
-    const hasOwnUrl = page?.status === "success" && page.routeId !== rootRouteId;
-    const siteHead = createSiteHead(hasOwnUrl ? page.pathname : undefined);
+    const page = pageHead(currentPage(matches), publicOrigin());
 
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        ...siteHead.meta,
+        ...page.meta,
       ],
       links: [
-        ...siteHead.links,
+        ...page.links,
         { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
         { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
@@ -41,6 +37,7 @@ export const Route = createRootRoute({
         preloadFont(fonts.medium),
         { rel: "stylesheet", href: appCss },
       ],
+      scripts: page.scripts,
     };
   },
   component: RootComponent,
