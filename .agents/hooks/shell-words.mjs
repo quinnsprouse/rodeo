@@ -16,26 +16,62 @@ const WRAPPERS = new Set([
   "env",
   "sudo",
   "nohup",
+  "xargs",
 ]);
 const WRAPPER_VALUE_FLAGS = new Map([
   ["env", new Set(["-u", "-C", "--unset", "--chdir"])],
   ["sudo", new Set(["-u", "-g", "-C", "-D", "-h", "-p", "-r", "-t", "-T", "-U"])],
   ["exec", new Set(["-a"])],
   ["time", new Set(["-f", "-o"])],
+  [
+    "xargs",
+    new Set([
+      "-I",
+      "-J",
+      "-L",
+      "-P",
+      "-R",
+      "-S",
+      "-E",
+      "-a",
+      "-d",
+      "-n",
+      "-s",
+      "--arg-file",
+      "--delimiter",
+      "--max-args",
+      "--max-chars",
+      "--max-lines",
+      "--max-procs",
+      "--process-slot-var",
+    ]),
+  ],
 ]);
+const XARGS_REPLACE = /^(?:-[IJ]|-i|--replace=?)(.*)$/s;
+const SHELL_VALUE_OPTIONS = new Set(["-o", "+o", "-O", "+O", "--rcfile", "--init-file"]);
+const FIND_EXEC_ACTIONS = new Set(["-exec", "-execdir", "-ok", "-okdir"]);
 const DECLARATIONS = new Set(["export", "declare", "typeset", "local", "readonly"]);
 const ASSIGNMENT = /^([A-Za-z_]\w*)=(.*)$/s;
 const DESCRIPTOR = /^\d+$/;
 const DELIMITER_END = /[\s;&|()<>]/;
 const DOUBLE_QUOTE_ESCAPES = new Set(["$", "`", '"', "\\"]);
 const REDIRECTIONS = ["<<<", "<<-", "<<", "&>>", "&>", ">>", ">|", ">&", "<&", "<>", ">", "<"];
+const ECHO_FLAGS = /^-[neE]+$/;
+const PRINTF_CONVERSION = /%(?:%|[-+ #0]*\d*(?:\.\d*)?[a-zA-Z])/g;
+const OUTPUT_ESCAPES = new Map([
+  ["n", "\n"],
+  ["t", "\t"],
+  ["\\", "\\"],
+]);
+const RUNTIME_WORD = { text: "", quoted: true, runtime: true };
+const UNREADABLE = Symbol("unreadable script");
 
 const HANDLERS = new Map([
   [" ", "blank"],
   ["\t", "blank"],
   ["\n", "newline"],
   [";", "separator"],
-  ["|", "separator"],
+  ["|", "pipe"],
   ["&", "ampersand"],
   ["(", "openParen"],
   [")", "closeParen"],
@@ -79,7 +115,7 @@ class ShellLexer {
   }
 
   startCommand() {
-    this.command = { words: [], inputs: [] };
+    this.command = { words: [], inputs: [], stdinFiles: [], pipedFrom: null };
     this.commands.push(this.command);
   }
 
@@ -91,6 +127,7 @@ class ShellLexer {
   endWord() {
     if (!this.word) return;
     if (this.redirect === "herestring") this.command.inputs.push(this.word.text);
+    else if (this.redirect === "stdin") this.command.stdinFiles.push(this.word);
     else if (this.redirect === null) this.command.words.push(this.word);
     this.word = null;
     this.redirect = null;
@@ -113,14 +150,26 @@ class ShellLexer {
   }
 
   newline() {
-    this.endCommand();
+    if (!this.continuesPipeline()) this.endCommand();
     this.index++;
     this.readHeredocBodies();
+  }
+
+  continuesPipeline() {
+    return this.word === null && this.command.words.length === 0 && this.command.pipedFrom !== null;
   }
 
   separator() {
     this.endCommand();
     this.index++;
+  }
+
+  pipe() {
+    const producer = this.command;
+    const orList = this.source[this.index + 1] === "|";
+    this.endCommand();
+    if (!orList) this.command.pipedFrom = producer;
+    this.index += orList || this.source[this.index + 1] === "&" ? 2 : 1;
   }
 
   ampersand() {
@@ -144,15 +193,16 @@ class ShellLexer {
   }
 
   redirection() {
-    const descriptor = this.word && !this.word.quoted && DESCRIPTOR.test(this.word.text);
-    if (descriptor) this.word = null;
-    else this.endWord();
+    const descriptor =
+      this.word && !this.word.quoted && DESCRIPTOR.test(this.word.text) ? this.word.text : null;
+    if (descriptor === null) this.endWord();
+    else this.word = null;
     const operator = REDIRECTIONS.find((candidate) =>
       this.source.startsWith(candidate, this.index),
     );
     this.index += operator.length;
     if (operator === "<<" || operator === "<<-") this.readHeredocOperator(operator === "<<-");
-    else this.redirect = operator === "<<<" ? "herestring" : "file";
+    else this.redirect = redirectKind(operator, descriptor);
   }
 
   singleQuote() {
@@ -351,45 +401,201 @@ function skipWrapperOptions(words, start, wrapper) {
   return index;
 }
 
-function resolveCommand({ words, inputs }) {
+function redirectKind(operator, descriptor) {
+  if (operator === "<<<") return "herestring";
+  const readsStdin = (operator === "<" || operator === "<>") && (descriptor ?? "0") === "0";
+  return readsStdin ? "stdin" : "file";
+}
+
+function baseName(path) {
+  return path.slice(path.lastIndexOf("/") + 1);
+}
+
+function asRuntime(word) {
+  return { ...word, runtime: true };
+}
+
+function xargsReplaceString(options) {
+  let replace = null;
+  for (let index = 0; index < options.length; index++) {
+    const { text } = options[index];
+    const match = XARGS_REPLACE.exec(text);
+    if (match === null) continue;
+    const separateValue = text === "-I" || text === "-J";
+    replace = separateValue ? (options[index + 1]?.text ?? null) : match[1] || "{}";
+  }
+  return replace;
+}
+
+function fedByXargs(command, options) {
+  const replace = xargsReplaceString(options);
+  const args = replace
+    ? command.args.map((word) => (word.text.includes(replace) ? asRuntime(word) : word))
+    : [...command.args, RUNTIME_WORD];
+  return { ...command, args, inputs: [], stdinFiles: [], pipedFrom: null };
+}
+
+function resolveCommand({ words, inputs = [], stdinFiles = [], pipedFrom = null }) {
   const assignments = [];
+  let xargsOptions = null;
   let index = 0;
   while (index < words.length) {
-    const assignment = asAssignment(words[index]);
+    const word = words[index];
+    const assignment = asAssignment(word);
     if (assignment) assignments.push(assignment);
-    else if (!WRAPPERS.has(words[index].text)) break;
-    index = assignment ? index + 1 : skipWrapperOptions(words, index + 1, words[index].text);
+    else if (!WRAPPERS.has(word.text)) break;
+    const next = assignment ? index + 1 : skipWrapperOptions(words, index + 1, word.text);
+    if (word.text === "xargs") xargsOptions = words.slice(index + 1, next);
+    index = next;
   }
-  const text = words[index]?.text ?? "";
-  const program = text.slice(text.lastIndexOf("/") + 1);
+  const executable = words[index];
+  const program = baseName(executable?.text ?? "");
   const args = words.slice(index + 1);
   if (DECLARATIONS.has(program)) {
     assignments.push(...args.map(asAssignment).filter((assignment) => assignment !== null));
   }
-  return { assignments, program, args, inputs };
+  const command = { assignments, program, executable, args, inputs, stdinFiles, pipedFrom };
+  return xargsOptions === null ? command : fedByXargs(command, xargsOptions);
 }
 
-function shellCommandString(args) {
-  let runsString = false;
+function endsFindExec(word, words) {
+  return word.text === ";" || (word.text === "+" && words.at(-1)?.text === "{}");
+}
+
+function findExecs(args) {
+  const execs = [];
+  let words = null;
+  for (const word of args) {
+    if (words === null) {
+      words = FIND_EXEC_ACTIONS.has(word.text) ? [] : null;
+    } else if (endsFindExec(word, words)) {
+      execs.push({ words });
+      words = null;
+    } else {
+      words.push(word.text.includes("{}") ? asRuntime(word) : word);
+    }
+  }
+  return words === null ? execs : [...execs, { words }];
+}
+
+function resolveWithExecs(rawCommand) {
+  const command = resolveCommand(rawCommand);
+  if (command.program !== "find") return [command];
+  return [command, ...findExecs(command.args).map(resolveCommand)];
+}
+
+function shellInvocation(args) {
+  let letters = "";
   for (let index = 0; index < args.length; index++) {
     const word = args[index];
-    if (!isFlag(word)) return runsString ? [word.text] : [];
-    if (word.text === "-o") index++;
-    else if (!word.text.startsWith("--") && word.text.includes("c")) runsString = true;
+    if (word.quoted || !/^[-+]/.test(word.text)) return { letters, operand: word };
+    if (word.text === "-" || word.text === "--") return { letters, operand: args[index + 1] };
+    if (SHELL_VALUE_OPTIONS.has(word.text)) index++;
+    else if (/^-[^-]/.test(word.text)) letters += word.text.slice(1);
   }
-  return [];
+  return { letters, operand: undefined };
 }
 
-function nestedScripts({ program, args, inputs }) {
+function unescapeOutput(text) {
+  return text.replace(/\\([\\nt])/g, (sequence, letter) => OUTPUT_ESCAPES.get(letter) ?? sequence);
+}
+
+function echoOutput(args) {
+  const start = args.findIndex((word) => word.quoted || !ECHO_FLAGS.test(word.text));
+  const words = start === -1 ? [] : args.slice(start);
+  return unescapeOutput(words.map((word) => word.text).join(" "));
+}
+
+function printfOutput(args) {
+  const [format = "", ...values] = (args[0]?.text === "--" ? args.slice(1) : args).map(
+    (word) => word.text,
+  );
+  const conversions = (format.match(PRINTF_CONVERSION) ?? []).filter((match) => match !== "%%");
+  const passes =
+    conversions.length === 0 ? 1 : Math.max(1, Math.ceil(values.length / conversions.length));
+  const queue = [...values];
+  const output = Array.from({ length: passes }, () =>
+    format.replace(PRINTF_CONVERSION, (match) => (match === "%%" ? "%" : (queue.shift() ?? ""))),
+  );
+  return unescapeOutput(output.join(""));
+}
+
+function scriptFrom(word, readScript) {
+  if (word.text.startsWith("<(")) return [UNREADABLE];
+  if (word.runtime || /[$`]/.test(word.text)) return [];
+  const text = readScript(word);
+  return text === null ? [] : [text];
+}
+
+function shebangProgram(text) {
+  const [interpreter, ...rest] = text.split("\n", 1)[0].slice(2).trim().split(/\s+/);
+  const program = baseName(interpreter);
+  return program === "env" ? rest.find((word) => !word.startsWith("-")) : program;
+}
+
+function executableScript(word, readScript) {
+  const extension = /.\.([^.]+)$/.exec(baseName(word.text))?.[1];
+  if (extension !== undefined && !SHELLS.has(extension)) return [];
+  const [text] = scriptFrom(word, readScript);
+  if (typeof text !== "string") return [];
+  const shellScript =
+    extension !== undefined || (text.startsWith("#!") && SHELLS.has(shebangProgram(text)));
+  return shellScript ? [text] : [];
+}
+
+function stdinScript({ stdinFiles, pipedFrom }, readScript) {
+  if (stdinFiles.length > 0) return stdinFiles.flatMap((word) => scriptFrom(word, readScript));
+  return pipedFrom === null ? [] : pipedScript(resolveCommand(pipedFrom), readScript);
+}
+
+function pipedScript(producer, readScript) {
+  const { program, args, inputs } = producer;
+  if (program === "echo") return [echoOutput(args)];
+  if (program === "printf") return [printfOutput(args)];
+  if (program !== "cat") return [UNREADABLE];
+  const files = args.filter((word) => !isFlag(word));
+  if (files.length > 0) return files.flatMap((word) => scriptFrom(word, readScript));
+  return inputs.length > 0 ? inputs : stdinScript(producer, readScript);
+}
+
+function shellScripts(command, readScript) {
+  const { args, inputs } = command;
+  const { letters, operand } = shellInvocation(args);
+  if (letters.includes("c")) return operand === undefined ? inputs : [...inputs, operand.text];
+  if (letters.includes("n")) return inputs;
+  if (operand !== undefined && !letters.includes("s")) {
+    return [...inputs, ...scriptFrom(operand, readScript)];
+  }
+  return inputs.length > 0 ? inputs : stdinScript(command, readScript);
+}
+
+function nestedScripts(command, readScript) {
+  const { program, args, executable } = command;
   if (program === "eval") return [args.map((word) => word.text).join(" ")];
-  if (!SHELLS.has(program)) return [];
-  return [...inputs, ...shellCommandString(args)];
+  if (program === "source" || program === ".") {
+    return args.length > 0 ? scriptFrom(args[0], readScript) : [];
+  }
+  if (SHELLS.has(program)) return shellScripts(command, readScript);
+  return executable?.text.includes("/") ? executableScript(executable, readScript) : [];
 }
 
-export function simpleCommands(script, depth = 0) {
+function withNestedScripts(command, readScript) {
+  const scripts = nestedScripts(command, readScript);
+  return {
+    command: { ...command, runsUnreadableScript: scripts.includes(UNREADABLE) },
+    scripts: scripts.filter((script) => script !== UNREADABLE),
+  };
+}
+
+export function simpleCommands(script, readScript = () => null, depth = 0) {
   if (depth > MAX_DEPTH) return [];
   const { commands, scripts } = lex(script);
-  const resolved = commands.map(resolveCommand);
-  const nested = [...scripts, ...resolved.flatMap(nestedScripts)];
-  return [...resolved, ...nested.flatMap((inner) => simpleCommands(inner, depth + 1))];
+  const expanded = commands
+    .flatMap(resolveWithExecs)
+    .map((command) => withNestedScripts(command, readScript));
+  const nested = [...scripts, ...expanded.flatMap((entry) => entry.scripts)];
+  return [
+    ...expanded.map((entry) => entry.command),
+    ...nested.flatMap((inner) => simpleCommands(inner, readScript, depth + 1)),
+  ];
 }
