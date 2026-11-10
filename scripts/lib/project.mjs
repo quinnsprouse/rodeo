@@ -1,4 +1,16 @@
-const fontOutputs = ["src/styles/fonts.gen.css", "src/assets/fonts/", "scripts/fonts/usage.json"];
+import { readFileSync } from "node:fs";
+
+const fontPipeline = JSON.parse(
+  readFileSync(new URL("../fonts/config.json", import.meta.url), "utf8"),
+);
+
+function fontOutput(name) {
+  const path = fontPipeline.outputs?.[name];
+  if (typeof path === "string") return path;
+  throw new Error(`Set outputs.${name} in scripts/fonts/config.json.`);
+}
+
+const fontOutputs = [fontOutput("stylesheet"), `${fontOutput("fonts")}/`, fontOutput("usage")];
 
 export const generatedFiles = [
   {

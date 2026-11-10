@@ -8,6 +8,7 @@ import argparse
 import io
 import itertools
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -20,14 +21,15 @@ from fontTools.ttLib import TTFont
 from fontTools.ttLib.woff2 import WOFF2FlavorData
 from fontTools.varLib import instancer
 
-ROOT = Path(__file__).resolve().parents[2]
-SOURCES = ROOT / "scripts" / "fonts" / "sources"
-USAGE = ROOT / "scripts" / "fonts" / "usage.json"
-CONFIG = ROOT / "scripts" / "fonts" / "config.json"
-OUTPUT = ROOT / "src" / "assets" / "fonts"
-STYLESHEET = ROOT / "src" / "styles" / "fonts.gen.css"
-STYLESHEET_TO_OUTPUT = "../assets/fonts"
-PRINT_WIDTH = 100
+PIPELINE = Path(__file__).resolve().parent
+ROOT = PIPELINE.parents[1]
+SOURCES = PIPELINE / "sources"
+CONFIG_FILE = PIPELINE / "config.json"
+CONFIG = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+USAGE = ROOT / CONFIG["outputs"]["usage"]
+OUTPUT = ROOT / CONFIG["outputs"]["fonts"]
+STYLESHEET = ROOT / CONFIG["outputs"]["stylesheet"]
+STYLESHEET_TO_OUTPUT = Path(os.path.relpath(OUTPUT, STYLESHEET.parent)).as_posix()
 
 ASCII = set(range(0x20, 0x7F))
 LATIN_1 = set(range(0xA0, 0x100))
@@ -109,19 +111,10 @@ class Face:
     license: str
     style: str = "normal"
     rename_to: str | None = None
-    coverage: frozenset[int] | None = None
 
     @property
     def weight_range(self) -> tuple[int, int]:
         return (self.weight, self.weight) if isinstance(self.weight, int) else self.weight
-
-
-def parse_unicode_range(text: str) -> frozenset[int]:
-    codepoints = set()
-    for part in text.split(","):
-        low, _, high = part.strip().removeprefix("U+").partition("-")
-        codepoints |= set(range(int(low, 16), int(high or low, 16) + 1))
-    return frozenset(codepoints)
 
 
 def configured_face(entry: dict) -> Face:
@@ -134,13 +127,10 @@ def configured_face(entry: dict) -> Face:
         license=entry["license"],
         style=entry.get("style", "normal"),
         rename_to=entry.get("renameTo"),
-        coverage=parse_unicode_range(entry["coverage"]) if "coverage" in entry else None,
     )
 
 
-FACES = [
-    configured_face(entry) for entry in json.loads(CONFIG.read_text(encoding="utf-8"))["faces"]
-]
+FACES = [configured_face(entry) for entry in CONFIG["faces"]]
 
 
 @dataclass
@@ -364,8 +354,8 @@ def rename(font: TTFont, family: str) -> None:
 
 
 def restrict_cmap(font: TTFont, codepoints: set[int]) -> None:
-    # why: fontTools 4.68's subsetter can map characters it was not asked for, such as U+2264 in
-    # JetBrains Mono, so the file would cover characters its unicode-range doesn't list.
+    # why: fontTools 4.68's subsetter also maps the bidi mirror of each requested character, such as
+    # U+2264 for U+2265, so the file would cover characters its unicode-range doesn't list.
     for table in font["cmap"].tables:
         if table.isUnicode():
             table.cmap = {u: g for u, g in table.cmap.items() if u in codepoints}
@@ -551,7 +541,7 @@ def css_weight(face: Face, limits: dict) -> str:
 
 def plan(face: Face, usage: Usage) -> Result:
     source = TTFont(SOURCES / face.source)
-    available = set(source.getBestCmap()) & (face.coverage or set(source.getBestCmap()))
+    available = set(source.getBestCmap())
     keep = (
         ASCII
         | INVISIBLE
@@ -574,20 +564,6 @@ def plan(face: Face, usage: Usage) -> Result:
     )
 
 
-def declaration(name: str, items: list[str]) -> str:
-    single = f"  {name}: {', '.join(items)};"
-    if len(single) <= PRINT_WIDTH:
-        return single + "\n"
-    lines, line = [], f"    {items[0]}"
-    for item in items[1:]:
-        if len(f"{line}, {item},") <= PRINT_WIDTH:
-            line = f"{line}, {item}"
-        else:
-            lines.append(f"{line},")
-            line = f"    {item}"
-    return f"  {name}:\n" + "\n".join([*lines, f"{line};"]) + "\n"
-
-
 def stylesheet(results: list[Result]) -> str:
     rules = []
     for result in results:
@@ -599,8 +575,8 @@ def stylesheet(results: list[Result]) -> str:
                 "  font-display: swap;\n"
                 f"  font-weight: {result.css_weight};\n"
                 f'  src: url("{STYLESHEET_TO_OUTPUT}/{piece.name}.woff2") format("woff2");\n'
-                + declaration("unicode-range", unicode_ranges(piece.codepoints))
-                + "}\n"
+                f"  unicode-range: {', '.join(unicode_ranges(piece.codepoints))};\n"
+                "}\n"
             )
     return "\n".join(rules)
 
@@ -645,7 +621,8 @@ def main() -> int:
         reserved = reserved_font_names(face)
         if reserved and not face.rename_to:
             failures.append(
-                f"{face.output}: the OFL reserves {reserved}; set rename_to on its Face"
+                f"{face.output}: the OFL reserves {reserved}; "
+                f"set renameTo on its face in {CONFIG_FILE.relative_to(ROOT)}"
             )
         source = TTFont(SOURCES / face.source)
         for piece in result.pieces:

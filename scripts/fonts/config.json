@@ -1,5 +1,9 @@
 {
-  "sitemap": true,
+  "outputs": {
+    "fonts": "src/assets/fonts",
+    "stylesheet": "src/styles/fonts.gen.css",
+    "usage": "scripts/fonts/usage.json"
+  },
   "pages": [],
   "notFoundPage": "/__font-audit-missing-page",
   "contentFiles": [],
