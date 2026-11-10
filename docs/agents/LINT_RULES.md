@@ -14,6 +14,8 @@ Almost every comment can go. Write a `why:` comment only after an agent got the 
 // why: Vite inlines VITE_* values into the client bundle, so a secret here becomes public.
 ```
 
+Lint takes cause names from the dependencies in `package.json` and from `KNOWN_CAUSES` in `lint/rules.js`, so add a real cause it doesn't know to that list.
+
 **The test:** could you delete the comment by changing the code, or does a test already fail when someone undoes it? Then skip the comment.
 
 ## Where code goes

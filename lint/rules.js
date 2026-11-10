@@ -3,7 +3,7 @@ import { relative } from "node:path";
 
 import { definePlugin, defineRule } from "vite-plus/lint/plugins";
 
-const PLATFORM_CAUSES = [
+const KNOWN_CAUSES = [
   "browser",
   "chrome",
   "chromium",
@@ -29,7 +29,28 @@ const PLATFORM_CAUSES = [
   "vercel",
   "cloudflare",
   "workerd",
+  "postgres",
+  "mysql",
+  "sqlite",
+  "sql",
+  "s3",
+  "oauth",
+  "oidc",
+  "jwt",
+  "tls",
+  "dns",
+  "smtp",
+  "websocket",
+  "utc",
+  "timezone",
+  "daylight",
+  "iso",
+  "ieee",
+  "json",
+  "utf",
+  "posix",
 ];
+const MAX_SHORT_CAUSE_LENGTH = 3;
 const GENERIC_PACKAGE_WORDS = new Set(["api", "cli", "config", "core", "kit", "plugin", "start"]);
 
 function dependencyCauses() {
@@ -40,10 +61,16 @@ function dependencyCauses() {
     .filter((word) => word.length >= 3 && !GENERIC_PACKAGE_WORDS.has(word));
 }
 
-const outsideCauses = [...new Set([...dependencyCauses(), ...PLATFORM_CAUSES])]
-  .map((word) => word.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-  .join("|");
-const OUTSIDE_CAUSE = new RegExp(`\\b(?:${outsideCauses})|(?:${outsideCauses})\\b`, "i");
+function causePattern(word) {
+  const escaped = word.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (word.length <= MAX_SHORT_CAUSE_LENGTH) return `\\b${escaped}(?:s|\\d+)?\\b`;
+  return `\\b${escaped}|${escaped}\\b`;
+}
+
+const OUTSIDE_CAUSE = new RegExp(
+  [...new Set([...dependencyCauses(), ...KNOWN_CAUSES])].map(causePattern).join("|"),
+  "i",
+);
 
 const BROWSER_GLOBALS = new Set([
   "window",
@@ -404,7 +431,7 @@ const noComments = defineRule({
       length:
         "A `why:` comment in src/ and e2e/ is {{min}} to {{max}} words: the cause outside the code and what breaks without this code. Cut it to that, or delete it.",
       cause:
-        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is in this repo, fix the code instead and delete the comment.",
+        "This `why:` comment names no cause outside the code. Name the dependency, browser, or spec that forces this code, such as TanStack Router or Safari. If the cause is real but lint does not know its name, add the name to KNOWN_CAUSES in lint/rules.js. If the cause is in this repo, fix the code instead and delete the comment.",
     },
     schema: [],
   },

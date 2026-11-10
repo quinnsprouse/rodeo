@@ -14,6 +14,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const vp = join(dirname(require.resolve("vite-plus/package.json")), "bin/vp");
 const sandbox = join(repoRoot, ".scratch", `lint-policy-${process.pid}`);
 const layerProbeName = `.policy-probe-${process.pid}`;
+const appDeclarations = join(repoRoot, "src", "types", "*.d.ts");
 
 const rejected: RejectedProbe[] = [
   {
@@ -137,6 +138,11 @@ export function Probe() { return <Button type="button" className="px-l">Save</Bu
     rule: "shadcn(no-restyle)",
     source: `import { Button } from "@/components/ui/button";
 export function Probe() { return <Button type="button" className="bg-brand">Save</Button>; }`,
+  },
+  {
+    name: "inline style properties",
+    rule: "shadcn(no-inline-styles)",
+    source: `export function Probe({ value }: { value: number }) { return <div style={{ width: \`\${value}%\` }} />; }`,
   },
   {
     name: "Tailwind default scales the theme replaced",
@@ -361,6 +367,17 @@ export function Themed() {
 }`,
   },
   {
+    name: "dynamic values through CSS custom properties",
+    source: `export function Probe({ value, fade }: { value: number; fade: number }) {
+  return (
+    <div
+      className="w-(--progress) opacity-(--fade)"
+      style={{ "--progress": \`\${value}%\`, "--fade": fade }}
+    />
+  );
+}`,
+  },
+  {
     name: "Node code in a server module",
     layer: "src/lib",
     file: "secrets.server.ts",
@@ -450,7 +467,10 @@ beforeAll(async () => {
     mkdirSync(directory, { recursive: true });
     writeFileSync(
       join(directory, "tsconfig.json"),
-      JSON.stringify({ extends: join(repoRoot, "tsconfig.app.json"), include: ["*.ts", "*.tsx"] }),
+      JSON.stringify({
+        extends: join(repoRoot, "tsconfig.app.json"),
+        include: ["*.ts", "*.tsx", appDeclarations],
+      }),
     );
   }
   writeFileSync(
