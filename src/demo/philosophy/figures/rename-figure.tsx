@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 type Idea = "author" | "admin";
 
-const beats = timeline({ withoutRodeo: 500, rodeo: 650, author: 450, admin: 300 });
+const beats = timeline({ withoutRodeo: 150, rodeo: 500, author: 650, admin: 450 });
 
 function Mark({ idea, lit, children }: { idea: Idea; lit: boolean; children: ReactNode }) {
   return (

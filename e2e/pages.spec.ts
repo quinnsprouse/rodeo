@@ -2,7 +2,7 @@ import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
 
 import { appOrigin } from "./environment";
 import { expect, test } from "./fixtures";
-import { axeViolations, pageColors } from "./helpers";
+import { axeViolations, pageColors, structuredData } from "./helpers";
 
 async function sitemapPaths(request: APIRequestContext) {
   const sitemap = await (await request.get("/sitemap.xml")).text();
@@ -109,6 +109,21 @@ test("every page names its canonical URL from the configured origin, without the
     },
     { search: "?utm_source=newsletter" },
   );
+});
+
+test("every page's structured data parses and names the page's canonical URL", async ({
+  context,
+  request,
+}) => {
+  const described: string[] = [];
+  await checkEveryPage(context, request, async (page, path) => {
+    const canonical = JSON.stringify(new URL(path, appOrigin).href);
+    for (const data of await structuredData(page)) {
+      expect(JSON.stringify(data)).toContain(canonical);
+      described.push(path);
+    }
+  });
+  expect(described, "The home page describes the site").toContain("/");
 });
 
 test("every page offers a Markdown version that llms.txt lists", async ({ context, request }) => {

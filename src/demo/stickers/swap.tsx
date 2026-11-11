@@ -1,4 +1,5 @@
-import { ink, Sticker, type StickerProps } from "@/components/stickers/frame";
+import { Sticker, type StickerProps } from "@/components/stickers/frame";
+import { ink } from "@/demo/stickers/ink";
 import { cn } from "@/lib/utils";
 
 const blocked = (

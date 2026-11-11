@@ -1,5 +1,3 @@
-import { useSyncExternalStore } from "react";
-
 import { applyTheme, snapToTheme, type Theme } from "@/lib/theme";
 
 interface RevealOrigin {
@@ -10,12 +8,10 @@ interface RevealOrigin {
 const revealDuration = 600;
 const revealEasing = "cubic-bezier(0.645, 0.045, 0.355, 1)";
 const revealSettle = 40;
-const subscribers = new Set<() => void>();
 let latestReveal: ViewTransition | undefined;
 
 function setRevealing(revealing: boolean) {
   document.documentElement.classList.toggle("theme-reveal", revealing);
-  for (const notify of subscribers) notify();
 }
 
 function growCircle({ x, y }: RevealOrigin) {
@@ -55,25 +51,4 @@ export function revealTheme(theme: Theme, origin: RevealOrigin, reducedMotion: b
     setRevealing(false);
     latestReveal = undefined;
   });
-}
-
-function subscribeToReveal(onChange: () => void) {
-  subscribers.add(onChange);
-  return () => {
-    subscribers.delete(onChange);
-  };
-}
-
-function themeRevealing() {
-  return document.documentElement.classList.contains("theme-reveal");
-}
-
-function getServerSnapshot() {
-  return false;
-}
-
-// why: During a view transition, Chrome repaints every moving element in the live new view on
-// each frame, so motion pauses while the circle grows.
-export function useThemeRevealing() {
-  return useSyncExternalStore(subscribeToReveal, themeRevealing, getServerSnapshot);
 }

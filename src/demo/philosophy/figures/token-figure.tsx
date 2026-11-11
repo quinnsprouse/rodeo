@@ -13,7 +13,7 @@ function preloadParticles() {
   void loadParticles();
 }
 
-const beats = timeline({ task: 650, comments: 560, tests: 560, docs: 600, legend: 300 });
+const beats = timeline({ task: 150, comments: 650, tests: 560, docs: 560, legend: 600 });
 
 interface SegmentProps {
   part: string;

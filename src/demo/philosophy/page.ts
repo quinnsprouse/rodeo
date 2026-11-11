@@ -2,7 +2,7 @@ import type { Page } from "@/config/pages";
 
 export const published = "2026-10-17";
 
-export const philosophyPage: Page = {
+export const philosophyPage = {
   title: "Rodeo Philosophy",
   description:
     "how i think about building with agents, and why rodeo drops code comments, unit tests, and long docs.",
@@ -21,4 +21,4 @@ export const philosophyPage: Page = {
     datePublished: published,
     author,
   }),
-};
+} satisfies Page;

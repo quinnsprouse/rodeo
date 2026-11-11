@@ -1,5 +1,5 @@
-import { PyramidDiagram } from "@/demo/landing/pyramid-diagram";
 import { Figure, useFigure } from "@/demo/philosophy/figures/figure";
+import { PyramidDiagram } from "@/demo/pyramid-diagram";
 
 export function PyramidFigure() {
   const figure = useFigure();

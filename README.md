@@ -34,11 +34,11 @@ Add UI components with the configured shadcn CLI. Three motion packages are inst
 
 ### Remove the demo
 
-The landing page and the philosophy page are a demo. To start from a blank app, run `node scripts/remove-demo.mjs`, then `npm run check:push`.
+The landing page and the philosophy page are a demo in `src/demo/` and `src/routes/(demo)/`. To start from a blank app, run `node scripts/remove-demo.mjs`, then `npm run check:push`.
 
-The script deletes `src/demo/`, `src/routes/(demo)/`, the `e2e/demo-*.spec.ts` specs, `public/stickers/`, `public/og-rationale.png`, and itself. It removes the demo's references from `src/styles/app.css` and `lint/exceptions.ts`, removes this section from the README, writes a starter home route, and regenerates the route tree. If anything is not where it expects, it changes nothing.
+The script deletes `src/demo/`, `src/routes/(demo)/`, the `e2e/demo-*.spec.ts` specs, `public/stickers/`, `public/og-rationale.png`, and itself with its test. It removes the demo's references from `src/styles/app.css` and `lint/exceptions.ts`, removes this section from the README, writes a starter home route, and regenerates the route tree. If anything is not where it expects, it changes nothing. `npm run check` runs the same check, so a change that would break the removal fails there.
 
-The starter home shows the site name, the tagline, `ThemeToggle`, and a `Snippet` with `npm run dev`. `knip.config.ts` keeps the kit modules the starter doesn't use yet.
+The starter home, in `src/components/starter-home.tsx`, shows the site name, the tagline, `ThemeToggle`, and a `Snippet` with `npm run dev`.
 
 ## Commands
 
@@ -72,7 +72,6 @@ Optional skills are listed in `skills-lock.json`; restore them with `npm run set
 - `src/routes/`: TanStack routes
 - `src/components/`: application and UI components
 - `src/config/`, `src/hooks/`, `src/lib/`, `src/styles/`: site config, hooks, shared logic, and theme
-- `src/demo/`: the demo
 - `lint/`, `e2e/`: lint rules and verification tests
 - `docs/agents/`: implementation guides
 - `scripts/`: setup and verification scripts

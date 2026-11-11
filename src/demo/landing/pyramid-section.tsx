@@ -4,8 +4,8 @@ import { useRef } from "react";
 import { Icon } from "@/components/icon";
 import { ExternalLink } from "@/demo/external-link";
 import { PageSection } from "@/demo/landing/page-section";
-import { PyramidDiagram } from "@/demo/landing/pyramid-diagram";
 import { links } from "@/demo/links";
+import { PyramidDiagram } from "@/demo/pyramid-diagram";
 import { usePlayOnView } from "@/hooks/use-play-on-view";
 
 export const pyramidSectionId = "how-it-works";

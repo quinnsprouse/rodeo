@@ -9,13 +9,6 @@ export const ink = {
   lilac: "#b794ff",
   lavender: "#e1ceff",
   charcoal: "#202020",
-  paper: "#f0f0f0",
-  silver: "#dedede",
-  line: "#c5c5c5",
-  slate: "#969696",
-  orange: "#ffa344",
-  red: "#ff5263",
-  green: "#76ef6b",
   white: "#ffffff",
   shadow: "#000000",
 };

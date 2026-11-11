@@ -1,11 +1,12 @@
 import type { Page } from "@/config/pages";
 import { site } from "@/config/site";
+import { website } from "@/lib/structured-data";
 
 export const homePage: Page = {
   structuredData: ({ url, description, author }) => ({
     "@context": "https://schema.org",
     "@graph": [
-      { "@type": "WebSite", "@id": `${url}#website`, url, name: site.name, description },
+      website({ url, description }),
       {
         "@type": "SoftwareSourceCode",
         name: site.name,

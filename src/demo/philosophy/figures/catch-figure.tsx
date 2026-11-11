@@ -13,7 +13,7 @@ const stops = [
 ];
 const rodeoStopDelays = ["delay-0", "delay-700", "delay-1300"];
 
-const beats = timeline({ spotted: 500, handled: 1700, arrived: 300 });
+const beats = timeline({ spotted: 150, handled: 500, arrived: 1700 });
 const spotted = beats.at("spotted");
 const handled = beats.at("handled");
 const arrived = beats.at("arrived");

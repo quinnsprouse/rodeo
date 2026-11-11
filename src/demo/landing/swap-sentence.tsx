@@ -1,9 +1,10 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
-import { useThemeRevealing } from "@/components/theme-reveal";
 import { StaticChipFace, type SwapChoice } from "@/demo/landing/swap-chip-face";
+import { useOnScreen } from "@/demo/landing/use-on-screen";
 import { usePageVisible } from "@/demo/landing/use-page-visible";
+import { useThemeRevealing } from "@/demo/landing/use-theme-revealing";
 import {
   ClaudeSticker,
   CodexSticker,
@@ -14,7 +15,6 @@ import {
   OffBrandSticker,
   PushSticker,
 } from "@/demo/stickers/swap";
-import { useOnScreen } from "@/hooks/use-on-screen";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { excludeFromMarkdown } from "@/lib/page-markdown";
 

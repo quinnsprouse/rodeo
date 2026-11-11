@@ -1,11 +1,42 @@
 import type { Page } from "@playwright/test";
 
+import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./copy-command";
 import { appOrigin as origin } from "./environment";
 import { expect, test } from "./fixtures";
 import { structuredData } from "./helpers";
 
 function chip(page: Page, name: string) {
   return page.getByRole("button", { name, exact: true });
+}
+
+function installCommand(page: Page) {
+  return snippetAround(page.getByRole("status").first());
+}
+
+test.describe(() => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("the install command in the header copies to the clipboard", async ({ page }) => {
+    await page.goto("/");
+    const { command, copy } = installCommand(page);
+    const shown = await command.textContent();
+
+    await copy.click();
+    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
+  });
+});
+
+for (const fallback of copyFallbacks) {
+  test(`the install command in the header ${fallback.title}`, async ({ page }) => {
+    await withCopyFallback(page, fallback);
+    await page.goto("/");
+    const snippet = installCommand(page);
+    const shown = String(await snippet.command.textContent());
+
+    await snippet.copy.click();
+    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown));
+  });
 }
 
 test("swap chips show the next example when clicked", async ({ page }) => {
@@ -46,8 +77,6 @@ test("reduced motion keeps the swap chips on their first example", async ({ page
   await page.clock.install();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("button", { name: "Switch to dark theme" }).click();
-  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
 
   await page.clock.fastForward(6000);
   await expect(chip(page, "edit")).toBeVisible();
@@ -110,11 +139,13 @@ test("the home page names its repository and keeps its links in the Markdown", a
 }) => {
   await page.goto("/");
   const repository = await page.getByRole("link", { name: "GitHub" }).first().getAttribute("href");
-  expect(await structuredData(page)).toMatchObject({
-    "@graph": expect.arrayContaining([
-      expect.objectContaining({ "@type": "SoftwareSourceCode", codeRepository: repository }),
-    ]),
-  });
+  expect(await structuredData(page)).toMatchObject([
+    {
+      "@graph": expect.arrayContaining([
+        expect.objectContaining({ "@type": "SoftwareSourceCode", codeRepository: repository }),
+      ]),
+    },
+  ]);
 
   const markdownUrl = await page
     .locator('link[rel="alternate"][type="text/markdown"]')

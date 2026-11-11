@@ -12,7 +12,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 
 import { parse } from "node-html-parser";
 
@@ -107,8 +107,12 @@ async function servedHome(logName) {
   const server = await startBuiltServer({ root: appRoot, logFile: join(artifactRoot, logName) });
   try {
     const response = await fetch(server.origin);
-    const html = await response.text();
-    return { status: response.status, main: parse(html).querySelector("main#main") };
+    const html = parse(await response.text());
+    return {
+      status: response.status,
+      main: html.querySelector("main#main"),
+      siteName: html.querySelector('meta[property="og:site_name"]')?.getAttribute("content"),
+    };
   } finally {
     await server.stop();
   }
@@ -253,13 +257,12 @@ async function proveTheStarterWithoutTheDemo() {
   run(process.execPath, ["scripts/remove-demo.mjs"]);
   runNpm(["run", "check:push"]);
 
-  startStep("read the site name from src/config/site.ts");
-  const { site } = await import(pathToFileURL(join(appRoot, "src", "config", "site.ts")).href);
   const home = await servedHome("starter-server.log");
   assert.equal(home.status, 200);
+  assert.ok(home.siteName, "The starter home names no og:site_name.");
   assert.ok(
-    home.main?.text.includes(site.name),
-    `The starter home's main#main does not show the site name "${site.name}".`,
+    home.main?.text.includes(home.siteName),
+    `The starter home's main#main does not show the site name "${home.siteName}".`,
   );
 }
 

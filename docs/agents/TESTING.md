@@ -16,7 +16,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 - To test a streamed skeleton, set a desktop browser `userAgent` on the test. TanStack Router sends bots the finished page, and headless Chromium's default user agent counts as one.
 - `e2e/pages.spec.ts` runs axe and its other checks on every sitemap page. Fix an axe violation instead of turning the rule off.
 
-**Keep guardrail tests fast.** The Stop hook reruns the tests a change reaches, through imports or `forceRerunTriggers` in `vitest.config.ts`. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook by calling its handler or rules in process. Start a hook as a process only in `hook-process.test.ts`, which runs a copy inside a fixture so it can't reach this repository.
+**Keep guardrail tests fast.** The Stop hook runs all of them after every turn that changes files. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook by calling its handler or rules in process. Start a hook as a process only in `hook-process.test.ts`, which runs a copy inside a fixture so it can't reach this repository.
 
 **The check:** change the internals without changing what a user sees. If the test fails, it tested the implementation.
 
@@ -27,4 +27,4 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 - `stop-check.mjs` checks your changes before the turn ends and sends you back if they fail. In a checkout without dependencies or Git hooks, such as a new worktree, it sends you back to run `npm ci` or `npm run setup`.
 - Vite+ installs the Git hooks from `.vite-hooks/`. Don't add Husky.
 
-`npm run test:template` runs the whole starter from a clean copy of the staged files, then removes the demo there and runs the push checks again. CI runs it. Stage your changes before you run it locally.
+`npm run test:template` runs the whole starter from a clean copy of the staged files. If the copy has the demo, it then removes it and runs the push checks again. CI runs it. Stage your changes before you run it locally.

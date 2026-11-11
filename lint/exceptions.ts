@@ -18,12 +18,12 @@ export const exceptions: LintException[] = [
     why: "Vite exposes VITE_* variables only on import.meta.env, so the module that parses them into clientEnv has to read it.",
   },
   {
-    files: ["src/components/stickers/**", "src/demo/stickers/**"],
+    files: ["src/**/stickers/**"],
     rules: ["shadcn/no-raw-colors"],
     why: "Stickers are fixed artwork, like an image, so their colors stay the same in light and dark mode instead of following the theme tokens.",
   },
   {
-    files: ["src/components/ui/snippet.tsx"],
+    files: ["src/hooks/use-copy-command.ts"],
     rules: ["typescript/no-deprecated"],
     why: "Safari exposes navigator.clipboard only on HTTPS pages, so the copy button falls back to document.execCommand, the only copy API left on plain-HTTP previews.",
   },

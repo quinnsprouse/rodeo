@@ -121,12 +121,14 @@ test("the philosophy page describes itself as an article by its author", async (
     await page.locator('meta[name="twitter:creator"]').getAttribute("content"),
   );
 
-  expect(await structuredData(page)).toMatchObject({
-    "@type": "Article",
-    url: canonical,
-    datePublished: published,
-    author: { sameAs: expect.arrayContaining([`https://x.com/${creator.slice(1)}`]) },
-  });
+  expect(await structuredData(page)).toMatchObject([
+    {
+      "@type": "Article",
+      url: canonical,
+      datePublished: published,
+      author: { sameAs: expect.arrayContaining([`https://x.com/${creator.slice(1)}`]) },
+    },
+  ]);
 });
 
 test("the old /rationale URL redirects permanently to /philosophy", async ({ request }) => {

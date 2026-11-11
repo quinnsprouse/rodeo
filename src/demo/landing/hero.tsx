@@ -1,8 +1,7 @@
 import { BullSticker } from "@/components/stickers/bull";
-import { Snippet } from "@/components/ui/snippet";
 import { site } from "@/config/site";
+import { InstallCommand } from "@/demo/landing/install-command";
 import { SwapSentence } from "@/demo/landing/swap-sentence";
-import { TerminalSticker } from "@/demo/stickers/hero";
 
 export function Hero() {
   return (
@@ -17,13 +16,7 @@ export function Hero() {
         <SwapSentence />
       </div>
 
-      <Snippet
-        text={site.installCommand}
-        size="lg"
-        leading={<TerminalSticker className="size-[2em]" />}
-        shimmer
-        className="mt-xl max-w-full sm:mt-xxl"
-      />
+      <InstallCommand />
 
       <p aria-hidden="true" className="mt-m text-center text-s text-muted-foreground sm:text-m">
         {site.tagline}

@@ -3,8 +3,9 @@ import type { Page } from "@playwright/test";
 
 import { expect } from "./fixtures";
 
-export async function structuredData(page: Page): Promise<unknown> {
-  return JSON.parse(String(await page.locator('script[type="application/ld+json"]').textContent()));
+export async function structuredData(page: Page) {
+  const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
+  return blocks.map((block): unknown => JSON.parse(block));
 }
 
 const wcagTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];

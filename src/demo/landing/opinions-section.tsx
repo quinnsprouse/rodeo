@@ -27,7 +27,7 @@ const opinions: { title: string; reason: string; Sticker: ComponentType<StickerP
   {
     title: "Lint rules stay on",
     reason:
-      "When a lint rule gets in the way, the easy fix for an agent is a disable comment, and the problem hides. Rodeo rejects those comments. Exceptions go in vite.config.ts or lint/rodeo-rules.ts, each one with a why: comment.",
+      "When a lint rule gets in the way, the easy fix for an agent is a disable comment, and the problem hides. Rodeo rejects those comments. Exceptions go in lint/exceptions.ts, each one with a reason.",
     Sticker: LintRulesSticker,
   },
   {

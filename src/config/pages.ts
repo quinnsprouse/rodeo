@@ -1,6 +1,7 @@
-import { rootRouteId, type StaticDataRouteOption } from "@tanstack/react-router";
+import type { StaticDataRouteOption } from "@tanstack/react-router";
 
 import { site } from "@/config/site";
+import { pageMatch } from "@/lib/page-match";
 import { absoluteUrl, markdownPath, normalizePath } from "@/lib/page-url";
 import { author, structuredDataScript } from "@/lib/structured-data";
 
@@ -33,11 +34,9 @@ interface PageRoute {
 
 type HeadTag = Record<string, string>;
 
-// why: With notFoundMode "root", TanStack Router matches an unknown URL only to the root route,
-// so a page whose deepest match is the root is a 404.
 export function currentPage<Match extends PageMatch>(matches: readonly Match[]) {
-  const match = matches.at(-1);
-  return match?.status === "success" && match.routeId !== rootRouteId ? match : undefined;
+  const match = pageMatch(matches);
+  return match?.status === "success" ? match : undefined;
 }
 
 function pageText(page: Page = {}) {

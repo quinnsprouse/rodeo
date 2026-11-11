@@ -24,14 +24,12 @@ test("the trailing-slash redirect never leaves the site", async ({ baseURL, requ
   expect(response.headers().location).toBe("/evil.example");
 });
 
-test("a Markdown page never names another site as its canonical URL", async ({
-  baseURL,
-  request,
-}) => {
+test("a Markdown page never names or redirects to another site", async ({ baseURL, request }) => {
   const response = await request.get(`${baseURL}//evil.example/.md`, { maxRedirects: 0 });
 
   const elsewhere = linkedOrigins(response.headersArray()).filter((origin) => origin !== appOrigin);
   expect(elsewhere).toEqual([]);
+  expect(response.headers().location).toBe("/evil.example.md");
 });
 
 test("server functions reject cross-site requests", async ({ request }) => {

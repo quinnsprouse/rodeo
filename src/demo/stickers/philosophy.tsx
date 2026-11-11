@@ -1,5 +1,6 @@
-import { ink, Sticker, type StickerProps } from "@/components/stickers/frame";
+import { Sticker, type StickerProps } from "@/components/stickers/frame";
 import { gold, star } from "@/demo/stickers/gold";
+import { ink } from "@/demo/stickers/ink";
 
 export function TokenSticker({ className }: StickerProps) {
   return (

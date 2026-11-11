@@ -26,7 +26,7 @@ Each folder in `src/` imports only from the folders below it, as `lint/layers.ts
 routes → components → components/ui, hooks → lib, config
 ```
 
-Nothing imports a route module. Only the demo imports the demo, so removing it leaves a working app. Server-only code lives in `*.server.ts`, the only place `process`, `Buffer`, and `node:*` imports are allowed. Read `VITE_*` values from `clientEnv`, never from `import.meta.env`.
+Nothing imports a route module, and only `src/demo/` and `src/routes/(demo)/` may import `@/demo`. Server-only code lives in `*.server.ts`, the only place `process`, `Buffer`, and `node:*` imports are allowed. Read `VITE_*` values from `clientEnv`, never from `import.meta.env`.
 
 ## Errors that need more context
 

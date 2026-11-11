@@ -4,9 +4,9 @@ import { useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
 import { BullSticker } from "@/components/stickers/bull";
-import { ShimmerText } from "@/components/ui/shimmer-text";
 import { FileChange } from "@/demo/landing/checks-file-change";
 import { scenarios, type Scenario } from "@/demo/landing/checks-scenarios";
+import { ShimmerText } from "@/demo/landing/shimmer-text";
 import { StatusPill } from "@/demo/landing/status-pill";
 import { concealed, iconOut, iconSwap, reveal } from "@/demo/motion-classes";
 import { useBeats } from "@/demo/use-beats";
@@ -104,20 +104,21 @@ function TabLabel({ scenario }: { scenario: Scenario }) {
   );
 }
 
-const timing = { prompt: 300, step: 380, caught: 850, fix: 500, result: 250 };
+const leadIn = 150;
+const hold = { prompt: 300, step: 380, caught: 850, fix: 500 };
 
 function storyline(scenario: Scenario) {
   const caught = 1 + scenario.stepsBefore.length;
   const fix = caught + 1;
   const result = fix + scenario.stepsAfter.length;
-  const durations = [
-    timing.prompt,
-    ...scenario.stepsBefore.map(() => timing.step),
-    timing.caught,
-    ...scenario.stepsAfter.map(() => timing.fix),
-    timing.result,
+  const delays = [
+    leadIn,
+    hold.prompt,
+    ...scenario.stepsBefore.map(() => hold.step),
+    hold.caught,
+    ...scenario.stepsAfter.map(() => hold.fix),
   ];
-  return { caught, fix, result, durations };
+  return { caught, fix, result, delays };
 }
 
 type Storyline = ReturnType<typeof storyline>;
@@ -136,7 +137,7 @@ function stepState(index: number, beat: number): StepState {
 
 function ScenarioPanel({ scenario, playback }: { scenario: Scenario; playback: Playback }) {
   const story = storyline(scenario);
-  const beat = useBeats(story.durations, playback);
+  const beat = useBeats(story.delays, playback);
 
   return (
     <>

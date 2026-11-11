@@ -5,6 +5,8 @@
   --text-display--line-height: 1.6;
   --text-display-wide: clamp(2rem, min(4.6vw, 7.5vh), 4rem);
   --text-display-wide--line-height: 1.45;
+  --text-install: clamp(0.875rem, min(1.55vw, 2.6vh), 1.375rem);
+  --text-install--line-height: 1.5;
 
   --animate-nudge: nudge 1.8s ease-in-out infinite;
 
@@ -77,4 +79,45 @@
 .hold-still,
 .hold-still * {
   transition: none !important;
+}
+
+@keyframes shimmer-window {
+  from {
+    transform: translateX(-150%);
+  }
+  to {
+    transform: translateX(150%);
+  }
+}
+
+@keyframes shimmer-copy {
+  from {
+    transform: translateX(150%);
+  }
+  to {
+    transform: translateX(-150%);
+  }
+}
+
+.shimmer-window {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent 10%, #000 50%, transparent 90%);
+  animation: shimmer-window 2.8s linear infinite;
+}
+
+.shimmer-window::after {
+  content: attr(data-text);
+  display: block;
+  color: var(--color-1);
+  white-space: nowrap;
+  animation: shimmer-copy 2.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer-window {
+    display: none;
+  }
 }

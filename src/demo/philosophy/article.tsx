@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 
 import type { StickerProps } from "@/components/stickers/frame";
 import { formatPublished } from "@/demo/philosophy/format-date";
-import { published } from "@/demo/philosophy/page";
+import { philosophyPage, published } from "@/demo/philosophy/page";
 import { sections } from "@/demo/philosophy/sections";
 
 function Section({
@@ -34,7 +34,7 @@ export function PhilosophyArticle() {
   return (
     <article className="text-foreground">
       <header className="pb-xl">
-        <h1 className="font-medium">Rodeo Philosophy</h1>
+        <h1 className="font-medium">{philosophyPage.title}</h1>
         <p className="text-muted-foreground">
           <time dateTime={published}>{formatPublished(published)}</time>
         </p>

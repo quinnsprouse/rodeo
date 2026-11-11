@@ -49,6 +49,13 @@ test("a trailing slash redirects permanently to the page", async ({ request }) =
   expect(response.headers().location).toBe("/definitely-missing?ref=x");
 });
 
+test("a redirect's Markdown twin redirects to the twin of its target", async ({ request }) => {
+  const response = await request.get("/definitely-missing/.md?ref=x", { maxRedirects: 0 });
+
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toBe("/definitely-missing.md?ref=x");
+});
+
 test("older browsers and crawlers find the icon at /favicon.ico", async ({ request }) => {
   const response = await request.get("/favicon.ico");
 

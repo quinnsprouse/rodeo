@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+
 import type { KnipConfig } from "knip";
 
 import { lintConfig } from "./lint/config";
@@ -6,31 +8,21 @@ const lintPluginPackages = lintConfig.jsPlugins
   .map(({ specifier }) => specifier)
   .filter((specifier) => !specifier.startsWith("."));
 
-// why: These modules are the kit API the starter ships for apps, several of them taught in
-// docs/agents/UI_MOTION.md, so Knip keeps them before an app renders them.
-const keptKit = [
-  "src/components/theme-reveal.ts",
-  "src/components/theme-toggle.tsx",
-  "src/components/ui/shimmer-text.tsx",
-  "src/components/ui/snippet.tsx",
-  "src/hooks/use-on-screen.ts",
-  "src/hooks/use-play-on-view.ts",
-  "src/hooks/use-prefers-reduced-motion.ts",
-  "src/hooks/use-web-animation.ts",
-];
+// why: Oxlint loads the lint plugin and React Doctor loads its config by path, and the hooks and
+// tests run scripts that package.json does not name, so Knip finds none of them.
+const loadedByPath = ["lint/rules.js", "doctor.config.ts", "scripts/*.mjs"];
+
+// why: docs/agents/UI_MOTION.md teaches these hooks, and the starter ships them before a page
+// uses them.
+const taughtHooks = ["src/hooks/use-play-on-view.ts", "src/hooks/use-web-animation.ts"];
+
+// why: The demo owns "/" until scripts/remove-demo.mjs writes the route that renders this file.
+const starterHome = existsSync(new URL("src/demo", import.meta.url))
+  ? ["src/components/starter-home.tsx"]
+  : [];
 
 export default {
-  // why: Knip cannot see files that tools load by path or by convention: hook and script
-  // commands, the lint plugin specifier, route files, and src/start.ts.
-  entry: [
-    ".agents/hooks/{pre-tool-guard,post-edit,stop-check}.mjs",
-    "lint/rules.js",
-    "e2e/**/*.ts",
-    "scripts/*.mjs",
-    "src/routes/**/*.{ts,tsx}",
-    "src/start.ts",
-    ...keptKit,
-  ],
+  entry: [...loadedByPath, ...taughtHooks, ...starterHome],
   ignoreDependencies: [
     // why: The commit-msg shell hook runs this executable, outside Knip's JavaScript analysis.
     "@commitlint/cli",
@@ -44,6 +36,4 @@ export default {
     // plugins only from vite.config.ts itself.
     ...lintPluginPackages,
   ],
-  // why: Only the react-doctor CLI reads this file, and Knip has no plugin for it.
-  ignore: ["doctor.config.ts"],
 } satisfies KnipConfig;

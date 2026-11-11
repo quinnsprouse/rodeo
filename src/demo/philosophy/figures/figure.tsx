@@ -5,13 +5,13 @@ import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { cn } from "@/lib/utils";
 
 interface Timeline<Beat extends string> {
-  durations: number[];
+  delays: number[];
   at: (beat: Beat) => number;
 }
 
-export function timeline<Beat extends string>(beats: Record<Beat, number>): Timeline<Beat> {
-  const names: string[] = Object.keys(beats);
-  return { durations: Object.values(beats), at: (beat) => names.indexOf(beat) };
+export function timeline<Beat extends string>(delays: Record<Beat, number>): Timeline<Beat> {
+  const names: string[] = Object.keys(delays);
+  return { delays: Object.values(delays), at: (beat) => names.indexOf(beat) };
 }
 
 interface FigurePlayback {
@@ -23,7 +23,7 @@ interface FigurePlayback {
 export function useFigure<Beat extends string>(beats?: Timeline<Beat>): FigurePlayback {
   const card = useRef<HTMLDivElement>(null);
   const playback = usePlayOnView(card);
-  const beat = useBeats(beats?.durations ?? [], beats ? playback : "static");
+  const beat = useBeats(beats?.delays ?? [], beats ? playback : "static");
   return { card, playback, beat };
 }
 
