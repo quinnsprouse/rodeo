@@ -1,12 +1,10 @@
-import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { tmpdir } from "node:os";
 import { dirname, join, normalize, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 
-import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
+import { beforeAll, describe, expect, it } from "vite-plus/test";
 
+import { diagnosticsByFile, isRecord, repoRoot, runJson, withSandbox } from "./harness";
 import {
   commentScopes,
   isRodeoRuleName,
@@ -17,7 +15,6 @@ import {
 } from "./rodeo-rules";
 
 const require = createRequire(import.meta.url);
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 // why: oxlint is a dependency of vite-plus, not of this project, so it resolves from there instead
 // of relying on npm hoisting a transitive package.
 const requireFromVitePlus = createRequire(require.resolve("vite-plus/package.json"));
@@ -38,53 +35,36 @@ function probe(source: string, file = "src/probe.tsx"): Probe {
   return registered;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+const sandboxes = withSandbox();
+let sandbox = "";
+let diagnostics = new Map<string, Diagnostic[]>();
+
+function rodeoRule(code: string) {
+  const rule = code.replace(new RegExp(String.raw`^${pluginName}\((.+)\)$`), "$1");
+  if (!isRodeoRuleName(rule)) throw new Error(`Unexpected rule id: ${code}`);
+  return rule;
 }
 
-let sandbox: string;
-let diagnosticsByFile = new Map<string, Diagnostic[]>();
-
-function parseDiagnostic(entry: unknown): [string, Diagnostic] {
-  if (
-    !isRecord(entry) ||
-    typeof entry.code !== "string" ||
-    typeof entry.message !== "string" ||
-    typeof entry.filename !== "string"
-  ) {
-    throw new Error(`Unexpected diagnostic: ${JSON.stringify(entry)}`);
-  }
-  const rule = entry.code.replace(new RegExp(String.raw`^${pluginName}\((.+)\)$`), "$1");
-  if (!isRodeoRuleName(rule)) throw new Error(`Unexpected rule id: ${entry.code}`);
-  const label: unknown = Array.isArray(entry.labels) ? entry.labels[0] : undefined;
-  const span = isRecord(label) && isRecord(label.span) ? label.span : undefined;
-  const file = relative(sandbox, realpathSync(resolve(sandbox, entry.filename)));
-  const line = typeof span?.line === "number" ? span.line : 0;
-  return [file, { rule, line, message: entry.message }];
-}
-
-function parseRun(json: string) {
-  const parsed: unknown = JSON.parse(json);
-  if (!isRecord(parsed) || !Array.isArray(parsed.diagnostics)) {
-    throw new Error(`Unexpected oxlint output: ${json}`);
-  }
-  if (parsed.number_of_files !== probes.length) {
-    throw new Error(`Oxlint linted ${String(parsed.number_of_files)} of ${probes.length} probes`);
+function probesHit(output: unknown) {
+  const linted = isRecord(output) ? output.number_of_files : undefined;
+  if (linted !== probes.length) {
+    throw new Error(`Oxlint linted ${String(linted)} of ${probes.length} probes`);
   }
   const byFile = new Map(probes.map((registered) => [registered.file, Array<Diagnostic>()]));
-  for (const entry of parsed.diagnostics) {
-    const [file, diagnostic] = parseDiagnostic(entry);
-    const hits = byFile.get(file);
-    if (hits === undefined) throw new Error(`Diagnostic for a file that is not a probe: ${file}`);
-    hits.push(diagnostic);
+  for (const [path, found] of diagnosticsByFile(output, sandbox)) {
+    const hits = byFile.get(relative(sandbox, path));
+    if (hits === undefined) throw new Error(`Diagnostic for a file that is not a probe: ${path}`);
+    hits.push(
+      ...found.map(({ code, line, message }) => ({ rule: rodeoRule(code), line, message })),
+    );
   }
   return byFile;
 }
 
 // why: One oxlint run lints every probe, and its startup can exceed the default hook timeout
 // while CI builds in parallel.
-beforeAll(() => {
-  sandbox = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-lint-rules-")));
+beforeAll(async () => {
+  sandbox = sandboxes.temporary("rodeo-lint-rules-");
   symlinkSync(join(repoRoot, "node_modules"), join(sandbox, "node_modules"), "dir");
   writeFileSync(
     join(sandbox, ".oxlintrc.json"),
@@ -100,20 +80,16 @@ beforeAll(() => {
     writeFileSync(join(sandbox, file), source);
   }
   // why: Oxlint's config discovery is not reliable from inside a Vitest worker.
-  const result = spawnSync(
-    process.execPath,
-    [oxlintBinary, "-c", ".oxlintrc.json", "--format", "json", ...probes.map(({ file }) => file)],
-    { cwd: sandbox, encoding: "utf8" },
+  const output = await runJson(
+    oxlintBinary,
+    ["-c", ".oxlintrc.json", "--format", "json", ...probes.map(({ file }) => file)],
+    sandbox,
   );
-  diagnosticsByFile = parseRun(result.stdout);
+  diagnostics = probesHit(output);
 }, 30_000);
 
-afterAll(() => {
-  rmSync(sandbox, { force: true, recursive: true });
-});
-
 function lint(target: Probe): Diagnostic[] {
-  return diagnosticsByFile.get(target.file) ?? [];
+  return diagnostics.get(target.file) ?? [];
 }
 
 function rulesHit(target: Probe) {

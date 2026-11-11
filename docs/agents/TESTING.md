@@ -16,7 +16,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 - To test a streamed skeleton, set a desktop browser `userAgent` on the test. TanStack Router sends bots the finished page, and headless Chromium's default user agent counts as one.
 - `e2e/pages.spec.ts` runs axe and its other checks on every sitemap page. Fix an axe violation instead of turning the rule off.
 
-**Keep guardrail tests fast.** The Stop hook reruns the tests a change reaches, through imports or `forceRerunTriggers` in `vitest.config.ts`. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook's decisions by importing its rules module, and start the hook only to check its input and output, as `pre-tool-guard.test.ts` does.
+**Keep guardrail tests fast.** The Stop hook reruns the tests a change reaches, through imports or `forceRerunTriggers` in `vitest.config.ts`. Start one process for many cases, as `lint/policy.test.ts` does with a single `vp lint` run. Test a hook by calling its handler or rules in process. Start a hook as a process only in `hook-process.test.ts`, which runs a copy inside a fixture so it can't reach this repository.
 
 **The check:** change the internals without changing what a user sees. If the test fails, it tested the implementation.
 

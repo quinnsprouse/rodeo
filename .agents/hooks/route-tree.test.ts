@@ -26,14 +26,13 @@ const routeTreeScript = join("scripts", "generate-route-tree.mjs");
 const routeTreeModule = join("scripts", "lib", "route-tree.mjs");
 const routeTreeFile = join("src", "routeTree.gen.ts");
 
-let fixture = "";
-const inFixture = (path: string) => join(fixture, path);
+let fixtures = "";
 
 function routeModule(path: string) {
   return `import { createFileRoute } from "@tanstack/react-router";\n\nexport const Route = createFileRoute("${path}")({});\n`;
 }
 
-async function generate() {
+async function generate(fixture: string) {
   const { status, stdout, stderr } = await run(process.execPath, [routeTreeScript], {
     cwd: fixture,
   });
@@ -41,22 +40,23 @@ async function generate() {
   return stdout;
 }
 
-const routeTree = () => readFileSync(inFixture(routeTreeFile), "utf8");
+const routeTree = (fixture: string) => readFileSync(join(fixture, routeTreeFile), "utf8");
 
-function linkDependencies() {
-  mkdirSync(inFixture("node_modules"));
+function linkDependencies(fixture: string) {
+  mkdirSync(join(fixture, "node_modules"));
   for (const name of readdirSync(join(repoRoot, "node_modules"))) {
     if (!name.startsWith(".")) {
-      symlinkSync(join(repoRoot, "node_modules", name), inFixture(join("node_modules", name)));
+      symlinkSync(join(repoRoot, "node_modules", name), join(fixture, "node_modules", name));
     }
   }
 }
 
-beforeAll(async () => {
-  fixture = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-route-tree-")));
+async function routedApp(name: string) {
+  const fixture = join(fixtures, name);
+  const inFixture = (path: string) => join(fixture, path);
   mkdirSync(inFixture(join("src", "routes")), { recursive: true });
   mkdirSync(inFixture(join("scripts", "lib")), { recursive: true });
-  linkDependencies();
+  linkDependencies(fixture);
   cpSync(join(repoRoot, routeTreeScript), inFixture(routeTreeScript));
   cpSync(join(repoRoot, routeTreeModule), inFixture(routeTreeModule));
   writeFileSync(inFixture("package.json"), '{ "name": "route-tree-fixture", "type": "module" }\n');
@@ -72,35 +72,44 @@ beforeAll(async () => {
   );
   writeFileSync(inFixture("src/routes/index.tsx"), routeModule("/"));
   writeFileSync(inFixture("src/routes/old.tsx"), routeModule("/old"));
-  await generate();
+  await generate(fixture);
+  return fixture;
+}
+
+const apps = { added: "", deleted: "" };
+
+beforeAll(async () => {
+  fixtures = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-route-tree-")));
+  apps.added = await routedApp("added");
+  apps.deleted = join(fixtures, "deleted");
+  cpSync(apps.added, apps.deleted, { recursive: true, verbatimSymlinks: true });
 }, 30_000);
 
 afterAll(() => {
-  rmSync(fixture, { recursive: true, force: true });
+  rmSync(fixtures, { recursive: true, force: true });
 });
 
-describe("route tree regeneration", { timeout: 30_000 }, () => {
+describe.concurrent("route tree regeneration", { timeout: 30_000 }, () => {
   it("lists a route that an edit tool adds, so the agent sees no errors", async ({ expect }) => {
-    writeFileSync(inFixture("src/routes/about.tsx"), routeModule("/about"));
+    const added = join(apps.added, "src/routes/about.tsx");
+    writeFileSync(added, routeModule("/about"));
     const feedback = await postEditFeedback(
-      {
-        hook_event_name: "PostToolUse",
-        tool_name: "Write",
-        tool_input: { file_path: inFixture("src/routes/about.tsx") },
-      },
-      { root: fixture },
+      { hook_event_name: "PostToolUse", tool_name: "Write", tool_input: { file_path: added } },
+      { root: apps.added },
     );
     expect(feedback).toBeNull();
-    expect(routeTree()).toContain("from './routes/about'");
-    expect(routeTree()).toContain("declare module '@tanstack/react-start'");
+    expect(routeTree(apps.added)).toContain("from './routes/about'");
+    expect(routeTree(apps.added)).toContain("declare module '@tanstack/react-start'");
   });
 
   it("drops a deleted route, then leaves the current tree untouched", async ({ expect }) => {
-    rmSync(inFixture("src/routes/old.tsx"));
-    expect(await generate()).toBe("Regenerated src/routeTree.gen.ts from src/routes.\n");
-    expect(routeTree()).not.toContain("./routes/old");
-    const { mtimeMs } = statSync(inFixture(routeTreeFile));
-    expect(await generate()).toBe("");
-    expect(statSync(inFixture(routeTreeFile)).mtimeMs).toBe(mtimeMs);
+    rmSync(join(apps.deleted, "src/routes/old.tsx"));
+    expect(await generate(apps.deleted)).toBe(
+      "Regenerated src/routeTree.gen.ts from src/routes.\n",
+    );
+    expect(routeTree(apps.deleted)).not.toContain("./routes/old");
+    const { mtimeMs } = statSync(join(apps.deleted, routeTreeFile));
+    expect(await generate(apps.deleted)).toBe("");
+    expect(statSync(join(apps.deleted, routeTreeFile)).mtimeMs).toBe(mtimeMs);
   });
 });

@@ -25,6 +25,8 @@ export const generatedFiles = [
   })),
 ];
 
+export const scratchDirectory = ".scratch";
+
 export const ignoredDirectories = [
   ".git",
   "node_modules",
@@ -32,7 +34,7 @@ export const ignoredDirectories = [
   "dist",
   ".tanstack",
   ".tanstack-start",
-  ".scratch",
+  scratchDirectory,
   "test-results",
   "playwright-report",
   "coverage",
@@ -64,15 +66,14 @@ const docLocations = [
   ".claude/",
   ".codex/",
   ".github/",
-  ".scratch/",
+  `${scratchDirectory}/`,
   "docs/agents/",
   "gui/",
 ];
 
 const rootDocs = new Set(["AGENTS.md", "CLAUDE.md", "GUI.md", "README.md"]);
 
-export const docReason =
-  "Project docs live in docs/agents/, theme guidance in GUI.md and gui/. Docs cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in .scratch/, which Git ignores. To keep a decision, encode it in code, a type, or a lint rule.";
+export const docReason = `Project docs live in docs/agents/, theme guidance in GUI.md and gui/. Docs cover only what code, types, and lint errors can't say. Put plans, PRDs, decision records, and notes in ${scratchDirectory}/, which Git ignores. To keep a decision, encode it in code, a type, or a lint rule.`;
 
 export const appUnitTestReason =
   "App code has no unit tests. Test the behavior end to end in e2e/ with Playwright, through the page or through the server's HTTP endpoints. See docs/agents/TESTING.md.";

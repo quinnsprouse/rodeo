@@ -2,7 +2,7 @@ import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
 
 import { appOrigin } from "./environment";
 import { expect, test } from "./fixtures";
-import { axeViolations } from "./helpers";
+import { axeViolations, pageColors } from "./helpers";
 
 async function sitemapPaths(request: APIRequestContext) {
   const sitemap = await (await request.get("/sitemap.xml")).text();
@@ -14,9 +14,9 @@ async function sitemapPaths(request: APIRequestContext) {
 
 type PageCheck = (page: Page, path: string) => Promise<void>;
 
-async function checkPage(context: BrowserContext, path: string, check: PageCheck) {
+async function checkPage(context: BrowserContext, path: string, check: PageCheck, search: string) {
   const page = await context.newPage();
-  const response = await page.goto(path);
+  const response = await page.goto(`${path}${search}`);
   expect(response?.status()).toBe(200);
   await expect(page.getByRole("main")).toBeVisible();
   await check(page, path);
@@ -27,10 +27,11 @@ async function checkEveryPage(
   context: BrowserContext,
   request: APIRequestContext,
   check: PageCheck,
+  { search = "" } = {},
 ) {
   const paths = await sitemapPaths(request);
   const outcomes = await Promise.allSettled(
-    paths.map((path) => test.step(path, () => checkPage(context, path, check))),
+    paths.map((path) => test.step(path, () => checkPage(context, path, check, search))),
   );
   const failedPaths = paths.filter((_, index) => outcomes[index]?.status === "rejected");
   const firstFailure = outcomes.find(
@@ -39,24 +40,6 @@ async function checkEveryPage(
   if (firstFailure) {
     throw new Error(`Failed on ${failedPaths.join(", ")}`, { cause: firstFailure.reason });
   }
-}
-
-function browserColors(page: Page) {
-  return page.evaluate(() => {
-    const painter = new OffscreenCanvas(1, 1).getContext("2d", { willReadFrequently: true });
-    function painted(color: string) {
-      if (!painter || !CSS.supports("color", color)) return `not a color: ${color}`;
-      painter.clearRect(0, 0, 1, 1);
-      painter.fillStyle = color;
-      painter.fillRect(0, 0, 1, 1);
-      return painter.getImageData(0, 0, 1, 1).data.join(",");
-    }
-    const themeColor = document.querySelector('meta[name="theme-color"]')?.getAttribute("content");
-    return {
-      chrome: painted(themeColor ?? ""),
-      background: painted(getComputedStyle(document.body).backgroundColor),
-    };
-  });
 }
 
 test("every page renders one main landmark that the skip link reaches", async ({
@@ -101,9 +84,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       request,
     }) => {
       await checkEveryPage(context, request, async (page) => {
-        const { background } = await browserColors(page);
+        const { background } = await pageColors(page);
         await expect
-          .poll(async () => (await browserColors(page)).chrome, {
+          .poll(async () => (await pageColors(page)).chrome, {
             message: "theme-color paints the body background",
           })
           .toBe(background);
@@ -112,20 +95,25 @@ for (const colorScheme of ["light", "dark"] as const) {
   });
 }
 
-test("every page names its canonical URL from the configured origin", async ({
+test("every page names its canonical URL from the configured origin, without the query", async ({
   context,
   request,
 }) => {
-  await checkEveryPage(context, request, async (page, path) => {
-    const canonical = new URL(path, appOrigin).href;
-    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
-    await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
-  });
+  await checkEveryPage(
+    context,
+    request,
+    async (page, path) => {
+      const canonical = new URL(path, appOrigin).href;
+      await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", canonical);
+      await expect(page.locator('meta[property="og:url"]')).toHaveAttribute("content", canonical);
+    },
+    { search: "?utm_source=newsletter" },
+  );
 });
 
 test("every page offers a Markdown version that llms.txt lists", async ({ context, request }) => {
   const llms = await (await request.get("/llms.txt")).text();
-  await checkEveryPage(context, request, async (page) => {
+  await checkEveryPage(context, request, async (page, path) => {
     const alternate = page.locator('link[rel="alternate"][type="text/markdown"]');
     await expect(alternate).toHaveCount(1);
     const markdownUrl = new URL(String(await alternate.getAttribute("href")));
@@ -135,6 +123,12 @@ test("every page offers a Markdown version that llms.txt lists", async ({ contex
     await expect(markdown).toBeOK();
     expect(markdown.headers()["content-type"]).toContain("text/markdown");
     expect(llms).toContain(`(${markdownUrl.href})`);
+
+    const text = await markdown.text();
+    const heading = await page.getByRole("heading", { level: 1 }).textContent();
+    expect(text.split("\n")[0], "The Markdown starts with the page's heading").toBe(`# ${heading}`);
+    const negotiated = await request.get(path, { headers: { accept: "text/markdown" } });
+    expect(await negotiated.text(), "Asking the page for Markdown serves the same text").toBe(text);
   });
 });
 

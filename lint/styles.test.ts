@@ -1,19 +1,18 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, relative } from "node:path";
 
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatedFiles } from "#tooling/project";
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+import { repoRoot } from "./harness";
+
 const appDirectory = join(repoRoot, "src");
-// why: docs/agents/UI_MOTION.md tells agents to draw dividers with these utilities, so they stay
-// even before a page uses them.
-const documentedUtilities = new Set(["divider-t", "divider-b", "divider-r"]);
+const uiGuide = join(repoRoot, "docs", "agents", "UI_MOTION.md");
 
 function filesUnder(directory: string, extensions: readonly string[]): string[] {
   return readdirSync(directory, { recursive: true, encoding: "utf8" })
+    .filter((file) => !file.split("/").some((segment) => segment.startsWith(".")))
     .filter((file) => extensions.some((extension) => file.endsWith(extension)))
     .map((file) => join(directory, file));
 }
@@ -30,6 +29,10 @@ function declaredNames(css: string) {
   return [...utilities, ...classes];
 }
 
+const documented = [...readFileSync(uiGuide, "utf8").matchAll(/`([^`]+)`/g)]
+  .map((match) => match[1] ?? "")
+  .join("\n");
+
 const source = filesUnder(appDirectory, [".ts", ".tsx"])
   .filter((file) => !isGenerated(relative(repoRoot, file)))
   .map((file) => readFileSync(file, "utf8"))
@@ -42,11 +45,14 @@ const declared = filesUnder(appDirectory, [".css"]).flatMap((file) =>
   })),
 );
 
-const isUsed = (name: string) => new RegExp(`(?<![\\w-])${name}(?![\\w-])`).test(source);
-const unused = declared.filter(({ name }) => !documentedUtilities.has(name) && !isUsed(name));
+const named = (name: string, text: string) => new RegExp(`(?<![\\w-])${name}(?![\\w-])`).test(text);
+const unused = declared.filter(({ name }) => !named(name, source) && !named(name, documented));
 
 describe("Stylesheets", () => {
-  it("declare only utilities and classes that some source file uses", () => {
-    expect(unused, "Delete each unused rule from its stylesheet, or use it.").toEqual([]);
+  it("declare only utilities and classes that some source file or the UI guide uses", () => {
+    expect(
+      unused,
+      "Delete each unused rule from its stylesheet, use it, or name it in docs/agents/UI_MOTION.md.",
+    ).toEqual([]);
   });
 });

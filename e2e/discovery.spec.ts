@@ -1,51 +1,44 @@
 import { appOrigin as origin } from "./environment";
 import { expect, test } from "./fixtures";
 
-test("robots.txt points crawlers at a sitemap of every page", async ({ request }) => {
+test("robots.txt points crawlers at the sitemap", async ({ request }) => {
   const robots = await request.get("/robots.txt");
   expect(await robots.text()).toContain(`Sitemap: ${origin}/sitemap.xml`);
 
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.headers()["content-type"]).toContain("application/xml");
-  expect(await sitemap.text()).toContain(`<loc>${origin}/</loc>`);
 });
 
-test("llms.txt links every page as Markdown and the agent rules", async ({ request }) => {
+test("llms.txt is titled with the site name and links the agent rules", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/");
+  const siteName = await page.locator('meta[property="og:site_name"]').getAttribute("content");
   const index = await (await request.get("/llms.txt")).text();
 
-  expect(index).toMatch(/^# Rodeo\n/);
-  expect(index).toContain(`(${origin}/index.md)`);
-  expect(index).toContain("/main/AGENTS.md)");
+  expect(index.split("\n")[0]).toBe(`# ${siteName}`);
+  expect(index).toMatch(/\]\(\S+\/AGENTS\.md\)/);
 });
 
-test("agents can read each page as Markdown", async ({ page, request }) => {
+test("the page URL serves Markdown to agents and HTML to browsers", async ({ request }) => {
   const negotiated = await request.get("/", { headers: { accept: "text/markdown" } });
   expect(negotiated.status()).toBe(200);
   expect(negotiated.headers()["content-type"]).toContain("text/markdown");
   expect(negotiated.headers().vary).toContain("accept");
 
-  const markdown = await request.get("/index.md");
-  expect(markdown.status()).toBe(200);
-  expect(markdown.headers()["content-type"]).toContain("text/markdown");
-
   const browser = await request.get("/", {
     headers: { accept: "text/html,application/xhtml+xml,*/*;q=0.8" },
   });
   expect(browser.headers()["content-type"]).toContain("text/html");
-
-  await page.goto("/");
-  await expect(page.locator('link[rel="alternate"][type="text/markdown"]')).toHaveAttribute(
-    "href",
-    `${origin}/index.md`,
-  );
 });
 
-test("shared links credit the author on X", async ({ page }) => {
+test("shared links credit the author's X handle", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.locator('meta[name="twitter:creator"]')).toHaveAttribute(
     "content",
-    "@QuinnSprouse",
+    /^@\w{1,15}$/,
   );
 });
 

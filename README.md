@@ -22,7 +22,7 @@ Initialize Git before installation so Vite+ can install the hooks. If you instal
 
 ## Customize
 
-Update `src/config/site.ts` with the product identity and page defaults. The e2e tests check the site name, title, and author, so update their expectations in `e2e/` to match.
+Update `src/config/site.ts` with the product identity and page defaults.
 
 Each page declares its metadata beside its route, in `staticData.page`, and the sitemap and `llms.txt` list it from there.
 

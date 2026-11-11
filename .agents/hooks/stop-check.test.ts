@@ -1,13 +1,15 @@
 import { execFileSync } from "node:child_process";
 import {
-  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,11 +17,13 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, it, vi } from "vite-plus/test";
 
 import { hermeticGitEnv, hermeticGitSettings } from "#tooling/git-env";
-import { run } from "#tooling/run";
+import { gitHooksDirectory } from "#tooling/project";
 
 import { stopCheck } from "./stop-check.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const require = createRequire(import.meta.url);
+const vp = join(dirname(require.resolve("vite-plus/package.json")), "bin/vp");
 const gitEnv = hermeticGitEnv();
 
 let fixtures = "";
@@ -33,29 +37,52 @@ function git(cwd: string, ...args: string[]) {
   });
 }
 
-function createRepo(name: string, { changed }: { changed: boolean }) {
+function createRepo(name: string) {
   const root = fixture(name);
   mkdirSync(join(root, "src"), { recursive: true });
   writeFileSync(join(root, "README.md"), "# Fixture\n");
   git(root, "init", "--quiet", "--initial-branch=main");
   git(root, "add", "--all");
   git(root, "commit", "--quiet", "-m", "chore: fixture baseline");
-  if (changed) {
-    writeFileSync(
-      join(root, "src", "probe.ts"),
-      "export function probe(value: any) {\n  return value;\n}\n",
-    );
-  }
   return root;
 }
 
-function copyHooks(root: string) {
-  for (const path of [join(".agents", "hooks"), "scripts", "package.json"]) {
-    cpSync(join(repoRoot, path), join(root, path), {
-      recursive: true,
-      filter: (source) => !source.endsWith(".test.ts"),
-    });
+function change(root: string) {
+  mkdirSync(join(root, "src"), { recursive: true });
+  writeFileSync(
+    join(root, "src", "probe.ts"),
+    "export function probe(value: any) {\n  return value;\n}\n",
+  );
+  return root;
+}
+
+function linkDependencies(root: string) {
+  symlinkSync(fixture("dependencies"), join(root, "node_modules"), "dir");
+  return root;
+}
+
+const npmMetadata = new Set([".bin", ".package-lock.json"]);
+
+function installedDependencies() {
+  const installed = join(repoRoot, "node_modules");
+  mkdirSync(fixture("dependencies"));
+  const written = readdirSync(installed).filter(
+    (entry) => !entry.startsWith(".") || npmMetadata.has(entry),
+  );
+  for (const name of written) {
+    symlinkSync(join(installed, name), join(fixture("dependencies"), name));
   }
+}
+
+function freshWorktree(name: string) {
+  const main = linkDependencies(createRepo(`${name}-main`));
+  execFileSync(process.execPath, [vp, "config", "--hooks-dir", gitHooksDirectory], {
+    cwd: main,
+    env: gitEnv,
+    stdio: "ignore",
+  });
+  git(main, "worktree", "add", "--quiet", "--detach", fixture(name));
+  return fixture(name);
 }
 
 function stopEvent(stopHookActive: boolean) {
@@ -72,13 +99,12 @@ beforeAll(() => {
   }
   for (const [name, value] of Object.entries(hermeticGitSettings)) vi.stubEnv(name, value);
   fixtures = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-stop-check-")));
-  createRepo("unchanged", { changed: false });
-  createRepo("no-dependencies", { changed: true });
-  copyHooks(createRepo("hook-copy", { changed: true }));
-  mkdirSync(join(createRepo("no-git-hooks", { changed: true }), "node_modules", "vite-plus"), {
-    recursive: true,
-  });
-});
+  installedDependencies();
+  createRepo("unchanged");
+  change(createRepo("no-dependencies"));
+  change(linkDependencies(createRepo("no-git-hooks")));
+  change(linkDependencies(freshWorktree("fresh-worktree")));
+}, 30_000);
 
 afterAll(() => {
   vi.unstubAllEnvs();
@@ -109,16 +135,12 @@ describe.concurrent("stop check in a checkout that is not set up", { timeout: 30
     expect(output).toHaveProperty("reason", expect.stringContaining("`npm run setup`"));
   });
 
-  it("prints its verdict on stdout when it runs as a process", async ({ expect }) => {
-    const result = await run(
-      process.execPath,
-      [join(fixture("hook-copy"), ".agents", "hooks", "stop-check.mjs")],
-      { env: gitEnv, input: JSON.stringify(stopEvent(false)) },
-    );
-    expect({ status: result.status, stdout: result.stdout }).toEqual({
-      status: 0,
-      stdout: `${JSON.stringify(await stop("no-dependencies", false))}\n`,
-    });
+  it("sends the agent back to install the Git hooks in a fresh Git worktree", async ({
+    expect,
+  }) => {
+    const output = await stop("fresh-worktree", false);
+    expect(output).toHaveProperty("decision", "block");
+    expect(output).toHaveProperty("reason", expect.stringContaining("`npm run setup`"));
   });
 
   it("tells the human when the Git hooks are still missing", async ({ expect }) => {

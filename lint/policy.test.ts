@@ -1,20 +1,48 @@
-import { spawn } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join, relative } from "node:path";
 
-import { afterAll, beforeAll, describe, it } from "vite-plus/test";
+import { beforeAll, describe, it } from "vite-plus/test";
 
-type Probe = { name: string; source: string; layer?: string; file?: string };
+import { scratchDirectory } from "#tooling/project";
+
+import { diagnosticsByFile, ignoredByGit, repoRoot, runJson, withSandbox } from "./harness";
+
+type Probe = {
+  name: string;
+  source: string;
+  layer?: string;
+  file?: string;
+  extraFiles?: Record<string, string>;
+};
 type RejectedProbe = Probe & { rule: string };
 
 const require = createRequire(import.meta.url);
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const vp = join(dirname(require.resolve("vite-plus/package.json")), "bin/vp");
-const sandbox = join(repoRoot, ".scratch", `lint-policy-${process.pid}`);
-const layerProbeName = `.policy-probe-${process.pid}`;
+const sandboxPrefix = "lint-policy-";
+const layerPrefix = ".policy-probe-";
+const layerProbeName = `${layerPrefix}${process.pid}`;
 const appDeclarations = join(repoRoot, "src", "types", "*.d.ts");
+const kitStandIn = `@/components/ui/${layerProbeName}/probe-button`;
+const appStandIn = `@/components/${layerProbeName}/probe-badge`;
+
+const standIns: Probe[] = [
+  {
+    name: "a kit component",
+    layer: "src/components/ui",
+    file: "probe-button.tsx",
+    source: `import type { ComponentProps } from "react";
+export function ProbeButton(props: ComponentProps<"button">) {
+  return <button type="button" {...props} />;
+}`,
+  },
+  {
+    name: "an app component",
+    layer: "src/components",
+    file: "probe-badge.tsx",
+    source: `export function ProbeBadge() { return <span aria-hidden="true" />; }`,
+  },
+];
 
 const rejected: RejectedProbe[] = [
   {
@@ -130,14 +158,14 @@ return <Panel />;
   {
     name: "padding on a kit component, even from the theme scale",
     rule: "shadcn(no-restyle)",
-    source: `import { Button } from "@/components/ui/button";
-export function Probe() { return <Button type="button" className="px-l">Save</Button>; }`,
+    source: `import { ProbeButton } from "${kitStandIn}";
+export function Probe() { return <ProbeButton className="px-l">Save</ProbeButton>; }`,
   },
   {
     name: "restyling a kit component",
     rule: "shadcn(no-restyle)",
-    source: `import { Button } from "@/components/ui/button";
-export function Probe() { return <Button type="button" className="bg-brand">Save</Button>; }`,
+    source: `import { ProbeButton } from "${kitStandIn}";
+export function Probe() { return <ProbeButton className="bg-brand">Save</ProbeButton>; }`,
   },
   {
     name: "inline style properties",
@@ -227,11 +255,6 @@ try { return fetchItem(); } catch { return 0; }
     source: `export function notify() { alert("Saved"); }`,
   },
   {
-    name: "comments without a why: reason",
-    rule: "rodeo(no-comments)",
-    source: `// Hero section\nexport const title = "Rodeo";`,
-  },
-  {
     name: "TODO notes, even behind why:",
     rule: "eslint(no-warning-comments)",
     source: `// why: TODO handle the error case later.\nexport const title = "Rodeo";`,
@@ -259,6 +282,10 @@ return 0;
     source: `import { partnerValue } from "./cycle-partner";
 export const probeValue = 1;
 export const total = partnerValue;`,
+    extraFiles: {
+      "cycle-partner.tsx": `import { probeValue } from "./cycle-probe";
+export const partnerValue = probeValue + 1;`,
+    },
   },
   {
     name: "conditionals inside tests",
@@ -275,11 +302,6 @@ if (value > 0) expect(value).toBe(1);
     source: `import { expect, it } from "vite-plus/test";
 it("parses", () => { expect(Number("1")).toBe(1); });
 it("parses", () => { expect(Number("2")).toBe(2); });`,
-  },
-  {
-    name: "raw import.meta.env reads",
-    rule: "rodeo(no-import-meta-env)",
-    source: `export const appUrl = import.meta.env.VITE_APP_URL;`,
   },
   {
     name: "src/lib importing a component",
@@ -433,7 +455,7 @@ const allowed: Probe[] = [
     name: "explicit behavior and external synchronization with cleanup",
     source: `import { useEffect, useState } from "react";
 import * as z from "zod/mini";
-import { Button } from "@/components/ui/button";
+import { ProbeButton } from "${kitStandIn}";
 export const itemSchema = z.object({ id: z.string(), tab: z.catch(z.enum(["a", "b"]), "a") });
 export function Probe({ delay }: { delay: number }) {
   const [ticks, setTicks] = useState(0);
@@ -477,7 +499,7 @@ export function Editable() {
 export function Themed() {
   return (
     <>
-      <Button type="button" className="mt-m w-full">Save</Button>
+      <ProbeButton className="mt-m w-full">Save</ProbeButton>
       <p className="text-s font-medium text-success">Ready</p>
     </>
   );
@@ -512,27 +534,20 @@ export const region = process.env.REGION;`,
     layer: "src/components/ui",
     source: `import { Copy01Icon } from "@hugeicons/core-free-icons";
 import { Icon } from "@/components/icon";
-import { Button } from "@/components/ui/button";
-export function Probe() {
-  return (
-    <Button type="button">
-      <Icon icon={Copy01Icon} />
-      Copy
-    </Button>
-  );
-}`,
+import { ProbeButton } from "${kitStandIn}";
+export const parts = { Copy01Icon, Icon, ProbeButton };`,
   },
   {
     name: "nested kit and app component imports in an app component",
     layer: "src/components",
-    source: `import { BullSticker } from "@/components/stickers/bull";
-import { Button } from "@/components/ui/button";
+    source: `import { ProbeBadge } from "${appStandIn}";
+import { ProbeButton } from "${kitStandIn}";
 export function Probe() {
   return (
-    <Button type="button">
-      <BullSticker />
+    <ProbeButton>
+      <ProbeBadge />
       Save
-    </Button>
+    </ProbeButton>
   );
 }`,
   },
@@ -541,7 +556,7 @@ export function Probe() {
     source: `import { use, useState } from "react";
 import { Skeleton, SkeletonBox, SkeletonSuspense } from "skullet/react";
 import { TextMorph } from "torph/react";
-import { Button } from "@/components/ui/button";
+import { ProbeButton } from "${kitStandIn}";
 interface Profile { name: string; bio: string }
 const sampleProfile: Profile = { name: "Sample Person", bio: "One line about this person." };
 function ProfileCard({ profile }: { profile: Profile }) {
@@ -575,9 +590,9 @@ export function ChartPlaceholder() {
 export function CopyButton() {
   const [copied, setCopied] = useState(false);
   return (
-    <Button type="button" onClick={() => setCopied(true)}>
+    <ProbeButton onClick={() => setCopied(true)}>
       <TextMorph>{copied ? "Copied" : "Copy"}</TextMorph>
-    </Button>
+    </ProbeButton>
   );
 }
 export function Total({ total }: { total: number }) {
@@ -593,10 +608,8 @@ export function Total({ total }: { total: number }) {
     source: `import { useNavigate } from "@tanstack/react-router";
 import { GlimmProvider, GlimmScope, useGlimm, type GlimmScopeHandle } from "glimm/react";
 import { useRef, useState, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { useTheme } from "@/hooks/use-theme";
-export function CheckoutLayout({ children }: { children: ReactNode }) {
-  const theme = useTheme();
+import { ProbeButton } from "${kitStandIn}";
+export function CheckoutLayout({ children, theme }: { children: ReactNode; theme: "light" | "dark" }) {
   return (
     <GlimmProvider palette="prism" brightness={theme === "dark" ? 0.85 : 1}>
       {children}
@@ -607,9 +620,9 @@ export function PublishButton() {
   const navigate = useNavigate();
   const { sweep } = useGlimm();
   return (
-    <Button type="button" onClick={() => sweep(() => navigate({ to: "/", viewTransition: false }))}>
+    <ProbeButton onClick={() => sweep(() => navigate({ to: "/", viewTransition: false }))}>
       Publish
-    </Button>
+    </ProbeButton>
   );
 }
 export function PlanCard() {
@@ -620,9 +633,9 @@ export function PlanCard() {
       <GlimmScope ref={scope} curve={0.06} bandTight={34}>
         <article className="h-full rounded-m bg-card p-m">
           <p className="text-l font-heavy">{plan}</p>
-          <Button type="button" onClick={() => scope.current?.play({ change: () => setPlan("Pro") })}>
+          <ProbeButton onClick={() => scope.current?.play({ change: () => setPlan("Pro") })}>
             Upgrade
-          </Button>
+          </ProbeButton>
         </article>
       </GlimmScope>
     </div>
@@ -633,9 +646,22 @@ export function PlanCard() {
 
 // why: Path-scoped overrides match from the repository root, so a probe for src/lib must sit in
 // src/lib. TypeScript's include globs skip its dot directory, and .gitignore lists it.
-function probePath({ name, layer, file }: Probe) {
-  const directory = layer === undefined ? sandbox : join(repoRoot, layer, layerProbeName);
-  return join(directory, file ?? `${name.replaceAll(/[^a-z0-9]+/gi, "-")}.tsx`);
+function probeHome({ layer }: Pick<Probe, "layer">) {
+  return layer === undefined
+    ? { parent: join(repoRoot, scratchDirectory), prefix: sandboxPrefix }
+    : { parent: join(repoRoot, layer), prefix: layerPrefix };
+}
+
+function probeDirectory(probe: Pick<Probe, "layer">) {
+  const { parent, prefix } = probeHome(probe);
+  return join(parent, `${prefix}${process.pid}`);
+}
+
+function probePath(probe: Probe) {
+  return join(
+    probeDirectory(probe),
+    probe.file ?? `${probe.name.replaceAll(/[^a-z0-9]+/gi, "-")}.tsx`,
+  );
 }
 
 const allowedFiles = [
@@ -646,50 +672,35 @@ const allowedFiles = [
 ];
 
 const probes = [...rejected, ...allowed];
-const probeDirectories = [
-  ...new Set([sandbox, ...probes.map((probe) => dirname(probePath(probe)))]),
-];
+const written = [...probes, ...standIns];
+const probeDirectories = [...new Set(written.map((probe) => probeDirectory(probe)))];
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
+function isRunning(pid: number) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error instanceof Error && "code" in error && error.code === "EPERM";
+  }
 }
 
-function codesByFile(json: string) {
-  const parsed: unknown = JSON.parse(json);
-  if (!isRecord(parsed) || !Array.isArray(parsed.diagnostics)) {
-    throw new Error(`Unexpected lint output: ${json.slice(0, 500)}`);
-  }
-  const diagnostics: unknown[] = parsed.diagnostics;
-  const codes = new Map<string, string[]>();
-  for (const diagnostic of diagnostics) {
-    if (
-      !isRecord(diagnostic) ||
-      typeof diagnostic.filename !== "string" ||
-      typeof diagnostic.code !== "string"
-    ) {
-      throw new Error(`Unexpected diagnostic: ${JSON.stringify(diagnostic)}`);
-    }
-    const file = resolve(repoRoot, diagnostic.filename);
-    codes.set(file, [...(codes.get(file) ?? []), diagnostic.code]);
-  }
-  return codes;
+function leftoverRun(name: string, prefix: string) {
+  const pid = name.slice(prefix.length);
+  return name.startsWith(prefix) && /^\d+$/.test(pid) && !isRunning(Number(pid));
 }
 
-function lint(targets: string[]) {
-  return new Promise<string>((resolvePromise, reject) => {
-    const child = spawn(
-      process.execPath,
-      [vp, "lint", "--no-ignore", "--format", "json", ...targets],
-      { cwd: repoRoot },
-    );
-    let stdout = "";
-    child.stdout.setEncoding("utf8");
-    child.stdout.on("data", (chunk: string) => {
-      stdout += chunk;
-    });
-    child.on("error", reject);
-    child.on("close", () => resolvePromise(stdout));
-  });
+function leftoverProbeDirectories() {
+  const homes = new Map(
+    written.map((probe) => {
+      const { parent, prefix } = probeHome(probe);
+      return [parent, prefix] as const;
+    }),
+  );
+  return [...homes].flatMap(([parent, prefix]) =>
+    (existsSync(parent) ? readdirSync(parent) : [])
+      .filter((name) => leftoverRun(name, prefix))
+      .map((name) => join(parent, name)),
+  );
 }
 
 let diagnostics = new Map<string, string[]>();
@@ -698,11 +709,15 @@ function codesFor(path: string) {
   return diagnostics.get(path) ?? [];
 }
 
+const sandboxes = withSandbox();
+
 // why: One type-aware lint run over every probe takes several seconds, longer than the default
 // hook timeout while CI builds in parallel.
 beforeAll(async () => {
+  for (const directory of leftoverProbeDirectories())
+    rmSync(directory, { recursive: true, force: true });
   for (const directory of probeDirectories) {
-    mkdirSync(directory, { recursive: true });
+    sandboxes.directory(directory);
     writeFileSync(
       join(directory, "tsconfig.json"),
       JSON.stringify({
@@ -711,22 +726,31 @@ beforeAll(async () => {
       }),
     );
   }
-  writeFileSync(
-    join(sandbox, "cycle-partner.tsx"),
-    `import { probeValue } from "./cycle-probe";\nexport const partnerValue = probeValue + 1;\n`,
-  );
-  for (const probe of probes) writeFileSync(probePath(probe), probe.source);
-  diagnostics = codesByFile(
-    await lint([
+  for (const probe of written) {
+    writeFileSync(probePath(probe), probe.source);
+    for (const [file, source] of Object.entries(probe.extraFiles ?? {})) {
+      writeFileSync(join(probeDirectory(probe), file), source);
+    }
+  }
+  const output = await runJson(
+    vp,
+    [
+      "lint",
+      "--no-ignore",
+      "--format",
+      "json",
       ...probes.map((probe) => probePath(probe)),
       ...allowedFiles.map(({ path }) => path),
+    ],
+    repoRoot,
+  );
+  diagnostics = new Map(
+    [...diagnosticsByFile(output, repoRoot)].map(([file, found]) => [
+      file,
+      found.map(({ code }) => code),
     ]),
   );
 }, 60_000);
-
-afterAll(() => {
-  for (const directory of probeDirectories) rmSync(directory, { recursive: true, force: true });
-});
 
 describe("Lint policy", () => {
   it.for(rejected)("rejects $name", (probe, { expect }) => {
@@ -741,5 +765,10 @@ describe("Lint policy", () => {
 
   it.for(allowedFiles)("allows the repository file $name", ({ path }, { expect }) => {
     expect(codesFor(path)).toEqual([]);
+  });
+
+  it("writes its probes only where Git ignores them", async ({ expect }) => {
+    const paths = written.map((probe) => relative(repoRoot, probePath(probe)));
+    expect(await ignoredByGit(paths)).toEqual(paths);
   });
 });

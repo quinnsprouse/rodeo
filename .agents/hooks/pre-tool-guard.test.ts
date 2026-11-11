@@ -1,20 +1,14 @@
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 
 import { afterAll, beforeAll, describe, it, vi } from "vite-plus/test";
 
 import { hermeticGitEnv, hermeticGitSettings } from "#tooling/git-env";
-import { run as runProcess } from "#tooling/run";
 
-import { bashVerdict, editVerdict } from "./guard-rules.mjs";
-import { preToolDecision, shellTool } from "./pre-tool-guard.mjs";
+import { preToolDecision } from "./pre-tool-guard.mjs";
 
-const hooksDir = dirname(fileURLToPath(import.meta.url));
-const repoRoot = resolve(hooksDir, "..", "..");
-const guard = join(hooksDir, "pre-tool-guard.mjs");
 const gitEnv = hermeticGitEnv();
 
 type Decision = "allow" | "ask" | "deny";
@@ -26,11 +20,21 @@ type ToolCall = {
   cwd?: string;
 };
 
-function verdict({ toolName, toolInput, project = repoRoot, cwd }: ToolCall) {
-  const { command } = toolInput;
-  return toolName === shellTool && command !== undefined
-    ? bashVerdict(command, { projectRoot: project, cwd })
-    : editVerdict(toolName, toolInput, { projectRoot: project });
+let project = "";
+
+function hookEvent({ toolName, toolInput, cwd }: ToolCall) {
+  const event = { hook_event_name: "PreToolUse", tool_name: toolName, tool_input: toolInput };
+  return cwd === undefined ? event : { ...event, cwd };
+}
+
+function verdict(call: ToolCall) {
+  const output = preToolDecision(hookEvent(call), { root: call.project ?? project });
+  return output === null
+    ? { decision: "allow", reason: "" }
+    : {
+        decision: output.hookSpecificOutput.permissionDecision,
+        reason: output.hookSpecificOutput.permissionDecisionReason,
+      };
 }
 
 function label(call: ToolCall) {
@@ -39,7 +43,7 @@ function label(call: ToolCall) {
 
 function decisions(cases: [ToolCall, Decision][]) {
   return {
-    actual: cases.map(([call]) => [label(call), verdict(call)?.decision ?? "allow"]),
+    actual: cases.map(([call]) => [label(call), verdict(call).decision]),
     expected: cases.map(([call, decision]) => [label(call), decision]),
   };
 }
@@ -51,67 +55,27 @@ function sameVerdicts(pairs: [typed: string, routed: string][]) {
   };
 }
 
-async function runGuard(stdin: string) {
-  const { status, stdout } = await runProcess(process.execPath, [guard], {
-    env: gitEnv,
-    input: stdin,
-  });
-  return { status, stdout };
-}
-
-function hookEvent({ toolName, toolInput, cwd }: ToolCall) {
-  const event = { hook_event_name: "PreToolUse", tool_name: toolName, tool_input: toolInput };
-  return cwd === undefined ? event : { ...event, cwd };
-}
-
-function hookOutput(call: ToolCall, decision: Decision) {
-  if (decision === "allow") return null;
-  return {
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: decision,
-      permissionDecisionReason: verdict(call)?.reason,
-    },
-  };
-}
-
-function stdoutFor(call: ToolCall, decision: Decision) {
-  const output = hookOutput(call, decision);
-  return output === null ? "" : `${JSON.stringify(output)}\n`;
-}
-
-async function hookRuns(cases: [ToolCall, Decision][]) {
-  const runs = await Promise.all(cases.map(([call]) => runGuard(JSON.stringify(hookEvent(call)))));
-  return {
-    actual: cases.map(([call], index) => [label(call), runs[index]]),
-    expected: cases.map(([call, decision]) => [
-      label(call),
-      { status: 0, stdout: stdoutFor(call, decision) },
-    ]),
-  };
-}
-
-function handlerRuns(cases: [ToolCall, Decision][]) {
-  return {
-    actual: cases.map(([call]) => [
-      label(call),
-      preToolDecision(hookEvent(call), { root: call.project ?? repoRoot }),
-    ]),
-    expected: cases.map(([call, decision]) => [label(call), hookOutput(call, decision)]),
-  };
-}
-
 const bash = (command: string): ToolCall => ({ toolName: "Bash", toolInput: { command } });
 const edit = (file: string): ToolCall => ({
   toolName: "Edit",
-  toolInput: { file_path: join(repoRoot, file) },
+  toolInput: { file_path: join(project, file) },
 });
 const patch = (...headers: string[]): ToolCall => ({
   toolName: "apply_patch",
   toolInput: { command: ["*** Begin Patch", ...headers, "*** End Patch"].join("\n") },
 });
 const script = (...lines: string[]) => bash(lines.join("\n"));
-const reasonFor = (command: string) => verdict(bash(command))?.reason ?? "";
+const reasonFor = (command: string) => verdict(bash(command)).reason;
+
+beforeAll(() => {
+  project = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-guard-project-")));
+  mkdirSync(join(project, "src", "routes"), { recursive: true });
+  writeFileSync(join(project, "src", "routes", "__root.tsx"), "export {};\n");
+});
+
+afterAll(() => {
+  rmSync(project, { recursive: true, force: true });
+});
 
 describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
   it("denies unit tests in app code", ({ expect }) => {
@@ -128,7 +92,7 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
   it("denies new Markdown docs outside docs/agents and agent config", ({ expect }) => {
     const write = (file: string): ToolCall => ({
       toolName: "Write",
-      toolInput: { file_path: join(repoRoot, file) },
+      toolInput: { file_path: join(project, file) },
     });
     const { actual, expected } = decisions([
       [write("docs/adr/0011-use-redis.md"), "deny"],
@@ -433,24 +397,6 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
     ]);
     expect(actual).toEqual(expected);
   });
-
-  it("prints each verdict on stdout in the PreToolUse hook shape", async ({ expect }) => {
-    const { actual, expected } = await hookRuns([
-      [bash('git commit -m "feat: x" --no-verify'), "deny"],
-      [bash("git push --force origin main"), "ask"],
-      [bash("npm run check"), "allow"],
-      [edit("src/routeTree.gen.ts"), "deny"],
-      [
-        patch("*** Update File: src/routes/index.tsx", "*** Delete File: package-lock.json"),
-        "deny",
-      ],
-    ]);
-    expect(actual).toEqual(expected);
-  });
-
-  it("never blocks on malformed input", async ({ expect }) => {
-    expect(await runGuard("not json")).toEqual({ status: 0, stdout: "" });
-  });
 });
 
 describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
@@ -521,7 +467,10 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
   });
 
   it("resolves rm targets from the hook input's cwd", ({ expect }) => {
-    const { actual, expected } = handlerRuns([[rm("rm -rf ../drafts", "lib"), "ask"]]);
+    const { actual, expected } = decisions([
+      [rm("rm -rf ../drafts", "lib"), "ask"],
+      [rm("rm -rf drafts", "lib"), "allow"],
+    ]);
     expect(actual).toEqual(expected);
   });
 
