@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { chromium } from "@playwright/test";
 
-import { generatedFiles } from "#tooling/project";
+import { isGeneratedPath } from "#tooling/project";
 
 const config = JSON.parse(readFileSync(new URL("config.json", import.meta.url), "utf8"));
 const families = [...new Set(config.faces.map((face) => face.family))];
@@ -12,7 +12,6 @@ const viewports = [
   { width: 1440, height: 900 },
   { width: 390, height: 844 },
 ];
-const generatedPaths = generatedFiles.map((file) => file.path);
 
 function collectFontUsage(familyNames) {
   const wanted = new Map(familyNames.map((name) => [name.toLowerCase(), name]));
@@ -233,10 +232,7 @@ function sourceCharacters(root) {
   const found = new Map();
   const files = readdirSync(join(root, "src"), { recursive: true, encoding: "utf8" })
     .map((file) => join("src", file))
-    .filter(
-      (file) =>
-        /\.(tsx?|css|mdx?)$/.test(file) && !generatedPaths.some((path) => file.startsWith(path)),
-    );
+    .filter((file) => /\.(tsx?|css|mdx?)$/.test(file) && !isGeneratedPath(file));
   for (const file of files) {
     for (const character of readFileSync(join(root, file), "utf8")) {
       if (character.codePointAt(0) > 0x7e) {

@@ -1,10 +1,11 @@
-import { existsSync, lstatSync, realpathSync } from "node:fs";
-import { extname, isAbsolute, relative, resolve } from "node:path";
+import { statSync } from "node:fs";
+import { extname, isAbsolute, relative } from "node:path";
 
 import { checkableExtensions, lintableExtensions, typedExtensions } from "#tooling/project";
 
 import { editTargets } from "./edit-targets.mjs";
 import { runHook, truncate } from "./hook-io.mjs";
+import { physicalPath } from "./physical-path.mjs";
 import {
   dependenciesInstalled,
   packageBinary,
@@ -40,10 +41,9 @@ function writtenPaths(toolName, toolInput) {
 }
 
 function projectFile(filePath, root) {
-  const candidate = isAbsolute(filePath) ? filePath : resolve(root, filePath);
-  if (!existsSync(candidate) || !lstatSync(candidate).isFile()) return null;
+  const target = physicalPath(root, filePath);
+  if (!statSync(target, { throwIfNoEntry: false })?.isFile()) return null;
 
-  const target = realpathSync(candidate);
   const projectPath = relative(root, target);
   if (
     projectPath === "" ||

@@ -1,5 +1,13 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,7 +29,8 @@ type Decision = "allow" | "ask" | "deny";
 
 let fixtures = "";
 const project = () => join(fixtures, "project");
-const hook = (name: string) => join(project(), ".agents", "hooks", `${name}.mjs`);
+const projectLink = () => join(fixtures, "project-link");
+const hook = (name: string, root = project()) => join(root, ".agents", "hooks", `${name}.mjs`);
 
 function copyHooks(root: string) {
   for (const path of [join(".agents", "hooks"), "scripts", "package.json"]) {
@@ -40,8 +49,8 @@ function git(...args: string[]) {
   });
 }
 
-async function runHook(name: string, input: unknown) {
-  const { status, stdout } = await run(process.execPath, [hook(name)], {
+async function runHook(name: string, input: unknown, root = project()) {
+  const { status, stdout } = await run(process.execPath, [hook(name, root)], {
     env: gitEnv,
     input: typeof input === "string" ? input : JSON.stringify(input),
   });
@@ -68,8 +77,8 @@ const guardOutput = z.object({
   }),
 });
 
-async function guardDecisions(input: unknown) {
-  const { status, printed } = await runHook("pre-tool-guard", input);
+async function guardDecisions(input: unknown, root = project()) {
+  const { status, printed } = await runHook("pre-tool-guard", input, root);
   return {
     status,
     decisions: printed.map((line) => guardOutput.parse(line).hookSpecificOutput.permissionDecision),
@@ -96,6 +105,7 @@ beforeAll(() => {
   copyHooks(project());
   writeFileSync(join(project(), "src", "probe.ts"), "export const probe = 1;\n");
   writeFileSync(join(fixtures, "outside.ts"), "export const outside = 1;\n");
+  symlinkSync(project(), projectLink(), "dir");
 });
 
 afterAll(() => {
@@ -110,6 +120,16 @@ describe.concurrent("hooks run as processes from a copy in a fixture", { timeout
       [bash("npm run check"), "allow"],
     ];
     const runs = await Promise.all(cases.map(([input]) => guardDecisions(input)));
+    expect(runs).toEqual(cases.map(([, decision]) => printedDecisions(decision)));
+  });
+
+  it("the pre-tool guard launched through a symlink guards paths given through it", async () => {
+    const cases: [unknown, Decision][] = [
+      [guardEvent("Edit", { file_path: join(projectLink(), "package-lock.json") }), "deny"],
+      [{ ...bash("rm -rf src"), cwd: projectLink() }, "ask"],
+      [{ ...bash("rm -rf src/missing"), cwd: projectLink() }, "allow"],
+    ];
+    const runs = await Promise.all(cases.map(([input]) => guardDecisions(input, projectLink())));
     expect(runs).toEqual(cases.map(([, decision]) => printedDecisions(decision)));
   });
 

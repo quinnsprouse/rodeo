@@ -30,6 +30,7 @@ export async function runJson(binary: string, args: readonly string[], cwd: stri
 interface Diagnostic {
   code: string;
   message: string;
+  help: string | undefined;
   line: number;
 }
 
@@ -38,14 +39,16 @@ function parseDiagnostic(entry: unknown, root: string): [string, Diagnostic] {
     !isRecord(entry) ||
     typeof entry.filename !== "string" ||
     typeof entry.code !== "string" ||
-    typeof entry.message !== "string"
+    typeof entry.message !== "string" ||
+    !(entry.help === undefined || typeof entry.help === "string")
   ) {
     throw new Error(`Unexpected diagnostic: ${JSON.stringify(entry)}`);
   }
   const label: unknown = Array.isArray(entry.labels) ? entry.labels[0] : undefined;
   const span = isRecord(label) && isRecord(label.span) ? label.span : undefined;
   const line = typeof span?.line === "number" ? span.line : 0;
-  return [resolve(root, entry.filename), { code: entry.code, message: entry.message, line }];
+  const { code, message, help } = entry;
+  return [resolve(root, entry.filename), { code, message, help, line }];
 }
 
 export function diagnosticsByFile(output: unknown, root: string) {

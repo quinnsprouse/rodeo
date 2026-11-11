@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -21,6 +21,8 @@ type ToolCall = {
 };
 
 let project = "";
+let outside = "";
+const projectLink = () => `${project}-link`;
 
 function hookEvent({ toolName, toolInput, cwd }: ToolCall) {
   const event = { hook_event_name: "PreToolUse", tool_name: toolName, tool_input: toolInput };
@@ -71,10 +73,16 @@ beforeAll(() => {
   project = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-guard-project-")));
   mkdirSync(join(project, "src", "routes"), { recursive: true });
   writeFileSync(join(project, "src", "routes", "__root.tsx"), "export {};\n");
+  outside = realpathSync(mkdtempSync(join(tmpdir(), "rodeo-guard-outside-")));
+  symlinkSync(project, projectLink(), "dir");
+  symlinkSync(join(project, "src"), join(project, "source-alias"), "dir");
+  symlinkSync(outside, join(project, "outside-alias"), "dir");
 });
 
 afterAll(() => {
+  rmSync(projectLink(), { force: true });
   rmSync(project, { recursive: true, force: true });
+  rmSync(outside, { recursive: true, force: true });
 });
 
 describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
@@ -127,6 +135,23 @@ describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
       [edit("src/routes/index.tsx"), "allow"],
       [edit(".vite-hooks/pre-commit"), "allow"],
       [{ toolName: "Write", toolInput: { file_path: "/tmp/elsewhere/notes.md" } }, "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
+  it("compares each edited path by the file it reaches through symlinks", ({ expect }) => {
+    const linked = (toolName: string, file: string): ToolCall => ({
+      toolName,
+      toolInput: { file_path: join(projectLink(), file) },
+    });
+    const { actual, expected } = decisions([
+      [linked("Edit", "package-lock.json"), "deny"],
+      [linked("Edit", "src/routeTree.gen.ts"), "deny"],
+      [linked("Write", "PLAN.md"), "deny"],
+      [edit("source-alias/routeTree.gen.ts"), "deny"],
+      [patch("*** Add File: source-alias/lib/format.test.ts"), "deny"],
+      [linked("Edit", "src/routes/index.tsx"), "allow"],
+      [edit("outside-alias/package-lock.json"), "allow"],
     ]);
     expect(actual).toEqual(expected);
   });
@@ -411,10 +436,18 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
     writeFileSync(join(fixture, path), content);
   }
 
+  const fixtureLink = () => `${fixture}-link`;
+
   const rm = (command: string, cwd = ""): ToolCall => ({
     ...bash(command),
     project: fixture,
     cwd: join(fixture, cwd),
+  });
+
+  const rmFromLink = (command: string, cwd = ""): ToolCall => ({
+    ...bash(command),
+    project: fixture,
+    cwd: join(fixtureLink(), cwd),
   });
 
   beforeAll(() => {
@@ -433,10 +466,14 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
     writeFixture("drafts/new.ts");
     writeFixture("node_modules/pkg/index.js");
     writeFixture(".output/server.mjs");
+    mkdirSync(join(fixture, "app", "nested"));
+    symlinkSync(join(fixture, "app", "nested"), join(fixture, "nested-alias"), "dir");
+    symlinkSync(fixture, fixtureLink(), "dir");
   });
 
   afterAll(() => {
     vi.unstubAllEnvs();
+    rmSync(fixtureLink(), { force: true });
     rmSync(fixture, { recursive: true, force: true });
   });
 
@@ -470,6 +507,23 @@ describe.concurrent("pre-tool guard on rm -r", { timeout: 30_000 }, () => {
     const { actual, expected } = decisions([
       [rm("rm -rf ../drafts", "lib"), "ask"],
       [rm("rm -rf drafts", "lib"), "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
+  it("compares targets and the hook input's cwd by where they reach through symlinks", ({
+    expect,
+  }) => {
+    const { actual, expected } = decisions([
+      [rmFromLink("rm -rf ."), "ask"],
+      [rmFromLink("rm -rf drafts"), "ask"],
+      [rmFromLink("rm -rf ../drafts", "lib"), "ask"],
+      [rmFromLink("find drafts -delete"), "ask"],
+      [rm(`rm -rf ${join(fixtureLink(), "drafts")}`), "ask"],
+      [rm(`rm -rf ${fixtureLink()}`), "ask"],
+      [rm("git -C nested-alias checkout ../page.ts"), "ask"],
+      [rmFromLink("rm -rf lib"), "allow"],
+      [rm("git -C nested-alias checkout ../missing.ts"), "allow"],
     ]);
     expect(actual).toEqual(expected);
   });

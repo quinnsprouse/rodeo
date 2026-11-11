@@ -7,6 +7,7 @@ import { setTimeout as delay } from "node:timers/promises";
 const host = "127.0.0.1";
 const serverEntry = ".output/server/index.mjs";
 const pollInterval = 200;
+const startTimeout = 30_000;
 
 function reservePort() {
   return new Promise((resolvePort, reject) => {
@@ -20,11 +21,11 @@ function reservePort() {
   });
 }
 
-function spawnServer({ root, env, logFile, port }) {
+function spawnServer({ root, logFile, port }) {
   const log = logFile === undefined ? undefined : openSync(logFile, "a");
   const server = spawn(process.execPath, [serverEntry], {
     cwd: root,
-    env: { ...process.env, NODE_ENV: "production", ...env, HOST: host, PORT: String(port) },
+    env: { ...process.env, NODE_ENV: "production", HOST: host, PORT: String(port) },
     stdio: log === undefined ? "ignore" : ["ignore", log, log],
   });
   if (log !== undefined) closeSync(log);
@@ -61,17 +62,17 @@ function stopper(server) {
   };
 }
 
-export async function startBuiltServer({ root, env = {}, logFile, timeout = 30_000 }) {
+export async function startBuiltServer({ root, logFile }) {
   const port = await reservePort();
   const origin = `http://${host}:${port}`;
-  const server = spawnServer({ root, env, logFile, port });
+  const server = spawnServer({ root, logFile, port });
   const stop = stopper(server);
-  if (await waitForAnswer(server, origin, Date.now() + timeout)) return { origin, stop };
+  if (await waitForAnswer(server, origin, Date.now() + startTimeout)) return { origin, stop };
   const exitStatus = server.signalCode ?? server.exitCode;
   await stop();
   throw new Error(
     exitStatus === null
-      ? `The built server in ${root} did not answer ${origin} with a status below 500 within ${timeout} ms.`
+      ? `The built server in ${root} did not answer ${origin} with a status below 500 within ${startTimeout} ms.`
       : `The built server in ${root} exited with ${exitStatus} before it answered.`,
   );
 }

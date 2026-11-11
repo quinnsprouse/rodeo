@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { generatedRouteTree, routesDirectory, routeTreeIsCurrent } from "./lib/route-tree.mjs";
+
+const projectRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 
 function packageDirectory(fromDirectory, name) {
   const require = createRequire(join(fromDirectory, "package.json"));
@@ -66,7 +68,7 @@ async function updateRouteTree(root) {
 
 if (import.meta.main) {
   try {
-    if (await updateRouteTree(process.cwd())) {
+    if (await updateRouteTree(projectRoot)) {
       console.log(`Regenerated ${generatedRouteTree} from ${routesDirectory}.`);
     }
   } catch (error) {

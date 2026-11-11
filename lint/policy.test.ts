@@ -4,7 +4,7 @@ import { dirname, join, relative } from "node:path";
 
 import { beforeAll, describe, it } from "vite-plus/test";
 
-import { scratchDirectory } from "#tooling/project";
+import { appUnitTestReason, scratchDirectory } from "#tooling/project";
 
 import { diagnosticsByFile, ignoredByGit, repoRoot, runJson, withSandbox } from "./harness";
 
@@ -15,7 +15,7 @@ type Probe = {
   file?: string;
   extraFiles?: Record<string, string>;
 };
-type RejectedProbe = Probe & { rule: string };
+type RejectedProbe = Probe & { rule: string; help?: string };
 
 const require = createRequire(import.meta.url);
 const vp = join(dirname(require.resolve("vite-plus/package.json")), "bin/vp");
@@ -410,6 +410,30 @@ export const schema = z.object({ id: z.string() });`,
     source: `import { reveal } from "@/demo/motion-classes";\nexport const entrance = reveal;`,
   },
   {
+    name: "the relative demo import a file at the src root would write",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src",
+    source: `import { Hero } from "./demo/landing/hero";\nexport const hero = Hero;`,
+  },
+  {
+    name: "a relative import of the whole demo folder",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src",
+    source: `import * as demo from "./demo";\nexport const loaded = demo;`,
+  },
+  {
+    name: "the relative demo routes import a file at the src root would write",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src",
+    source: `import { Route } from "./routes/(demo)/philosophy";\nexport const route = Route;`,
+  },
+  {
+    name: "the relative demo route import a route would write",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/routes",
+    source: `import { Route } from "./(demo)/philosophy";\nexport const route = Route;`,
+  },
+  {
     name: "browser tests importing test and expect from @playwright/test",
     rule: "eslint(no-restricted-imports)",
     layer: "e2e",
@@ -444,6 +468,7 @@ test("loads the home page", async ({ page }) => {
   {
     name: "unit tests in app code",
     rule: "eslint(no-restricted-imports)",
+    help: appUnitTestReason,
     layer: "src/lib",
     source: `import { expect, it } from "vite-plus/test";
 it("adds", () => { expect(1 + 1).toBe(2); });`,
@@ -703,11 +728,19 @@ function leftoverProbeDirectories() {
   );
 }
 
-let diagnostics = new Map<string, string[]>();
+let diagnostics: ReturnType<typeof diagnosticsByFile> = new Map();
 
 function codesFor(path: string) {
-  return diagnostics.get(path) ?? [];
+  return (diagnostics.get(path) ?? []).map(({ code }) => code);
 }
+
+function helpFor(path: string) {
+  return (diagnostics.get(path) ?? []).flatMap(({ help }) => (help === undefined ? [] : [help]));
+}
+
+const explained = rejected.flatMap(({ help, ...probe }) =>
+  help === undefined ? [] : [{ ...probe, help }],
+);
 
 const sandboxes = withSandbox();
 
@@ -744,12 +777,7 @@ beforeAll(async () => {
     ],
     repoRoot,
   );
-  diagnostics = new Map(
-    [...diagnosticsByFile(output, repoRoot)].map(([file, found]) => [
-      file,
-      found.map(({ code }) => code),
-    ]),
-  );
+  diagnostics = diagnosticsByFile(output, repoRoot);
 }, 60_000);
 
 describe("Lint policy", () => {
@@ -757,6 +785,10 @@ describe("Lint policy", () => {
     expect(codesFor(probePath(probe))).toEqual(
       expect.arrayContaining([expect.stringContaining(probe.rule)]),
     );
+  });
+
+  it.for(explained)("gives the project's reason when it rejects $name", (probe, { expect }) => {
+    expect(helpFor(probePath(probe))).toEqual([probe.help]);
   });
 
   it.for(allowed)("allows $name", (probe, { expect }) => {

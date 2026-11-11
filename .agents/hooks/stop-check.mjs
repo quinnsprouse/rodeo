@@ -38,21 +38,21 @@ async function git(root, args) {
   return result.stdout;
 }
 
-function lines(output) {
-  return output.split("\n").filter(Boolean);
+function pathList(output) {
+  return output.split("\0").filter(Boolean);
 }
 
 async function baseRevision(root) {
   const head = await run("git", ["rev-parse", "--verify", "--quiet", "HEAD"], { cwd: root });
-  return head.status === 0 ? "HEAD" : gitEmptyTree;
+  return head.status === 0 ? head.stdout.trim() : gitEmptyTree;
 }
 
 async function trackedChanges(root, base) {
-  return lines(await git(root, ["diff", "--name-only", base]));
+  return pathList(await git(root, ["diff", "--name-only", "-z", base]));
 }
 
 async function untrackedPaths(root) {
-  return lines(await git(root, ["ls-files", "--others", "--exclude-standard"]));
+  return pathList(await git(root, ["ls-files", "-z", "--others", "--exclude-standard"]));
 }
 
 function unique(paths) {
@@ -61,6 +61,7 @@ function unique(paths) {
 
 async function fingerprint(root, base, files, untracked) {
   const hash = createHash("sha256");
+  hash.update(base);
   hash.update(await git(root, ["diff", base, "--binary"]));
   for (const path of untracked.toSorted()) {
     const stats = statSync(join(root, path), { throwIfNoEntry: false });
@@ -98,11 +99,10 @@ async function runCheck(root, label, binary, args) {
   return { label, ...(await runTool(root, binary, args, { CI: "1" })) };
 }
 
-function runChecks(root, base, files) {
+function runChecks(root, files) {
   const vp = packageBinary(root, "vite-plus", "vp");
   const tsc = packageBinary(root, "typescript", "tsc");
   const checkable = files.filter((path) => checkableExtensions.has(extname(path).toLowerCase()));
-  const testArgs = ["test", "run", ...(base === "HEAD" ? ["--changed"] : [])];
   return Promise.all([
     checkable.length > 0
       ? runCheck(root, "vp check (changed files)", vp, [
@@ -112,7 +112,7 @@ function runChecks(root, base, files) {
         ])
       : { label: "vp check", ok: true, output: "" },
     runCheck(root, "tsc -b", tsc, ["-b", "--pretty", "false"]),
-    runCheck(root, `vp ${testArgs.join(" ")}`, vp, [...testArgs, "--passWithNoTests"]),
+    runCheck(root, "vp test run", vp, ["test", "run", "--passWithNoTests"]),
   ]);
 }
 
@@ -133,8 +133,6 @@ async function checkChanges(root, { base, changed, untracked, stopHookActive }) 
     ? unique([...(await trackedChanges(root, base)), ...untracked])
     : changed;
   const files = paths.filter((path) => existsSync(join(root, path)));
-  if (files.length === 0 && routeTree.ok) return null;
-
   const state = readState(root);
   const current = await fingerprint(root, base, files, untracked);
   if (state.passed === current) return null;
@@ -145,9 +143,7 @@ async function checkChanges(root, { base, changed, untracked, stopHookActive }) 
     };
   }
 
-  const failures = [routeTree, ...(await runChecks(root, base, files))].filter(
-    (result) => !result.ok,
-  );
+  const failures = [routeTree, ...(await runChecks(root, files))].filter((result) => !result.ok);
   if (failures.length === 0) {
     writeState(root, { ...state, passed: current });
     return null;

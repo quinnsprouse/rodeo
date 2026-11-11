@@ -1,13 +1,9 @@
 import type { ReactDoctorConfig } from "react-doctor/api";
 
-import { generatedFiles, ignoredDirectories } from "#tooling/project";
+import { generatedGlobs, ignoredDirectories } from "#tooling/project";
 
 import { exceptions } from "./lint/exceptions";
 import { rodeoPlugin, rodeoRules } from "./lint/rodeo-rules";
-
-function asGlob(path: string) {
-  return path.endsWith("/") ? `${path}**` : path;
-}
 
 export default {
   blocking: "warning",
@@ -20,7 +16,7 @@ export default {
     // Node tooling, where its React and server rules do not apply: a hook that formats a file
     // before it lints that file is not making a user wait twice.
     files: [
-      ...generatedFiles.map(({ path }) => asGlob(path)),
+      ...generatedGlobs,
       ...ignoredDirectories.map((directory) => `${directory}/**`),
       ".agents/**",
       "scripts/**",

@@ -12,7 +12,7 @@ export function truncate(text, { keep, limit = outputLimit }) {
 }
 
 function projectRoot() {
-  return realpathSync(resolve(dirname(fileURLToPath(import.meta.url)), "..", ".."));
+  return realpathSync.native(resolve(dirname(fileURLToPath(import.meta.url)), "..", ".."));
 }
 
 function readInput() {

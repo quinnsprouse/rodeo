@@ -25,6 +25,24 @@ export const generatedFiles = [
   })),
 ];
 
+function isDirectoryEntry(generatedPath) {
+  return generatedPath.endsWith("/");
+}
+
+export function generatedFileAt(path) {
+  return generatedFiles.find((file) =>
+    isDirectoryEntry(file.path) ? path.startsWith(file.path) : path === file.path,
+  );
+}
+
+export function isGeneratedPath(path) {
+  return generatedFileAt(path) !== undefined;
+}
+
+export const generatedGlobs = generatedFiles.map((file) =>
+  isDirectoryEntry(file.path) ? `${file.path}**` : file.path,
+);
+
 export const scratchDirectory = ".scratch";
 
 export const ignoredDirectories = [

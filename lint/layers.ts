@@ -1,5 +1,7 @@
 import type { OxlintOverride } from "vite-plus/lint";
 
+import { appUnitTestReason } from "#tooling/project";
+
 type ImportPath = { name: string; importNames?: string[]; message: string };
 type ImportPattern = { group: string[]; message: string };
 type Restrictions = { paths?: ImportPath[]; patterns?: ImportPattern[] };
@@ -53,8 +55,7 @@ const sharedRestrictions = {
 
 const testApis: ImportPattern = {
   group: ["vite-plus/test", "vitest", "vitest/*", "@testing-library/*", "@playwright/test"],
-  message:
-    "App code has no unit tests. Test the behavior end to end in e2e/ with Playwright, through the page or through the server's HTTP endpoints. See docs/agents/TESTING.md",
+  message: appUnitTestReason,
 };
 
 const nodeBuiltins: ImportPattern = {
@@ -76,7 +77,16 @@ const nodeGlobals = ["process", "Buffer", "global", "__dirname", "__filename", "
 export const appFiles = "src/**";
 
 const demoImports: ImportPattern = {
-  group: ["@/demo", "@/demo/**"],
+  group: [
+    "@/demo",
+    "@/demo/**",
+    "./demo",
+    "./demo/**",
+    "./(demo)",
+    "./(demo)/**",
+    "./routes/(demo)",
+    "./routes/(demo)/**",
+  ],
   message:
     "Only src/demo and src/routes/(demo) import the demo, so deleting it leaves a working app. Move what this file needs out of src/demo, or pass it in as an argument.",
 };

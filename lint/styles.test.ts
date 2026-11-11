@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 
 import { describe, expect, it } from "vite-plus/test";
 
-import { generatedFiles } from "#tooling/project";
+import { isGeneratedPath } from "#tooling/project";
 
 import { repoRoot } from "./harness";
 
@@ -17,12 +17,6 @@ function filesUnder(directory: string, extensions: readonly string[]): string[] 
     .map((file) => join(directory, file));
 }
 
-function isGenerated(file: string) {
-  return generatedFiles.some(({ path }) =>
-    path.endsWith("/") ? file.startsWith(path) : file === path,
-  );
-}
-
 function declaredNames(css: string) {
   const utilities = [...css.matchAll(/@utility\s+([\w-]+)/g)].map((match) => match[1] ?? "");
   const classes = [...css.matchAll(/^\.([\w-]+)[\s,:{]/gm)].map((match) => match[1] ?? "");
@@ -34,7 +28,7 @@ const documented = [...readFileSync(uiGuide, "utf8").matchAll(/`([^`]+)`/g)]
   .join("\n");
 
 const source = filesUnder(appDirectory, [".ts", ".tsx"])
-  .filter((file) => !isGenerated(relative(repoRoot, file)))
+  .filter((file) => !isGeneratedPath(relative(repoRoot, file)))
   .map((file) => readFileSync(file, "utf8"))
   .join("\n");
 
