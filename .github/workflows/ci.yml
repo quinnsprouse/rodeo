@@ -62,3 +62,31 @@ jobs:
             playwright-report/
           if-no-files-found: ignore
           retention-days: 7
+
+  # The verify job installs with the npm that ships with Node. This job installs with the newest
+  # npm, which is what a user gets from `npm install -g npm`, so a new npm major can't break the
+  # starter unnoticed.
+  npm-latest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install the latest npm
+        working-directory: ${{ runner.temp }}
+        run: npm install --global npm@latest
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run the fast gate
+        run: npm run check

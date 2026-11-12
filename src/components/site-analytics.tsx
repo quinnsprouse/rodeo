@@ -1,11 +1,11 @@
-import { rootRouteId, useRouterState, type RouterState } from "@tanstack/react-router";
+import { useRouterState, type RouterState } from "@tanstack/react-router";
 import { Analytics } from "@vercel/analytics/react";
 
+import { pageMatch } from "@/lib/page-match";
+
 function currentView({ matches, location }: RouterState) {
-  const page = matches.at(-1);
-  if (!page || page.routeId === rootRouteId) {
-    return { route: location.pathname, path: location.pathname };
-  }
+  const page = pageMatch(matches);
+  if (!page) return { route: location.pathname, path: location.pathname };
   return { route: page.fullPath, path: page.pathname };
 }
 

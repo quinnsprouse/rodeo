@@ -9,25 +9,16 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as PhilosophyRouteImport } from './routes/philosophy'
 import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as demoIndexRouteImport } from './routes/(demo)/index'
+import { Route as demoPhilosophyRouteImport } from './routes/(demo)/philosophy'
+import { Route as demoRationaleRouteImport } from './routes/(demo)/rationale'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
   id: '/llms.txt',
   path: '/llms.txt',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PhilosophyRoute = PhilosophyRouteImport.update({
-  id: '/philosophy',
-  path: '/philosophy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
@@ -40,72 +31,90 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const demoIndexRoute = demoIndexRouteImport.update({
+  id: '/(demo)/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const demoPhilosophyRoute = demoPhilosophyRouteImport.update({
+  id: '/(demo)/philosophy',
+  path: '/philosophy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const demoRationaleRoute = demoRationaleRouteImport.update({
+  id: '/(demo)/rationale',
+  path: '/rationale',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/philosophy': typeof PhilosophyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/philosophy': typeof demoPhilosophyRoute
+  '/rationale': typeof demoRationaleRoute
+  '/': typeof demoIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/philosophy': typeof PhilosophyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/philosophy': typeof demoPhilosophyRoute
+  '/rationale': typeof demoRationaleRoute
+  '/': typeof demoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/llms.txt': typeof LlmsDottxtRoute
-  '/philosophy': typeof PhilosophyRoute
   '/robots.txt': typeof RobotsDottxtRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/(demo)/philosophy': typeof demoPhilosophyRoute
+  '/(demo)/rationale': typeof demoRationaleRoute
+  '/(demo)/': typeof demoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/llms.txt' | '/philosophy' | '/robots.txt' | '/sitemap.xml'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/llms.txt' | '/philosophy' | '/robots.txt' | '/sitemap.xml'
-  id:
-    | '__root__'
-    | '/'
+  fullPaths:
     | '/llms.txt'
-    | '/philosophy'
     | '/robots.txt'
     | '/sitemap.xml'
+    | '/philosophy'
+    | '/rationale'
+    | '/'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/philosophy'
+    | '/rationale'
+    | '/'
+  id:
+    | '__root__'
+    | '/llms.txt'
+    | '/robots.txt'
+    | '/sitemap.xml'
+    | '/(demo)/philosophy'
+    | '/(demo)/rationale'
+    | '/(demo)/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
-  PhilosophyRoute: typeof PhilosophyRoute
   RobotsDottxtRoute: typeof RobotsDottxtRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  demoPhilosophyRoute: typeof demoPhilosophyRoute
+  demoRationaleRoute: typeof demoRationaleRoute
+  demoIndexRoute: typeof demoIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/llms.txt': {
       id: '/llms.txt'
       path: '/llms.txt'
       fullPath: '/llms.txt'
       preLoaderRoute: typeof LlmsDottxtRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/philosophy': {
-      id: '/philosophy'
-      path: '/philosophy'
-      fullPath: '/philosophy'
-      preLoaderRoute: typeof PhilosophyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/robots.txt': {
@@ -122,15 +131,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(demo)/': {
+      id: '/(demo)/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof demoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(demo)/philosophy': {
+      id: '/(demo)/philosophy'
+      path: '/philosophy'
+      fullPath: '/philosophy'
+      preLoaderRoute: typeof demoPhilosophyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(demo)/rationale': {
+      id: '/(demo)/rationale'
+      path: '/rationale'
+      fullPath: '/rationale'
+      preLoaderRoute: typeof demoRationaleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
-  PhilosophyRoute: PhilosophyRoute,
   RobotsDottxtRoute: RobotsDottxtRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  demoPhilosophyRoute: demoPhilosophyRoute,
+  demoRationaleRoute: demoRationaleRoute,
+  demoIndexRoute: demoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -4,7 +4,7 @@
 
 A React starter for working with coding agents. Built on Vite+, TanStack Start, React 19, and Tailwind v4, with shadcn/ui configured for Base UI components. Includes Git hooks, tests, and agent docs.
 
-Requires Node 24.11 or newer within Node 24, npm 11.12 or newer (npm 12 works too), and Git 2.36 or newer.
+Requires Git 2.36 or newer, and the Node and npm versions `package.json` sets in `devEngines`.
 
 ## Quick start
 
@@ -16,41 +16,44 @@ npm ci
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open the URL `npm run dev` prints.
 
 Initialize Git before installation so Vite+ can install the hooks. If you install first, run `git init && npm run setup` afterward. Before the first push, install Chromium with `npm run test:e2e:install`.
 
 ## Customize
 
-Update `src/config/site.ts` with the product identity and its pages, and set `VITE_APP_URL` in production. The canonical links, social metadata, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it. Leaving the URL unset omits the origin-dependent tags, and the generated files fall back to the request's origin. The e2e tests check the site name, title, and author, so update their expectations in `e2e/` to match.
+Update `src/config/site.ts` with the product identity and page defaults.
+
+Each page declares its metadata beside its route, in `staticData.page`, and the sitemap and `llms.txt` list it from there.
+
+Set `VITE_APP_URL` in production. The canonical links, social metadata, structured data, `sitemap.xml`, `robots.txt`, and `llms.txt` use it. Leaving the URL unset omits the origin-dependent tags, and the generated files fall back to the request's origin.
 
 Agents can read every page as Markdown, at `/index.md` or the page path plus `.md`, or by sending `Accept: text/markdown`. `src/server.ts` converts the rendered page.
 
-Add UI components with the configured shadcn CLI. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, and icon conventions.
+Add UI components with the configured shadcn CLI. Three motion packages are installed: [Torph](https://torph.lochie.me/) for text that morphs in place, [Skullet](https://skullet.lochie.me/) for loading skeletons drawn from the real component, and [Glimm](https://glimm.dev/) for a shader sweep on milestone moments. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, icon, and motion conventions.
 
 ### Remove the demo
 
-The landing page and the philosophy page are a demo. To start from a blank app:
+The landing page and the philosophy page are a demo in `src/demo/` and `src/routes/(demo)/`. To start from a blank app, run `node scripts/remove-demo.mjs`, then `npm run check:push`. The push checks need Chromium, so run `npm run test:e2e:install` first if you have not.
 
-1. Replace `src/routes/index.tsx` with your home route. Delete `src/routes/philosophy.tsx` and the `/rationale` redirects in `vite.config.ts`.
-2. In `src/config/site.ts`, delete `philosophyMeta` and remove it from `sitePages`. Delete `public/og-rationale.png`.
-3. Run `npx knip` and delete every file it reports. Repeat until it reports no files, then remove the exports it reports and `npm uninstall` the packages. Knip also reports kit pieces that only the demo used, such as the theme toggle, `Snippet`, and the icon wrapper. To keep one, use it.
-4. Delete `src/styles/demo.css`, the `@import "./demo.css";` line at the end of `src/styles/app.css`, `public/stickers/`, and `e2e/demo-*.spec.ts`.
+The script deletes `src/demo/`, `src/routes/(demo)/`, the `e2e/demo-*.spec.ts` specs, `public/stickers/`, `public/og-rationale.png`, the example feature in `scripts/example-feature/` that the kit's own CI builds on the blank starter, and itself with its test. It removes the demo's references from `src/styles/app.css` and `lint/exceptions.ts`, removes this section from the README, writes a starter home route, and regenerates the route tree. If anything is not where it expects, it changes nothing. `npm run check` runs the same check, so a change that would break the removal fails there.
 
-Then run `npm run check:push`. The stylesheet test reports any CSS that only a deleted component used, such as the shimmer styles. Delete what it reports.
+The starter home, in `src/components/starter-home.tsx`, shows the site name, the tagline, `ThemeToggle`, and a `Snippet` with `npm run dev`.
 
 ## Commands
 
-| Command              | Purpose                                                           |
-| -------------------- | ----------------------------------------------------------------- |
-| `npm run dev`        | Development server on port 3000                                   |
-| `npm run check`      | Toolchain alignment, formatting, lint, types, and guardrail tests |
-| `npm run check:push` | Check, production build, dead code, and browser tests             |
-| `npm run check:ci`   | Push checks, clean template installation, React Doctor, and audit |
-| `npm run fmt`        | Format files                                                      |
-| `npm run test:watch` | Guardrail tests in watch mode                                     |
-| `npm run build`      | Production build                                                  |
-| `npm run start`      | Run the built Nitro server                                        |
+| Command              | Purpose                                           |
+| -------------------- | ------------------------------------------------- |
+| `npm run dev`        | Development server                                |
+| `npm run check`      | Fast checks to run while you work                 |
+| `npm run check:push` | Pre-push checks, with the build and browser tests |
+| `npm run check:ci`   | CI checks, with a clean template install          |
+| `npm run fmt`        | Format files                                      |
+| `npm run test:watch` | Guardrail tests in watch mode                     |
+| `npm run build`      | Production build                                  |
+| `npm run start`      | Run the built Nitro server                        |
+
+`scripts/lib/tasks.mjs` defines each check as a `verify:*` task.
 
 To ship the app to Node, Vercel, or Cloudflare Workers, follow [Deploy](docs/agents/DEPLOY.md).
 
@@ -68,8 +71,8 @@ Optional skills are listed in `skills-lock.json`; restore them with `npm run set
 
 - `src/routes/`: TanStack routes
 - `src/components/`: application and UI components
-- `src/hooks/`, `src/lib/`, `src/styles/`: hooks, shared logic, and theme
-- `lint/`, `e2e/`: custom rules and verification tests
+- `src/config/`, `src/hooks/`, `src/lib/`, `src/styles/`: site config, hooks, shared logic, and theme
+- `lint/`, `e2e/`: lint rules and verification tests
 - `docs/agents/`: implementation guides
 - `scripts/`: setup and verification scripts
 - `.scratch/`: ignored experiments

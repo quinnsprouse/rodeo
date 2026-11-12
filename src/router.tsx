@@ -2,6 +2,7 @@ import { createRouter } from "@tanstack/react-router";
 
 import { RouteErrorComponent } from "@/components/route-error";
 import { RouteNotFoundComponent } from "@/components/route-not-found";
+import type { Page } from "@/config/pages";
 import type { Canvas } from "@/lib/theme";
 
 import { routeTree } from "./routeTree.gen";
@@ -26,5 +27,6 @@ declare module "@tanstack/react-router" {
   }
   interface StaticDataRouteOption {
     canvas?: Canvas;
+    page?: Page;
   }
 }

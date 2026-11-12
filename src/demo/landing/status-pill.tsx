@@ -1,0 +1,40 @@
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+
+import { Icon } from "@/components/icon";
+import { BullSticker } from "@/components/stickers/bull";
+import { iconOut, iconSwap, reveal } from "@/demo/motion-classes";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
+import { cn } from "@/lib/utils";
+
+export function StatusPill({
+  status,
+  shown,
+  className,
+}: {
+  status: string;
+  shown: boolean;
+  className?: string;
+}) {
+  return (
+    <p
+      {...excludeFromMarkdown}
+      className={cn(
+        "dark flex w-fit items-center gap-s rounded-full bg-card py-xxs pr-m pl-xs text-s text-card-foreground ring ring-border",
+        reveal,
+        !shown && "translate-y-2 scale-95 opacity-0 blur-xs",
+        className,
+      )}
+    >
+      <BullSticker className={cn("size-8 delay-100", reveal, !shown && "scale-75 -rotate-12")} />
+      <span className="font-medium">Rodeo</span>
+      <span className="flex items-center gap-xxs text-muted-foreground">
+        <Icon
+          icon={Tick02Icon}
+          className={cn("size-4 text-success delay-300", iconSwap, !shown && iconOut)}
+          aria-hidden="true"
+        />
+        {status}
+      </span>
+    </p>
+  );
+}

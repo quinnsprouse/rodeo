@@ -1,178 +1,32 @@
-import { cva, type VariantProps } from "class-variance-authority";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-
-import { Icon, Tick02Icon, Copy01Icon } from "@/components/icons";
-import { Button } from "@/components/ui/button";
-import { ShimmerText } from "@/components/ui/shimmer-text";
-import { useOnScreen } from "@/hooks/use-on-screen";
+import {
+  snippetBar,
+  snippetCode,
+  snippetCommand,
+  SnippetCopyButton,
+  SnippetRoot,
+} from "@/components/ui/snippet-parts";
+import { useCopyCommand } from "@/hooks/use-copy-command";
 import { cn } from "@/lib/utils";
 
-const snippetVariants = cva("group relative flex items-center", {
-  variants: {
-    size: {
-      default: "rounded-m bg-card ring ring-border",
-      lg: "gap-xs rounded-l bg-muted pl-s text-install",
-    },
-  },
-  defaultVariants: {
-    size: "default",
-  },
-});
-
-interface SnippetProps extends VariantProps<typeof snippetVariants> {
-  text: string | string[];
-  prompt?: boolean;
-  leading?: ReactNode;
-  shimmer?: boolean;
-  className?: string;
-  onCopy?: () => void;
-}
-
-const iconMorph = "transition duration-(--motion-duration) ease-(--motion-easing)";
-const iconHidden = "opacity-0 motion-safe:scale-40 motion-safe:blur-xs";
-
-export function Snippet({
-  text,
-  prompt = true,
-  leading,
-  shimmer = false,
-  size,
-  className,
-  onCopy,
-}: SnippetProps) {
-  const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
-  const copied = status === "copied";
-  const timeoutRef = useRef<number | null>(null);
-  const commandRef = useRef<HTMLDivElement>(null);
-  const onScreen = useOnScreen(commandRef);
-  const lines = Array.isArray(text) ? text : [text];
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
-    };
-  }, []);
-
-  const selectCommand = () => {
-    const selection = window.getSelection();
-    const commands = commandRef.current?.querySelectorAll("code");
-    const first = commands?.item(0);
-    const last = commands?.item(commands.length - 1);
-    if (!selection || !first || !last) return undefined;
-    const range = document.createRange();
-    range.setStart(first, 0);
-    range.setEnd(last, last.childNodes.length);
-    selection.removeAllRanges();
-    selection.addRange(range);
-    return selection;
-  };
-
-  const copySelectedCommand = () => {
-    const selection = selectCommand();
-    if (!selection || !document.execCommand("copy")) return false;
-    selection.removeAllRanges();
-    return true;
-  };
-
-  const showCopied = () => {
-    setStatus("copied");
-    timeoutRef.current = window.setTimeout(() => setStatus("idle"), 1500);
-    onCopy?.();
-  };
-
-  const copyWithFallback = () => {
-    if (copySelectedCommand()) {
-      showCopied();
-      return;
-    }
-    selectCommand();
-    setStatus("failed");
-  };
-
-  const handleCopy = async () => {
-    const payload = lines.join("\n");
-    if (timeoutRef.current) {
-      window.clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-    setStatus("idle");
-    if (!navigator.clipboard?.writeText) {
-      copyWithFallback();
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(payload);
-    } catch {
-      copyWithFallback();
-      return;
-    }
-
-    showCopied();
-  };
+export function Snippet({ text, className }: { text: string; className?: string }) {
+  const { status, codeRef, copy } = useCopyCommand(text);
 
   return (
-    <div className={cn("flex flex-col", className)}>
-      <div className={snippetVariants({ size })}>
-        {leading}
-        <div
-          ref={commandRef}
-          className={cn(
-            "min-w-0 flex-1 overflow-hidden py-s max-xs:mask-r-from-75%",
-            leading ? "pr-m" : "px-m",
-          )}
-        >
-          {lines.map((line) => (
-            <code
-              key={line}
-              className={cn(
-                "block font-data whitespace-nowrap text-foreground",
-                size !== "lg" && "text-s",
-                prompt &&
-                  !leading &&
-                  "before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
-              )}
-            >
-              {shimmer ? <ShimmerText text={line} shimmering={onScreen} /> : line}
-            </code>
-          ))}
-        </div>
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() => void handleCopy()}
-          className="mr-xs"
-          aria-label={copied ? "Copied" : "Copy to clipboard"}
-        >
-          <span
-            aria-hidden="true"
+    <SnippetRoot status={status} className={className}>
+      <div className={cn(snippetBar, "rounded-m bg-card ring ring-border")}>
+        <div className={cn(snippetCommand, "px-m")}>
+          <code
+            ref={codeRef}
             className={cn(
-              "relative",
-              size === "lg" ? "size-[calc(var(--text-install)*1.1)]" : "size-5",
+              snippetCode,
+              "text-s before:mr-xs before:text-muted-foreground before:content-['$'] before:select-none",
             )}
           >
-            <Icon
-              icon={Copy01Icon}
-              className={cn("absolute inset-0 size-full", iconMorph, copied && iconHidden)}
-            />
-            <Icon
-              icon={Tick02Icon}
-              className={cn("absolute inset-0 size-full", iconMorph, !copied && iconHidden)}
-            />
-          </span>
-        </Button>
+            {text}
+          </code>
+        </div>
+        <SnippetCopyButton status={status} onCopy={copy} iconClassName="size-5" />
       </div>
-      <output className={status === "failed" ? "mt-xs text-xs text-foreground" : "sr-only"}>
-        {status === "failed"
-          ? "Couldn't copy. Select and copy the command manually."
-          : copied
-            ? "Copied to clipboard."
-            : ""}
-      </output>
-    </div>
+    </SnippetRoot>
   );
 }

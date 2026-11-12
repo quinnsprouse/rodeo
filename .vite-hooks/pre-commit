@@ -1,5 +1,11 @@
 vp staged
-# Advisory React health scan of staged files; the full CI profile blocks regressions.
-react-doctor --staged --blocking warning || {
-  echo "React Doctor found staged regressions. Run 'npm run doctor' to inspect and fix." >&2
-}
+# why: React Doctor's text report adds agent instructions and share links even on a clean score, and it has no quiet flag, so the hook prints only the findings from its JSON report.
+# why: React Doctor refuses a staged scan while a config file such as package.json has unstaged changes, and exits 1 even with --blocking none, so the hook prints the refusal and goes on.
+react-doctor --staged --blocking none --json --json-compact | node -e '
+const report = JSON.parse(require("node:fs").readFileSync(0, "utf8") || "{}");
+const lines = (report.diagnostics ?? []).map(
+  (finding) => `${finding.filePath}:${finding.line} ${finding.severity} ${finding.plugin}/${finding.rule}: ${finding.message}`,
+);
+if (report.error) lines.unshift(`React Doctor skipped: ${report.error.message}`);
+if (lines.length > 0) console.log(lines.join("\n"));
+' || true

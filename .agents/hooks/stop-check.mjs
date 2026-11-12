@@ -1,187 +1,202 @@
-import { spawn, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, extname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { stripVTControlCharacters } from "node:util";
+import { dirname, extname, join } from "node:path";
 
-const require = createRequire(import.meta.url);
-const projectRoot =
-  process.env.CLAUDE_PROJECT_DIR ?? resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const stateFile = join(projectRoot, "node_modules", ".cache", "rodeo", "stop-check.json");
-const checkableExtensions = new Set([
-  ".cjs",
-  ".css",
-  ".cts",
-  ".html",
-  ".js",
-  ".json",
-  ".jsonc",
-  ".jsx",
-  ".md",
-  ".mjs",
-  ".mts",
-  ".ts",
-  ".tsx",
-  ".yaml",
-  ".yml",
-]);
-const outputLimit = 3_500;
+import { checkableExtensions, isToolingPath } from "#tooling/project";
+import { run } from "#tooling/run";
 
-function git(args) {
-  const result = spawnSync("git", args, {
-    cwd: projectRoot,
-    encoding: "utf8",
-    maxBuffer: 64 << 20,
-  });
+import { outputLimit, runHook, truncate } from "./hook-io.mjs";
+import {
+  dependenciesInstalled,
+  gitHooksInstalled,
+  packageBinary,
+  refreshRouteTree,
+  runTool,
+} from "./project-tools.mjs";
+
+export const event = "Stop";
+
+const gitEmptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+const repositoryTests = ".repo.test.ts";
+const setupSteps = {
+  dependencies: {
+    reason:
+      "Dependencies are not installed in this checkout, so the stop check and the Git hooks cannot run. Run `npm ci`, then finish.",
+    systemMessage:
+      "The stop check did not run: dependencies are not installed in this checkout, so the checks and the Git hooks cannot run. Run `npm ci`.",
+  },
+  gitHooks: {
+    reason:
+      "The Git hooks are not installed in this checkout, so commits and pushes would skip their checks. Run `npm run setup`, then finish.",
+    systemMessage:
+      "The stop check did not run: the Git hooks are not installed in this checkout, so commits and pushes skip their checks. Run `npm run setup`.",
+  },
+};
+
+async function git(root, args) {
+  const result = await run("git", args, { cwd: root });
   if (result.status !== 0) throw new Error(`git ${args.join(" ")} failed: ${result.stderr}`);
   return result.stdout;
 }
 
-function lines(output) {
-  return output.split("\n").filter(Boolean);
+function pathList(output) {
+  return output.split("\0").filter(Boolean);
 }
 
-const gitEmptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
-
-function baseRevision() {
-  const head = spawnSync("git", ["rev-parse", "--verify", "--quiet", "HEAD"], { cwd: projectRoot });
-  return head.status === 0 ? "HEAD" : gitEmptyTree;
+async function baseRevision(root) {
+  const head = await run("git", ["rev-parse", "--verify", "--quiet", "HEAD"], { cwd: root });
+  return head.status === 0 ? head.stdout.trim() : gitEmptyTree;
 }
 
-function changedFiles(base) {
-  const paths = [
-    ...lines(git(["diff", "--name-only", base])),
-    ...lines(git(["ls-files", "--others", "--exclude-standard"])),
-  ];
-  return [...new Set(paths)].filter((path) => existsSync(join(projectRoot, path)));
+async function trackedChanges(root, base) {
+  return pathList(await git(root, ["diff", "--name-only", "--no-renames", "-z", base]));
 }
 
-function fingerprint(base, files) {
+async function untrackedPaths(root) {
+  return pathList(await git(root, ["ls-files", "-z", "--others", "--exclude-standard"]));
+}
+
+function unique(paths) {
+  return [...new Set(paths)];
+}
+
+async function fingerprint(root, base, files, untracked) {
   const hash = createHash("sha256");
-  hash.update(git(["diff", base, "--binary"]));
-  for (const path of lines(git(["ls-files", "--others", "--exclude-standard"])).toSorted()) {
-    const stats = statSync(join(projectRoot, path), { throwIfNoEntry: false });
+  hash.update(base);
+  hash.update(await git(root, ["diff", base, "--binary"]));
+  for (const path of untracked.toSorted()) {
+    const stats = statSync(join(root, path), { throwIfNoEntry: false });
     hash.update(`${path}:${stats?.size ?? "deleted"}:${stats?.mtimeMs ?? 0}\n`);
   }
   hash.update(files.join("\n"));
   return hash.digest("hex");
 }
 
-function readState() {
+function fileContent(file) {
+  return statSync(file, { throwIfNoEntry: false })?.isFile() ? readFileSync(file) : null;
+}
+
+function toolingFingerprint(root, base, paths) {
+  if (paths.length === 0) return null;
+  const hash = createHash("sha256").update(base);
+  for (const path of paths.toSorted()) {
+    const content = fileContent(join(root, path));
+    hash.update(`\0${path}\0${content?.length ?? "missing"}\0`);
+    if (content) hash.update(content);
+  }
+  return hash.digest("hex");
+}
+
+function stateFile(root) {
+  return join(root, "node_modules", ".cache", "rodeo", "stop-check.json");
+}
+
+function readState(root) {
   try {
-    const value = JSON.parse(readFileSync(stateFile, "utf8"));
+    const value = JSON.parse(readFileSync(stateFile(root), "utf8"));
     return typeof value === "object" && value !== null ? value : {};
   } catch {
     return {};
   }
 }
 
-function writeState(state) {
-  mkdirSync(dirname(stateFile), { recursive: true });
-  writeFileSync(stateFile, `${JSON.stringify(state)}\n`);
+function writeState(root, state) {
+  mkdirSync(dirname(stateFile(root)), { recursive: true });
+  writeFileSync(stateFile(root), `${JSON.stringify(state)}\n`);
 }
 
-function packageBinary(packageName, binaryName) {
-  const packagePath = require.resolve(`${packageName}/package.json`);
-  const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
-  const binary =
-    typeof packageJson.bin === "string" ? packageJson.bin : packageJson.bin?.[binaryName];
-  if (!binary) throw new Error(`${packageName} does not expose ${binaryName}`);
-  return resolve(dirname(packagePath), binary);
+async function missingSetup(root) {
+  if (!dependenciesInstalled(root)) return setupSteps.dependencies;
+  if (!(await gitHooksInstalled(root))) return setupSteps.gitHooks;
+  return null;
 }
 
-function run(label, binary, args) {
-  return new Promise((resolvePromise) => {
-    const child = spawn(process.execPath, [binary, ...args], {
-      cwd: projectRoot,
-      env: { ...process.env, CI: "1", FORCE_COLOR: "0", NO_COLOR: "1" },
-    });
-    let output = "";
-    child.stdout.on("data", (chunk) => (output += chunk));
-    child.stderr.on("data", (chunk) => (output += chunk));
-    child.on("error", (error) => resolvePromise({ label, ok: false, output: String(error) }));
-    child.on("close", (code) => resolvePromise({ label, ok: code === 0, output }));
-  });
+async function runCheck(root, label, binary, args) {
+  return { label, ...(await runTool(root, binary, args, { CI: "1" })) };
 }
 
-function clean(text) {
-  return stripVTControlCharacters(text)
-    .split("\n")
-    .filter((line) => !line.startsWith("note: You are running `vp"))
-    .join("\n");
+function runTests(root, vp, toolTestsDue) {
+  const selection = toolTestsDue ? [] : [repositoryTests];
+  return runCheck(root, ["vp test run", ...selection].join(" "), vp, [
+    "test",
+    "run",
+    "--passWithNoTests",
+    ...selection,
+  ]);
 }
 
-function tail(text, limit) {
-  const trimmed = clean(text).trim();
-  return trimmed.length > limit ? `...${trimmed.slice(-limit)}` : trimmed;
-}
-
-function respond(output) {
-  process.stdout.write(`${JSON.stringify(output)}\n`);
-  process.exit(0);
-}
-
-try {
-  const input = JSON.parse(readFileSync(0, "utf8"));
-  if (input.hook_event_name !== "Stop") process.exit(0);
-  if (!existsSync(join(projectRoot, ".git")) || !existsSync(join(projectRoot, "node_modules"))) {
-    process.exit(0);
-  }
-
-  const base = baseRevision();
-  const files = changedFiles(base);
-  if (files.length === 0) process.exit(0);
-
-  const state = readState();
-  const current = fingerprint(base, files);
-  if (state.passed === current) process.exit(0);
-
-  const retriedWithoutChanges = input.stop_hook_active === true && state.failed === current;
-  if (retriedWithoutChanges) {
-    respond({
-      systemMessage:
-        "The stop check still fails on the current changes. Run `npm run check` to see the errors.",
-    });
-  }
-
-  const vp = packageBinary("vite-plus", "vp");
+function runChecks(root, files, toolTestsDue) {
+  const vp = packageBinary(root, "vite-plus", "vp");
+  const tsc = packageBinary(root, "typescript", "tsc");
   const checkable = files.filter((path) => checkableExtensions.has(extname(path).toLowerCase()));
-  const results = await Promise.all([
+  return Promise.all([
     checkable.length > 0
-      ? run("vp check (changed files)", vp, [
+      ? runCheck(root, "vp check (changed files)", vp, [
           "check",
           "--no-error-on-unmatched-pattern",
           ...checkable,
         ])
       : { label: "vp check", ok: true, output: "" },
-    run("tsc -b", packageBinary("typescript", "tsc"), ["-b", "--pretty", "false"]),
-    run("vp test run --changed", vp, [
-      "test",
-      "run",
-      ...(base === "HEAD" ? ["--changed"] : []),
-      "--passWithNoTests",
-    ]),
+    runCheck(root, "tsc -b", tsc, ["-b", "--pretty", "false"]),
+    runTests(root, vp, toolTestsDue),
   ]);
+}
 
-  const failures = results.filter((result) => !result.ok);
-  if (failures.length === 0) {
-    writeState({ ...state, passed: current });
-    process.exit(0);
+function blockReason(failures) {
+  const perFailure = Math.floor(outputLimit / failures.length);
+  return [
+    "The stop check found problems in the files you changed. Fix them before you finish.",
+    ...failures.map(
+      (failure) =>
+        `${failure.label} failed:\n${truncate(failure.output.trim(), { keep: "end", limit: perFailure })}`,
+    ),
+  ].join("\n\n");
+}
+
+async function checkChanges(root, { base, changed, untracked, stopHookActive }) {
+  const routeTree = { label: "Route tree generation", ...(await refreshRouteTree(root, changed)) };
+  const paths = routeTree.ran
+    ? unique([...(await trackedChanges(root, base)), ...untracked])
+    : changed;
+  const files = paths.filter((path) => existsSync(join(root, path)));
+  const state = readState(root);
+  const current = await fingerprint(root, base, files, untracked);
+  if (state.passed === current) return null;
+  if (stopHookActive && state.failed === current) {
+    return {
+      systemMessage:
+        "The stop check still fails on the current changes. Run `npm run check` to see the errors.",
+    };
   }
 
-  writeState({ ...state, failed: current });
-  const perFailure = Math.floor(outputLimit / failures.length);
-  respond({
-    decision: "block",
-    reason: [
-      "The stop check found problems in the files you changed. Fix them before you finish.",
-      ...failures.map((failure) => `${failure.label} failed:\n${tail(failure.output, perFailure)}`),
-    ].join("\n\n"),
-  });
-} catch (error) {
-  respond({
-    systemMessage: `The stop check could not run: ${error instanceof Error ? error.message : String(error)}`,
-  });
+  const tooling = toolingFingerprint(root, base, paths.filter(isToolingPath));
+  const toolTestsDue = tooling !== null && state.toolTestsPassed !== tooling;
+  const [checked, typed, tested] = await runChecks(root, files, toolTestsDue);
+  const remembered = toolTestsDue && tested.ok ? { ...state, toolTestsPassed: tooling } : state;
+  const failures = [routeTree, checked, typed, tested].filter((result) => !result.ok);
+  if (failures.length === 0) {
+    writeState(root, { ...remembered, passed: current });
+    return null;
+  }
+  writeState(root, { ...remembered, failed: current });
+  return { decision: "block", reason: blockReason(failures) };
 }
+
+export async function stopCheck(input, { root }) {
+  if (!existsSync(join(root, ".git"))) return null;
+
+  const [base, untracked] = await Promise.all([baseRevision(root), untrackedPaths(root)]);
+  const changed = unique([...(await trackedChanges(root, base)), ...untracked]);
+  if (changed.length === 0) return null;
+
+  const stopHookActive = input.stop_hook_active === true;
+  const setup = await missingSetup(root);
+  if (setup) {
+    return stopHookActive
+      ? { systemMessage: setup.systemMessage }
+      : { decision: "block", reason: setup.reason };
+  }
+  return checkChanges(root, { base, changed, untracked, stopHookActive });
+}
+
+if (import.meta.main) await runHook(stopCheck, { event, name: "stop check" });

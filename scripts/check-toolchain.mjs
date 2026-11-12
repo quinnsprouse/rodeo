@@ -8,11 +8,35 @@ const require = createRequire(import.meta.url);
 const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 const packageJson = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
 const { version: vitePlusVersion } = require("vite-plus/package.json");
-const { versions } = require("vite-plus/versions");
+const { versions: bundledTools } = require("vite-plus/versions");
+const vitePlusCore = `npm:@voidzero-dev/vite-plus-core@${vitePlusVersion}`;
+const vitestPin = packageJson.overrides.vitest;
+
+function pinVitePlusExpects(name) {
+  return name === "vite" ? vitePlusCore : bundledTools[name];
+}
+
+function pinnedToVitePlus(name, spec) {
+  return spec === packageJson.overrides[name] && spec === pinVitePlusExpects(name);
+}
+
+const secondCopies = ["dependencies", "devDependencies", "optionalDependencies"].flatMap((field) =>
+  Object.entries(packageJson[field] ?? {})
+    .filter(([name, spec]) => Object.hasOwn(bundledTools, name) && !pinnedToVitePlus(name, spec))
+    .map(([name, spec]) => `${field}.${name}: ${spec}`),
+);
 
 assert.equal(packageJson.devDependencies["vite-plus"], vitePlusVersion);
-assert.equal(packageJson.overrides.vitest, versions.vitest);
-assert.equal(packageJson.overrides.vite, `npm:@voidzero-dev/vite-plus-core@${vitePlusVersion}`);
+assert.equal(packageJson.overrides.vite, vitePlusCore);
+assert.ok(
+  vitestPin === undefined || vitestPin === pinVitePlusExpects("vitest"),
+  `The vitest override must pin the Vitest that Vite+ bundles, ${bundledTools.vitest}. Run vp migrate to re-pin or remove it.`,
+);
+assert.deepEqual(
+  secondCopies,
+  [],
+  `package.json installs a second copy of a tool Vite+ ${vitePlusVersion} ships (see vite-plus/versions): ${secondCopies.join(", ")}. Remove each one and run the tool through vp or import it from vite-plus. A second copy drifts from the version Vite+ runs.`,
+);
 assert.equal(
   packageJson.devDependencies["@oxlint/plugins"],
   undefined,

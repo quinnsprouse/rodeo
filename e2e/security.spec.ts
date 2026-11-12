@@ -1,4 +1,11 @@
-import { expect, test } from "@playwright/test";
+import { appOrigin } from "./environment";
+import { expect, test } from "./fixtures";
+
+function linkedOrigins(headers: { name: string; value: string }[]) {
+  return headers
+    .filter(({ name }) => name.toLowerCase() === "link")
+    .map(({ value }) => new URL(value.slice(value.indexOf("<") + 1, value.indexOf(">"))).origin);
+}
 
 test("responses carry the baseline security headers", async ({ request }) => {
   const response = await request.get("/");
@@ -17,12 +24,19 @@ test("the trailing-slash redirect never leaves the site", async ({ baseURL, requ
   expect(response.headers().location).toBe("/evil.example");
 });
 
+test("a Markdown page never names or redirects to another site", async ({ baseURL, request }) => {
+  const response = await request.get(`${baseURL}//evil.example/.md`, { maxRedirects: 0 });
+
+  const elsewhere = linkedOrigins(response.headersArray()).filter((origin) => origin !== appOrigin);
+  expect(elsewhere).toEqual([]);
+  expect(response.headers().location).toBe("/evil.example.md");
+});
+
 test("server functions reject cross-site requests", async ({ request }) => {
-  const serverFn = "/_serverFn/csrf-probe";
+  const unknownServerFn = "/_serverFn/csrf-probe";
+  const post = (fetchSite: string) =>
+    request.post(unknownServerFn, { headers: { "sec-fetch-site": fetchSite } });
 
-  const crossSite = await request.post(serverFn, { headers: { "sec-fetch-site": "cross-site" } });
-  expect(crossSite.status()).toBe(403);
-
-  const sameOrigin = await request.post(serverFn, { headers: { "sec-fetch-site": "same-origin" } });
-  expect(sameOrigin.status()).not.toBe(403);
+  expect((await post("cross-site")).status()).toBe(403);
+  expect((await post("same-origin")).status()).toBe(404);
 });

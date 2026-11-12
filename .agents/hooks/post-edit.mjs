@@ -1,30 +1,20 @@
-import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync, realpathSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, extname, isAbsolute, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { statSync } from "node:fs";
+import { extname, isAbsolute, relative } from "node:path";
 
-const require = createRequire(import.meta.url);
-const fallbackRoot = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
-const projectRoot = realpathSync(process.env.CLAUDE_PROJECT_DIR ?? fallbackRoot);
-const supportedExtensions = new Set([
-  ".css",
-  ".cts",
-  ".html",
-  ".js",
-  ".json",
-  ".jsonc",
-  ".jsx",
-  ".md",
-  ".mjs",
-  ".mts",
-  ".ts",
-  ".tsx",
-  ".yaml",
-  ".yml",
-]);
-const typeScriptExtensions = new Set([".cts", ".mts", ".ts", ".tsx"]);
-const lintExtensions = new Set([".cjs", ".cts", ".js", ".jsx", ".mjs", ".mts", ".ts", ".tsx"]);
+import { checkableExtensions, lintableExtensions, typedExtensions } from "#tooling/project";
+
+import { editTargets } from "./edit-targets.mjs";
+import { runHook, truncate } from "./hook-io.mjs";
+import { physicalPath } from "./physical-path.mjs";
+import {
+  dependenciesInstalled,
+  packageBinary,
+  refreshRouteTree,
+  runTool,
+} from "./project-tools.mjs";
+
+export const event = "PostToolUse";
+
 const ignoredRoots = [
   ".git",
   ".output",
@@ -33,108 +23,105 @@ const ignoredRoots = [
   "coverage",
   "node_modules",
 ];
+const skipped = { ok: true, output: "" };
 
-function packageBinary(packageName, binaryName) {
-  const packagePath = require.resolve(`${packageName}/package.json`);
-  const packageJson = JSON.parse(readFileSync(packagePath, "utf8"));
-  const binary =
-    typeof packageJson.bin === "string" ? packageJson.bin : packageJson.bin?.[binaryName];
-  if (!binary) throw new Error(`${packageName} does not expose ${binaryName}`);
-  return resolve(dirname(packagePath), binary);
+function feedback(message) {
+  return {
+    hookSpecificOutput: {
+      hookEventName: event,
+      additionalContext: truncate(message, { keep: "start" }),
+    },
+  };
 }
 
-function run(binary, args) {
-  return spawnSync(process.execPath, [binary, ...args], {
-    cwd: projectRoot,
-    encoding: "utf8",
-    env: { ...process.env, NO_COLOR: "1" },
-  });
+function writtenPaths(toolName, toolInput) {
+  return editTargets(toolName, toolInput)
+    .filter((target) => !target.deleted)
+    .map((target) => target.path);
 }
 
-function report(message) {
-  const additionalContext = message.length > 4_000 ? `${message.slice(0, 3_997)}...` : message;
-  process.stdout.write(
-    `${JSON.stringify({ hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext } })}\n`,
-  );
-}
+function projectFile(filePath, root) {
+  const target = physicalPath(root, filePath);
+  if (!statSync(target, { throwIfNoEntry: false })?.isFile()) return null;
 
-function editedFiles(toolName, toolInput) {
-  if (toolName === "apply_patch" && typeof toolInput?.command === "string") {
-    return [
-      ...toolInput.command.matchAll(/^\*\*\* (?:Add|Update) File: (.+)$|^\*\*\* Move to: (.+)$/gm),
-    ].map((match) => (match[1] ?? match[2]).trim());
-  }
-  if (
-    ["Edit", "Write", "MultiEdit"].includes(toolName) &&
-    typeof toolInput?.file_path === "string"
-  ) {
-    return [toolInput.file_path];
-  }
-  return [];
-}
-
-function projectFile(filePath) {
-  const candidate = isAbsolute(filePath) ? filePath : resolve(projectRoot, filePath);
-  if (!existsSync(candidate) || !lstatSync(candidate).isFile()) return null;
-
-  const target = realpathSync(candidate);
-  const projectPath = relative(projectRoot, target);
+  const projectPath = relative(root, target);
   if (
     projectPath === "" ||
     projectPath.startsWith("..") ||
     isAbsolute(projectPath) ||
-    ignoredRoots.some((root) => projectPath === root || projectPath.startsWith(`${root}/`)) ||
-    !supportedExtensions.has(extname(target).toLowerCase())
+    ignoredRoots.some(
+      (ignored) => projectPath === ignored || projectPath.startsWith(`${ignored}/`),
+    ) ||
+    !checkableExtensions.has(extname(target).toLowerCase())
   ) {
     return null;
   }
   return { target, projectPath };
 }
 
-try {
-  const input = JSON.parse(readFileSync(0, "utf8"));
-  if (input.hook_event_name !== "PostToolUse") process.exit(0);
-
-  const files = editedFiles(input.tool_name, input.tool_input)
-    .map(projectFile)
+function projectFiles(input, root) {
+  const files = writtenPaths(input.tool_name, input.tool_input)
+    .map((path) => projectFile(path, root))
     .filter((file) => file !== null);
-  if (files.length === 0) process.exit(0);
-
-  const vp = packageBinary("vite-plus", "vp");
-  const feedback = [];
-
-  for (const { target, projectPath } of files) {
-    const format = run(vp, ["fmt", target]);
-    if (format.status !== 0) {
-      feedback.push(
-        `Automatic formatting failed for ${projectPath}.\n${format.stderr || format.stdout}`,
-      );
-      continue;
-    }
-
-    if (lintExtensions.has(extname(target).toLowerCase())) {
-      const lint = run(vp, ["lint", target]);
-      if (lint.status !== 0) {
-        feedback.push(`Lint found an issue in ${projectPath}.\n${lint.stdout || lint.stderr}`);
-      }
-    }
-  }
-
-  const typeScriptFile = files.find(({ target }) =>
-    typeScriptExtensions.has(extname(target).toLowerCase()),
-  );
-  if (typeScriptFile) {
-    const typecheck = run(packageBinary("typescript", "tsc"), ["-b", "--pretty", "false"]);
-    if (typecheck.status !== 0) {
-      feedback.push(
-        `Type checking found an issue after editing ${typeScriptFile.projectPath}.\n${typecheck.stdout || typecheck.stderr}`,
-      );
-    }
-  }
-
-  if (feedback.length > 0) report(feedback.join("\n\n"));
-} catch (error) {
-  report(
-    `Post-edit feedback could not run.\n${error instanceof Error ? error.message : String(error)}`,
-  );
+  return [...new Map(files.map((file) => [file.target, file])).values()];
 }
+
+function withExtension(files, extensions) {
+  return files.filter(({ target }) => extensions.has(extname(target).toLowerCase()));
+}
+
+function pathList(files) {
+  return files.map(({ projectPath }) => projectPath).join(", ");
+}
+
+function targetsOf(files) {
+  return files.map(({ target }) => target);
+}
+
+function problem(result, heading) {
+  return result.ok ? [] : [`${heading}\n${result.output}`];
+}
+
+async function problemsIn(files, root) {
+  const lintable = withExtension(files, lintableExtensions);
+  const typed = withExtension(files, typedExtensions);
+  const vp = packageBinary(root, "vite-plus", "vp");
+  const tsc = typed.length > 0 ? packageBinary(root, "typescript", "tsc") : null;
+
+  const routeTree = await refreshRouteTree(
+    root,
+    files.map(({ projectPath }) => projectPath),
+  );
+  const format = await runTool(root, vp, [
+    "fmt",
+    "--no-error-on-unmatched-pattern",
+    ...targetsOf(files),
+  ]);
+  const [lint, typecheck] = await Promise.all([
+    lintable.length > 0
+      ? runTool(root, vp, ["lint", "--no-error-on-unmatched-pattern", ...targetsOf(lintable)])
+      : skipped,
+    tsc ? runTool(root, tsc, ["-b", "--pretty", "false"]) : skipped,
+  ]);
+
+  return [
+    ...problem(routeTree, `Route tree generation failed after editing ${pathList(files)}.`),
+    ...problem(format, `Automatic formatting failed for ${pathList(files)}.`),
+    ...problem(lint, `Lint found an issue in ${pathList(lintable)}.`),
+    ...problem(typecheck, `Type checking found an issue after editing ${pathList(typed)}.`),
+  ];
+}
+
+export async function postEditFeedback(input, { root }) {
+  const files = projectFiles(input, root);
+  if (files.length === 0) return null;
+  if (!dependenciesInstalled(root)) {
+    return feedback(
+      "Post-edit feedback could not run: dependencies are not installed. Run `npm ci`.",
+    );
+  }
+  const problems = await problemsIn(files, root);
+  return problems.length > 0 ? feedback(problems.join("\n\n")) : null;
+}
+
+if (import.meta.main) await runHook(postEditFeedback, { event, name: "post-edit feedback" });

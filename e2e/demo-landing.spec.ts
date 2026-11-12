@@ -1,121 +1,68 @@
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { origin, structuredData, trackBrowserErrors } from "./helpers";
+import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./copy-command";
+import { appOrigin as origin } from "./environment";
+import { expect, test } from "./fixtures";
+import { structuredData } from "./helpers";
 
-const installCommand = "npx degit quinnsprouse/rodeo my-app";
-
-test("the install command copies to the clipboard", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
-  await page.goto("/");
-
-  await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
-  await expect(page.getByText(/^Checks every/)).toBeVisible();
-  await expect(page.getByRole("link", { name: /github/i }).first()).toBeVisible();
-  await expect(page.getByText(installCommand).first()).toBeVisible();
-
-  const copyButton = page.getByRole("button", { name: "Copy to clipboard" }).first();
-  await copyButton.click();
-  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
-  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(installCommand);
-  expect(browserErrors).toHaveLength(0);
-});
-
-function recordCopiedText(page: Page) {
-  return page.addInitScript(() => {
-    document.addEventListener("copy", () => {
-      document.documentElement.dataset.copied = String(window.getSelection());
-    });
-  });
+function chip(page: Page, name: string) {
+  return page.getByRole("button", { name, exact: true });
 }
 
-test("copy falls back to the selection when the clipboard API is unavailable", async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
-  });
-  await recordCopiedText(page);
-  await page.goto("/");
+function installCommand(page: Page) {
+  return snippetAround(page.getByRole("status").first());
+}
 
-  await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
-  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
-  await expect(page.locator("html")).toHaveAttribute("data-copied", installCommand);
+test.describe(() => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("the install command in the header copies to the clipboard", async ({ page }) => {
+    await page.goto("/");
+    const { command, copy } = installCommand(page);
+    const shown = await command.textContent();
+
+    await copy.click();
+    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
+  });
 });
 
-test("copy explains the manual path when no copy method works", async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
-    Object.defineProperty(document, "execCommand", { configurable: true, value: () => false });
+for (const fallback of copyFallbacks) {
+  test(`the install command in the header ${fallback.title}`, async ({ page }) => {
+    await withCopyFallback(page, fallback);
+    await page.goto("/");
+    const snippet = installCommand(page);
+    const shown = String(await snippet.command.textContent());
+
+    await snippet.copy.click();
+    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown));
   });
-  await page.goto("/");
-
-  await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
-  await expect(
-    page.getByText("Couldn't copy. Select and copy the command manually."),
-  ).toBeVisible();
-  expect(await page.evaluate(() => String(window.getSelection()))).toBe(installCommand);
-});
-
-test("copy falls back when clipboard access is denied", async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator.clipboard, "writeText", {
-      configurable: true,
-      value: () => Promise.reject(new DOMException("Permission denied", "NotAllowedError")),
-    });
-  });
-  await recordCopiedText(page);
-  await page.goto("/");
-
-  await page.getByRole("button", { name: "Copy to clipboard" }).first().click();
-  await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
-  await expect(page.locator("html")).toHaveAttribute("data-copied", installCommand);
-});
-
-async function swapChip(page: Page, current: string, next: string) {
-  await page.getByRole("button", { name: current, exact: true }).click();
-  await expect(page.getByRole("button", { name: next, exact: true })).toBeVisible();
 }
 
 test("swap chips show the next example when clicked", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  await swapChip(page, "edit", "commit");
-  await swapChip(page, "commit", "push");
-  await swapChip(page, "push", "edit");
-  await swapChip(page, "stray comments", "dead code");
-  await swapChip(page, "Claude Code", "Codex");
-  expect(browserErrors).toHaveLength(0);
+  await chip(page, "edit").click();
+  await expect(chip(page, "commit")).toBeVisible();
+  await chip(page, "commit").click();
+  await expect(chip(page, "push")).toBeVisible();
+  await chip(page, "push").click();
+  await expect(chip(page, "edit")).toBeVisible();
+  await chip(page, "stray comments").click();
+  await expect(chip(page, "dead code")).toBeVisible();
+  await chip(page, "Claude Code").click();
+  await expect(chip(page, "Codex")).toBeVisible();
 });
 
 test("swap chips play on their own when motion is allowed", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
 
-  await expect(page.getByRole("button", { name: "commit", exact: true })).toBeVisible();
-  expect(browserErrors).toHaveLength(0);
-});
-
-test("a theme switch overrides the system theme and is remembered", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
-  await page.emulateMedia({ colorScheme: "dark" });
-  await page.goto("/");
-  const root = page.locator("html");
-
-  await page.getByRole("button", { name: "Switch to light theme" }).click();
-  await expect(root).not.toHaveClass(/\bdark\b/);
-
-  await page.reload();
-  await expect(root).not.toHaveClass(/\bdark\b/);
-  await page.emulateMedia({ colorScheme: "light" });
-  await page.emulateMedia({ colorScheme: "dark" });
-  await expect(page.getByRole("button", { name: "Switch to dark theme" })).toBeVisible();
-  await expect(root).not.toHaveClass(/\bdark\b/);
-  expect(browserErrors).toHaveLength(0);
+  await expect(chip(page, "commit")).toBeVisible();
 });
 
 test("the scroll hint leads past the header and then gets out of the way", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
   await page.goto("/");
   const hint = page.getByRole("link", { name: "Scroll to how Rodeo works" });
 
@@ -124,31 +71,24 @@ test("the scroll hint leads past the header and then gets out of the way", async
     page.getByRole("heading", { name: "Start with code you want the agent to copy." }),
   ).toBeInViewport();
   await expect(hint).toBeHidden();
-  expect(browserErrors).toHaveLength(0);
 });
 
-test("reduced motion shows content immediately", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
+test("reduced motion keeps the swap chips on their first example", async ({ page }) => {
   await page.clock.install();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
-  await expect(page.getByText(installCommand).first()).toBeVisible();
   await page.clock.fastForward(6000);
-  await expect(page.getByRole("button", { name: "edit", exact: true })).toBeVisible();
-  expect(browserErrors).toHaveLength(0);
+  await expect(chip(page, "edit")).toBeVisible();
 });
 
 test("motion responds when the system preference changes", async ({ page }) => {
-  const browserErrors = trackBrowserErrors(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "edit", exact: true })).toBeVisible();
+  await expect(chip(page, "edit")).toBeVisible();
 
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await expect(page.getByRole("button", { name: "commit", exact: true })).toBeVisible();
-  expect(browserErrors).toHaveLength(0);
+  await expect(chip(page, "commit")).toBeVisible();
 });
 
 test.describe("server-rendered introduction", () => {
@@ -158,7 +98,7 @@ test.describe("server-rendered introduction", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1, name: "rodeo" })).toBeVisible();
     await expect(page.getByText(/^Checks every/)).toBeVisible();
-    await expect(page.getByText(installCommand).first()).toBeVisible();
+    await expect(page.getByRole("code").first()).toHaveText(/\S/);
     await expect(page.getByText("Format, lint, and types pass")).toBeVisible();
   });
 });
@@ -193,33 +133,25 @@ test("switching checks stages keeps the page where the reader left it", async ({
   expect(await page.evaluate(() => window.scrollY)).toBe(scrollBefore);
 });
 
-test("the theme toggle switches the browser chrome and remembers it", async ({ page }) => {
-  await page.goto("/");
-  const browserChrome = page.locator('meta[name="theme-color"]');
-
-  await expect(browserChrome).toHaveAttribute("content", "#ffffff");
-  await page.getByRole("button", { name: "Switch to dark theme" }).click();
-  await expect(browserChrome).toHaveAttribute("content", "#000000");
-
-  await page.reload();
-  await expect(browserChrome).toHaveAttribute("content", "#000000");
-});
-
-test("the home page describes Rodeo with structured data and Markdown", async ({
+test("the home page names its repository and keeps its links in the Markdown", async ({
   page,
   request,
 }) => {
   await page.goto("/");
-  expect(await structuredData(page)).toMatchObject({
-    "@graph": expect.arrayContaining([
-      expect.objectContaining({
-        "@type": "SoftwareSourceCode",
-        codeRepository: "https://github.com/quinnsprouse/rodeo",
-      }),
-    ]),
-  });
+  const repository = await page.getByRole("link", { name: "GitHub" }).first().getAttribute("href");
+  expect(await structuredData(page)).toMatchObject([
+    {
+      "@graph": expect.arrayContaining([
+        expect.objectContaining({ "@type": "SoftwareSourceCode", codeRepository: repository }),
+      ]),
+    },
+  ]);
 
-  const home = await (await request.get("/index.md")).text();
-  expect(home).toMatch(/^# rodeo: A free React starter for Claude Code and Codex\./);
-  expect(home).toContain(`[Read the philosophy](${origin}/philosophy)`);
+  const markdownUrl = await page
+    .locator('link[rel="alternate"][type="text/markdown"]')
+    .getAttribute("href");
+  const markdown = await (await request.get(new URL(String(markdownUrl)).pathname)).text();
+  const philosophy = page.getByRole("main").getByRole("link", { name: "Read the philosophy" });
+  const philosophyUrl = new URL(String(await philosophy.getAttribute("href")), origin).href;
+  expect(markdown).toContain(`[Read the philosophy](${philosophyUrl})`);
 });

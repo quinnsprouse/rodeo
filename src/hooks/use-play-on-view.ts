@@ -1,9 +1,12 @@
 import { useEffect, useState, type RefObject } from "react";
 
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+
 export type Playback = "static" | "waiting" | "playing";
 
-export function usePlayOnView(ref: RefObject<Element | null>, enabled: boolean): Playback {
+export function usePlayOnView(ref: RefObject<Element | null>): Playback {
   const [playback, setPlayback] = useState<Playback>("static");
+  const enabled = !usePrefersReducedMotion();
 
   useEffect(() => {
     const node = ref.current;

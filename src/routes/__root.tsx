@@ -2,8 +2,8 @@ import {
   Outlet,
   createRootRoute,
   HeadContent,
+  ScriptOnce,
   Scripts,
-  rootRouteId,
   useMatches,
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -11,28 +11,25 @@ import type { ReactNode } from "react";
 import { SiteAnalytics } from "@/components/site-analytics";
 import { clientEnv } from "@/config/env";
 import { fonts, preloadFont } from "@/config/fonts";
-import { createSiteHead } from "@/config/site";
+import { currentPage, pageHead } from "@/config/pages";
 import { useTheme } from "@/hooks/use-theme";
-import { browserChrome, themeInitScript, type Canvas } from "@/lib/theme";
+import { publicOrigin } from "@/lib/page-url";
+import { canvases, themeInitScript, type Canvas } from "@/lib/theme";
 
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
   head: ({ matches }) => {
-    // why: With notFoundMode "root", TanStack Router matches an unknown URL only to the root route,
-    // so a page whose deepest match is the root is a 404.
-    const page = matches.at(-1);
-    const hasOwnUrl = page?.status === "success" && page.routeId !== rootRouteId;
-    const siteHead = createSiteHead(hasOwnUrl ? page.pathname : undefined);
+    const page = pageHead(currentPage(matches), publicOrigin());
 
     return {
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
-        ...siteHead.meta,
+        ...page.meta,
       ],
       links: [
-        ...siteHead.links,
+        ...page.links,
         { rel: "icon", href: "/favicon.ico", sizes: "32x32" },
         { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
         { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
@@ -40,7 +37,7 @@ export const Route = createRootRoute({
         preloadFont(fonts.medium),
         { rel: "stylesheet", href: appCss },
       ],
-      scripts: [{ children: themeInitScript }],
+      scripts: page.scripts,
     };
   },
   component: RootComponent,
@@ -61,7 +58,7 @@ function useCanvas(): Canvas {
 
 function BrowserChrome({ canvas }: { canvas: Canvas }) {
   const theme = useTheme();
-  return <meta name="theme-color" content={browserChrome[theme][canvas]} />;
+  return <meta name="theme-color" content={canvases[canvas].chrome[theme]} />;
 }
 
 function RootShell({ children }: { children: ReactNode }) {
@@ -70,10 +67,13 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="motion-safe:scroll-smooth" suppressHydrationWarning>
       <head>
+        {/* why: TanStack Router reruns head() in the browser, and the minified function text there
+            differs from the server's, so a head script would run twice. */}
+        <ScriptOnce>{themeInitScript}</ScriptOnce>
         <HeadContent />
         <BrowserChrome canvas={canvas} />
       </head>
-      <body className={canvas === "card" ? "bg-card" : undefined}>
+      <body className={canvases[canvas].body}>
         <a
           href="#main"
           className="fixed top-0 left-0 z-50 -translate-y-full bg-foreground px-m py-xs text-s font-medium text-background transition-transform duration-(--motion-duration) ease-(--motion-easing) focus:translate-y-0"

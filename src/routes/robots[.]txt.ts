@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { robotsTxt, siteOrigin, textFile } from "@/lib/site-files";
+import { publicOrigin } from "@/lib/page-url";
+import { robotsTxt, textFile } from "@/lib/site-files";
 
 export const Route = createFileRoute("/robots.txt")({
   server: {
     handlers: {
-      GET: ({ request }) => textFile(robotsTxt(siteOrigin(request)), "text/plain"),
+      GET: ({ request }) => textFile(robotsTxt(publicOrigin(request)), "text/plain"),
     },
   },
 });

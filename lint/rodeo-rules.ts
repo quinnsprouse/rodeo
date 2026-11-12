@@ -1,28 +1,37 @@
-export const rodeoRuleNames = [
-  "no-disable-directives",
-  "no-comments",
-  "no-import-meta-env",
-  "server-fn-requires-validator",
-  "no-state-from-props",
-  "no-module-scope-browser-globals",
-  "no-window-navigation",
-] as const;
+import type { OxlintConfig } from "vite-plus/lint";
 
-export type RodeoRuleName = (typeof rodeoRuleNames)[number];
+import { defaultCommentOptions, pluginName, rules } from "./rules.js";
+
+export type RodeoRuleName = keyof typeof rules;
+
+export type RodeoRuleId = `${typeof pluginName}/${RodeoRuleName}`;
+
+export { pluginName };
+
+const rodeoPluginPath = "./lint/rules.js";
+
+export const rodeoPlugin = { name: pluginName, specifier: rodeoPluginPath } as const;
+
+export function isRodeoRuleName(name: string): name is RodeoRuleName {
+  return Object.hasOwn(rules, name);
+}
+
+function ruleId(name: RodeoRuleName): RodeoRuleId {
+  return `${pluginName}/${name}`;
+}
 
 export const rodeoRules = Object.fromEntries(
-  rodeoRuleNames.map((name) => [`rodeo/${name}`, "error" as const]),
+  Object.keys(rules)
+    .filter(isRodeoRuleName)
+    .map((name) => [ruleId(name), "error" as const]),
 );
 
-export const rodeoRuleExceptions = [
-  {
-    // why: This module is where the app parses import.meta.env into clientEnv.
-    files: ["src/config/env.ts"],
-    rules: ["rodeo/no-import-meta-env"],
-  },
-  {
-    // why: cn build regenerates this module on every build, and its header comments come from cn.
-    files: ["src/lib/cn-tables.ts"],
-    rules: ["rodeo/no-comments"],
-  },
-];
+export const commentScopes = {
+  rules: { [ruleId("no-comments")]: ["error", { cause: "optional", minWords: 3 }] },
+  overrides: [
+    {
+      files: ["src/**", "e2e/**"],
+      rules: { [ruleId("no-comments")]: ["error", defaultCommentOptions] },
+    },
+  ],
+} satisfies Pick<OxlintConfig, "rules" | "overrides">;

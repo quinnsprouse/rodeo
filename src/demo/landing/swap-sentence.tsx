@@ -1,0 +1,158 @@
+import { ClientOnly } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
+
+import { StaticChipFace, type SwapChoice } from "@/demo/landing/swap-chip-face";
+import { useOnScreen } from "@/demo/landing/use-on-screen";
+import { usePageVisible } from "@/demo/landing/use-page-visible";
+import { useThemeRevealing } from "@/demo/landing/use-theme-revealing";
+import {
+  ClaudeSticker,
+  CodexSticker,
+  CommentSticker,
+  CommitSticker,
+  DeadCodeSticker,
+  EditSticker,
+  OffBrandSticker,
+  PushSticker,
+} from "@/demo/stickers/swap";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
+import { excludeFromMarkdown } from "@/lib/page-markdown";
+
+const AnimatedChipFace = lazy(() =>
+  import("@/demo/landing/swap-chip-motion").then((mod) => ({ default: mod.AnimatedChipFace })),
+);
+
+type Choices = readonly [SwapChoice, ...SwapChoice[]];
+
+const checkpoints: Choices = [
+  { word: "edit", Sticker: EditSticker, swing: -1 },
+  { word: "commit", Sticker: CommitSticker, swing: 1 },
+  { word: "push", Sticker: PushSticker, swing: 1 },
+];
+
+const catches: Choices = [
+  { word: "stray comments", Sticker: CommentSticker, swing: -1 },
+  { word: "dead code", Sticker: DeadCodeSticker, swing: -1 },
+  { word: "off-brand colors", Sticker: OffBrandSticker, swing: -1 },
+];
+
+const agents: Choices = [
+  { word: "Claude Code", Sticker: ClaudeSticker, swing: -1 },
+  { word: "Codex", Sticker: CodexSticker, swing: 1 },
+];
+
+const slots: readonly Choices[] = [checkpoints, catches, agents];
+
+const firstSwapDelay = 600;
+const swapInterval = 1800;
+
+interface SwapState {
+  picks: number[];
+  next: number;
+  moved: boolean;
+}
+
+function advance(state: SwapState, slot: number): SwapState {
+  return {
+    picks: state.picks.map((pick, index) =>
+      index === slot ? (pick + 1) % (slots[index]?.length ?? 1) : pick,
+    ),
+    next: (slot + 1) % slots.length,
+    moved: true,
+  };
+}
+
+interface ChipProps {
+  choices: Choices;
+  pick: number;
+  animate: boolean;
+  hintId: string;
+  onSwap: () => void;
+  onHold: (held: boolean) => void;
+}
+
+function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
+  const choice = choices[pick % choices.length] ?? choices[0];
+  return (
+    <button
+      type="button"
+      onClick={onSwap}
+      onPointerEnter={() => onHold(true)}
+      onPointerLeave={() => onHold(false)}
+      onFocus={() => onHold(true)}
+      onBlur={() => onHold(false)}
+      aria-describedby={hintId}
+      className="group/chip relative isolate inline-flex h-[1.2em] items-center gap-xxs rounded-l bg-muted pr-xs pl-xxs align-middle transition duration-(--motion-duration) ease-(--motion-easing) select-none hover:bg-neutral-4 active:translate-y-(--motion-press-distance) md:h-[1.34em] md:gap-xs md:pr-m"
+    >
+      {animate ? (
+        <ClientOnly fallback={<StaticChipFace choice={choice} />}>
+          <Suspense fallback={<StaticChipFace choice={choice} />}>
+            <AnimatedChipFace choices={choices} pick={pick % choices.length} />
+          </Suspense>
+        </ClientOnly>
+      ) : (
+        <StaticChipFace choice={choice} />
+      )}
+    </button>
+  );
+}
+
+export function SwapSentence() {
+  const [state, setState] = useState<SwapState>({
+    picks: slots.map(() => 0),
+    next: 0,
+    moved: false,
+  });
+  const [held, setHeld] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+  const visible = usePageVisible();
+  const revealing = useThemeRevealing();
+  const hintId = useId();
+  const sentence = useRef<HTMLParagraphElement>(null);
+  const onScreen = useOnScreen(sentence);
+  const autoplay = !reducedMotion && visible && onScreen && !held && !revealing;
+
+  useEffect(() => {
+    if (!autoplay) return;
+    const timer = window.setTimeout(
+      () => setState((current) => advance(current, current.next)),
+      state.moved ? swapInterval : firstSwapDelay,
+    );
+    return () => window.clearTimeout(timer);
+  }, [autoplay, state]);
+
+  const [checkpointChip, catchChip, agentChip] = slots.map((choices, slot) => (
+    <Chip
+      key={choices[0].word}
+      choices={choices}
+      pick={state.picks[slot] ?? 0}
+      animate={!reducedMotion}
+      hintId={hintId}
+      onSwap={() => setState((current) => advance(current, slot))}
+      onHold={setHeld}
+    />
+  ));
+
+  return (
+    <>
+      <p
+        ref={sentence}
+        className="text-center text-display font-heavy tracking-xs text-foreground md:text-display-wide"
+      >
+        <span className="block">
+          Checks every <span className="whitespace-nowrap">{checkpointChip},</span>
+        </span>{" "}
+        <span className="block">
+          catches <span className="whitespace-nowrap">{catchChip},</span>
+        </span>{" "}
+        <span className="block">
+          and keeps {agentChip}
+          <br className="md:hidden" /> <span className="whitespace-nowrap">on track.</span>
+        </span>
+      </p>
+      <span id={hintId} {...excludeFromMarkdown} className="sr-only">
+        Select a highlighted word to see another example.
+      </span>
+    </>
+  );
+}

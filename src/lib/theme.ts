@@ -1,42 +1,47 @@
 export type Theme = "light" | "dark";
-export type Canvas = "background" | "card";
+
+interface CanvasColors {
+  body: string | undefined;
+  chrome: Record<Theme, string>;
+}
+
+export const canvases = {
+  background: { body: undefined, chrome: { light: "#ffffff", dark: "#000000" } },
+  card: { body: "bg-card", chrome: { light: "#fafafa", dark: "#202020" } },
+} satisfies Record<string, CanvasColors>;
+
+export type Canvas = keyof typeof canvases;
 
 const storageKey = "rodeo-theme";
-const changeEvent = "rodeo-theme-change";
-export const browserChrome: Record<Theme, Record<Canvas, string>> = {
-  light: { background: "#ffffff", card: "#fafafa" },
-  dark: { background: "#000000", card: "#202020" },
-};
-
 const systemDark = "(prefers-color-scheme: dark)";
 
-export const themeInitScript = `try{var s=localStorage.getItem("${storageKey}");if(s?s==="dark":matchMedia("${systemDark}").matches){var r=document.documentElement;r.classList.add("dark");r.style.colorScheme="dark"}}catch(e){}`;
-
-function storedTheme(): Theme | undefined {
+function themeFromStorage(key: string, darkQuery: string): Theme {
+  let stored: string | null;
   try {
-    const stored = localStorage.getItem(storageKey);
-    return stored === "dark" || stored === "light" ? stored : undefined;
+    stored = localStorage.getItem(key);
   } catch {
-    return undefined;
+    stored = null;
   }
+  if (stored === "dark" || stored === "light") return stored;
+  return matchMedia(darkQuery).matches ? "dark" : "light";
 }
 
-function storeTheme(theme: Theme) {
-  try {
-    localStorage.setItem(storageKey, theme);
-  } catch {
-    return;
-  }
-}
-
-function applyTheme(theme: Theme) {
+function writeTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.style.colorScheme = theme;
-  window.dispatchEvent(new Event(changeEvent));
 }
 
-function snapToTheme(theme: Theme) {
+export const themeInitScript = `try{var t=(${String(themeFromStorage)})(${JSON.stringify(storageKey)},${JSON.stringify(systemDark)});t==="dark"&&(${String(writeTheme)})(t)}catch(e){}`;
+
+const subscribers = new Set<() => void>();
+
+export function applyTheme(theme: Theme) {
+  writeTheme(theme);
+  for (const notify of subscribers) notify();
+}
+
+export function snapToTheme(theme: Theme) {
   const root = document.documentElement;
   root.classList.add("theme-snap");
   applyTheme(theme);
@@ -45,100 +50,43 @@ function snapToTheme(theme: Theme) {
   });
 }
 
-export interface RevealOrigin {
-  x: number;
-  y: number;
-}
-
-const revealDuration = 600;
-const revealEasing = "cubic-bezier(0.645, 0.045, 0.355, 1)";
-const revealSettle = 40;
-const revealEvent = "rodeo-theme-reveal";
-let latestReveal: ViewTransition | undefined;
-
-function setRevealing(revealing: boolean) {
-  document.documentElement.classList.toggle("theme-snap", revealing);
-  document.documentElement.classList.toggle("theme-reveal", revealing);
-  window.dispatchEvent(new Event(revealEvent));
-}
-
-function revealFrom({ x, y }: RevealOrigin) {
-  const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
-  document.documentElement.animate(
-    { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
-    {
-      duration: revealDuration,
-      easing: revealEasing,
-      delay: revealSettle,
-      fill: "both",
-      pseudoElement: "::view-transition-new(root)",
-    },
-  );
-}
-
-function applyThemeInOneStep(theme: Theme, origin: RevealOrigin | undefined) {
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reducedMotion || !origin || !("startViewTransition" in document)) {
-    snapToTheme(theme);
-    return;
-  }
-
-  const transition = document.startViewTransition(() => {
-    const root = document.documentElement;
-    root.style.setProperty("--reveal-x", `${origin.x}px`);
-    root.style.setProperty("--reveal-y", `${origin.y}px`);
-    setRevealing(true);
-    applyTheme(theme);
-  });
-  void transition.ready.then(
-    () => revealFrom(origin),
-    () => undefined,
-  );
-  latestReveal = transition;
-  void transition.finished.finally(() => {
-    if (latestReveal !== transition) return;
-    setRevealing(false);
-    latestReveal = undefined;
-  });
-}
-
-export function themeRevealing() {
-  return document.documentElement.classList.contains("theme-reveal");
-}
-
-export function subscribeToReveal(onChange: () => void) {
-  window.addEventListener(revealEvent, onChange);
-  return () => window.removeEventListener(revealEvent, onChange);
-}
-
-function followOtherTabs(event: StorageEvent) {
-  if (event.key !== storageKey) return;
-  applyTheme(event.newValue === "dark" ? "dark" : "light");
-}
-
-function followSystem(event: MediaQueryListEvent) {
-  const theme = event.matches ? "dark" : "light";
-  if (storedTheme() || currentTheme() === theme) return;
-  snapToTheme(theme);
-}
-
-export function setTheme(theme: Theme, origin?: RevealOrigin) {
-  storeTheme(theme);
-  applyThemeInOneStep(theme, origin);
-}
-
 export function currentTheme(): Theme {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
 export function subscribeToTheme(onChange: () => void) {
-  const system = window.matchMedia(systemDark);
-  window.addEventListener(changeEvent, onChange);
-  window.addEventListener("storage", followOtherTabs);
-  system.addEventListener("change", followSystem);
+  subscribers.add(onChange);
   return () => {
-    window.removeEventListener(changeEvent, onChange);
-    window.removeEventListener("storage", followOtherTabs);
-    system.removeEventListener("change", followSystem);
+    subscribers.delete(onChange);
   };
 }
+
+export function setTheme(theme: Theme, apply: (theme: Theme) => void = snapToTheme) {
+  try {
+    localStorage.setItem(storageKey, theme);
+  } catch {
+    // why: localStorage throws when the browser blocks site storage, and the theme should
+    // still apply to this page.
+  }
+  apply(theme);
+}
+
+function storedOrSystemTheme() {
+  return themeFromStorage(storageKey, systemDark);
+}
+
+function followSystem() {
+  const theme = storedOrSystemTheme();
+  if (theme !== currentTheme()) snapToTheme(theme);
+}
+
+function followOtherTabs(event: StorageEvent) {
+  if (event.key === storageKey) applyTheme(storedOrSystemTheme());
+}
+
+function followSystemAndOtherTabs() {
+  window.matchMedia(systemDark).addEventListener("change", followSystem);
+  window.addEventListener("storage", followOtherTabs);
+}
+
+if (typeof window !== "undefined") followSystemAndOtherTabs();

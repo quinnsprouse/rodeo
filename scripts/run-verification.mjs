@@ -3,17 +3,23 @@ import { spawn } from "node:child_process";
 const TASK_COMMUNICATION_FAILURE = "Failed to set up task communication";
 const OUTPUT_TAIL_LIMIT = 8_192;
 
-const task = process.argv[2];
+const taskAndFlags = process.argv.slice(2);
 
-if (!task) {
-  console.error("Usage: node scripts/run-verification.mjs <verification-task>");
+if (!taskAndFlags.some((argument) => !argument.startsWith("-"))) {
+  console.error("Usage: node scripts/run-verification.mjs [vp run flags] <verification-task>");
   process.exit(2);
 }
+
+// why: TanStack Start loads every environment variable into the build, so Vite Task fingerprints
+// them all, and the name of the npm script that started this run would miss the build cache.
+const taskEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !name.startsWith("npm_lifecycle_")),
+);
 
 function run(args) {
   return new Promise((resolve, reject) => {
     const child = spawn("vp", args, {
-      env: process.env,
+      env: taskEnv,
       stdio: ["inherit", "pipe", "pipe"],
     });
     let outputTail = "";
@@ -32,11 +38,11 @@ function run(args) {
   });
 }
 
-let result = await run(["run", task]);
+let result = await run(["run", ...taskAndFlags]);
 
 if (result.code !== 0 && result.outputTail.includes(TASK_COMMUNICATION_FAILURE)) {
   console.warn("Vite Task communication is unavailable; retrying this profile without cache.");
-  result = await run(["run", "--no-cache", task]);
+  result = await run(["run", "--no-cache", ...taskAndFlags]);
 }
 
 if (result.signal) {
