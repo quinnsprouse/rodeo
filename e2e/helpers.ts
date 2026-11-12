@@ -1,7 +1,51 @@
 import { AxeBuilder } from "@axe-core/playwright";
-import type { Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 
 import { expect } from "./fixtures";
+
+export interface PageRoute {
+  path: string;
+  listed: boolean;
+}
+
+function routesInBrowser() {
+  const router: unknown = Reflect.get(window, "__TSR_ROUTER__");
+  const routesByPath: unknown =
+    typeof router === "object" && router !== null ? Reflect.get(router, "routesByPath") : {};
+  const routes = typeof routesByPath === "object" && routesByPath !== null ? routesByPath : {};
+  const fieldPaths = [
+    ["options", "component"],
+    ["options", "staticData", "page", "listed"],
+  ];
+  return Object.entries(routes).map(([path, route]: [string, unknown]) => {
+    const [component, listed] = fieldPaths.map((keys) =>
+      keys.reduce<unknown>(
+        (value, key) =>
+          typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined,
+        route,
+      ),
+    );
+    return {
+      path,
+      isPage: component !== undefined && !path.includes("$"),
+      listed: listed !== false,
+    };
+  });
+}
+
+export async function pageRoutes(context: BrowserContext): Promise<PageRoute[]> {
+  const page = await context.newPage();
+  await page.goto("/");
+  await page.waitForFunction(() => Reflect.has(window, "__TSR_ROUTER__"));
+  const routes = await page.evaluate(routesInBrowser);
+  await page.close();
+  const pages = routes.filter(({ isPage }) => isPage).map(({ path, listed }) => ({ path, listed }));
+  expect(
+    pages.map(({ path }) => path),
+    "The router knows the home page",
+  ).toContain("/");
+  return pages;
+}
 
 export async function structuredData(page: Page) {
   const blocks = await page.locator('script[type="application/ld+json"]').allTextContents();
