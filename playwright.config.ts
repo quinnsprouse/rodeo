@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { baseURL, host, port } from "./e2e/environment";
+import { baseURL, host, port, serverEnv } from "./e2e/environment";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,7 +24,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "npm run start",
-    env: { HOST: host, NODE_ENV: "production", PORT: String(port) },
+    env: { ...serverEnv, HOST: host, NODE_ENV: "production", PORT: String(port) },
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
