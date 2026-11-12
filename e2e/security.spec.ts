@@ -33,11 +33,10 @@ test("a Markdown page never names or redirects to another site", async ({ baseUR
 });
 
 test("server functions reject cross-site requests", async ({ request }) => {
-  const serverFn = "/_serverFn/csrf-probe";
+  const unknownServerFn = "/_serverFn/csrf-probe";
+  const post = (fetchSite: string) =>
+    request.post(unknownServerFn, { headers: { "sec-fetch-site": fetchSite } });
 
-  const crossSite = await request.post(serverFn, { headers: { "sec-fetch-site": "cross-site" } });
-  expect(crossSite.status()).toBe(403);
-
-  const sameOrigin = await request.post(serverFn, { headers: { "sec-fetch-site": "same-origin" } });
-  expect(sameOrigin.status()).not.toBe(403);
+  expect((await post("cross-site")).status()).toBe(403);
+  expect((await post("same-origin")).status()).toBe(404);
 });
