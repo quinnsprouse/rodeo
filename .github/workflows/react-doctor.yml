@@ -28,6 +28,18 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
 
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # why: doctor.config.ts loads the lint plugin, which imports vite-plus. Without node_modules
+      # React Doctor fails to load the config, says so in one log line, and scans with its
+      # defaults: no ignored files and no rodeo rules.
+      - name: Install dependencies
+        run: npm ci
+
       - name: Read React Doctor version
         id: doctor-version
         run: echo "version=$(node -p "require('./package.json').devDependencies['react-doctor']")" >> "$GITHUB_OUTPUT"
