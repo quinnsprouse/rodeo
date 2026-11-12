@@ -26,6 +26,17 @@ const routeTreeScript = join("scripts", "generate-route-tree.mjs");
 const routeTreeModule = join("scripts", "lib", "route-tree.mjs");
 const routeTreeFile = join("src", "routeTree.gen.ts");
 
+const viteConfig = `import { defineConfig, lazyPlugins } from "vite-plus";
+
+export default defineConfig({
+  plugins:
+    lazyPlugins(async () => {
+      const { tanstackStart } = await import("@tanstack/react-start/plugin/vite");
+      return [tanstackStart()];
+    }) ?? [],
+});
+`;
+
 let fixtures = "";
 
 function routeModule(path: string) {
@@ -36,12 +47,10 @@ function treeListing(routes: readonly string[]) {
   return routes.map((route) => `import { Route } from './routes/${route}'\n`).join("");
 }
 
-async function generate(fixture: string) {
-  const { status, stdout, stderr } = await run(process.execPath, [join(fixture, routeTreeScript)], {
+function generate(fixture: string) {
+  return run(process.execPath, [join(fixture, routeTreeScript)], {
     cwd: join(fixture, "src", "routes"),
   });
-  if (status !== 0) throw new Error(`node ${routeTreeScript} exited ${String(status)}\n${stderr}`);
-  return stdout;
 }
 
 const routeTree = (fixture: string) => readFileSync(join(fixture, routeTreeFile), "utf8");
@@ -64,6 +73,7 @@ function routedApp(name: string, routes: readonly string[]) {
   cpSync(join(repoRoot, routeTreeScript), inFixture(routeTreeScript));
   cpSync(join(repoRoot, routeTreeModule), inFixture(routeTreeModule));
   writeFileSync(inFixture("package.json"), '{ "name": "route-tree-fixture", "type": "module" }\n');
+  writeFileSync(inFixture("vite.config.ts"), viteConfig);
   writeFileSync(
     inFixture("tsconfig.json"),
     '{ "files": ["src/start.ts"], "compilerOptions": { "noEmit": true, "types": [] } }\n',
@@ -101,17 +111,41 @@ describe.concurrent("route tree regeneration", { timeout: 30_000 }, () => {
     expect(routeTree(app)).toContain("from './routes/about'");
   });
 
-  it("adds new routes and drops deleted ones from any directory, then leaves the current tree untouched", async ({
+  it("runs the app's Vite plugins from any directory to add new routes and drop deleted ones, then leaves the current tree untouched", async ({
     expect,
   }) => {
     const app = routedApp("stale", ["home", "about"]);
     writeFileSync(join(app, routeTreeFile), treeListing(["__root", "home", "old"]));
-    expect(await generate(app)).toBe("Regenerated src/routeTree.gen.ts from src/routes.\n");
+    expect(await generate(app)).toMatchObject({
+      status: 0,
+      stdout: "Regenerated src/routeTree.gen.ts from src/routes.\n",
+    });
     expect(routeTree(app)).toContain("from './routes/about'");
     expect(routeTree(app)).not.toContain("./routes/old");
     expect(routeTree(app)).toContain("declare module '@tanstack/react-start'");
+    expect(readdirSync(join(app, "src", "routes")).toSorted()).toEqual([
+      "__root.tsx",
+      "about.tsx",
+      "home.tsx",
+    ]);
     const { mtimeMs } = statSync(join(app, routeTreeFile));
-    expect(await generate(app)).toBe("");
+    expect(await generate(app)).toMatchObject({ status: 0, stdout: "" });
     expect(statSync(join(app, routeTreeFile)).mtimeMs).toBe(mtimeMs);
+  });
+
+  it("fails with the router's own error and keeps the old tree when a route file is invalid", async ({
+    expect,
+  }) => {
+    const app = routedApp("invalid", ["home"]);
+    const staleTree = treeListing(["__root"]);
+    writeFileSync(join(app, routeTreeFile), staleTree);
+    writeFileSync(join(app, "src/routes/(group).tsx"), routeModule("/"));
+    const { status, stderr } = await generate(app);
+    expect(status).toBe(1);
+    expect(stderr).toContain("A route configuration for a route group was found");
+    expect(stderr).toContain(
+      "Could not regenerate src/routeTree.gen.ts: the TanStack Start plugin in vite.config.ts ran but left it out of date with src/routes.",
+    );
+    expect(routeTree(app)).toBe(staleTree);
   });
 });
