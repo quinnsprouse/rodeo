@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, extname, join } from "node:path";
 
-import { checkableExtensions } from "#tooling/project";
+import { checkableExtensions, isToolingPath } from "#tooling/project";
 import { run } from "#tooling/run";
 
 import { outputLimit, runHook, truncate } from "./hook-io.mjs";
@@ -17,6 +17,7 @@ import {
 export const event = "Stop";
 
 const gitEmptyTree = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+const repositoryTests = ".repo.test.ts";
 const setupSteps = {
   dependencies: {
     reason:
@@ -48,7 +49,7 @@ async function baseRevision(root) {
 }
 
 async function trackedChanges(root, base) {
-  return pathList(await git(root, ["diff", "--name-only", "-z", base]));
+  return pathList(await git(root, ["diff", "--name-only", "--no-renames", "-z", base]));
 }
 
 async function untrackedPaths(root) {
@@ -68,6 +69,21 @@ async function fingerprint(root, base, files, untracked) {
     hash.update(`${path}:${stats?.size ?? "deleted"}:${stats?.mtimeMs ?? 0}\n`);
   }
   hash.update(files.join("\n"));
+  return hash.digest("hex");
+}
+
+function fileContent(file) {
+  return statSync(file, { throwIfNoEntry: false })?.isFile() ? readFileSync(file) : null;
+}
+
+function toolingFingerprint(root, base, paths) {
+  if (paths.length === 0) return null;
+  const hash = createHash("sha256").update(base);
+  for (const path of paths.toSorted()) {
+    const content = fileContent(join(root, path));
+    hash.update(`\0${path}\0${content?.length ?? "missing"}\0`);
+    if (content) hash.update(content);
+  }
   return hash.digest("hex");
 }
 
@@ -99,7 +115,17 @@ async function runCheck(root, label, binary, args) {
   return { label, ...(await runTool(root, binary, args, { CI: "1" })) };
 }
 
-function runChecks(root, files) {
+function runTests(root, vp, toolTestsDue) {
+  const selection = toolTestsDue ? [] : [repositoryTests];
+  return runCheck(root, ["vp test run", ...selection].join(" "), vp, [
+    "test",
+    "run",
+    "--passWithNoTests",
+    ...selection,
+  ]);
+}
+
+function runChecks(root, files, toolTestsDue) {
   const vp = packageBinary(root, "vite-plus", "vp");
   const tsc = packageBinary(root, "typescript", "tsc");
   const checkable = files.filter((path) => checkableExtensions.has(extname(path).toLowerCase()));
@@ -112,7 +138,7 @@ function runChecks(root, files) {
         ])
       : { label: "vp check", ok: true, output: "" },
     runCheck(root, "tsc -b", tsc, ["-b", "--pretty", "false"]),
-    runCheck(root, "vp test run", vp, ["test", "run", "--passWithNoTests"]),
+    runTests(root, vp, toolTestsDue),
   ]);
 }
 
@@ -143,12 +169,16 @@ async function checkChanges(root, { base, changed, untracked, stopHookActive }) 
     };
   }
 
-  const failures = [routeTree, ...(await runChecks(root, files))].filter((result) => !result.ok);
+  const tooling = toolingFingerprint(root, base, paths.filter(isToolingPath));
+  const toolTestsDue = tooling !== null && state.toolTestsPassed !== tooling;
+  const [checked, typed, tested] = await runChecks(root, files, toolTestsDue);
+  const remembered = toolTestsDue && tested.ok ? { ...state, toolTestsPassed: tooling } : state;
+  const failures = [routeTree, checked, typed, tested].filter((result) => !result.ok);
   if (failures.length === 0) {
-    writeState(root, { ...state, passed: current });
+    writeState(root, { ...remembered, passed: current });
     return null;
   }
-  writeState(root, { ...state, failed: current });
+  writeState(root, { ...remembered, failed: current });
   return { decision: "block", reason: blockReason(failures) };
 }
 

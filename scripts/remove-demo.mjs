@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const ownFiles = ["scripts/remove-demo.mjs", "lint/remove-demo.test.ts"];
+const ownFiles = ["scripts/remove-demo.mjs", "lint/remove-demo.repo.test.ts"];
 const demoPaths = ["src/demo", "src/routes/(demo)", "public/stickers", "public/og-rationale.png"];
 const demoSpecs = "e2e/demo-*.spec.ts";
 const demoReference = /src\/demo\/|src\/routes\/\(demo\)|\.\.\/demo\//;

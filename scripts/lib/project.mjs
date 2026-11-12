@@ -1,3 +1,5 @@
+import { matchesGlob } from "node:path";
+
 export const fontOutputs = {
   fonts: "src/assets/fonts",
   stylesheet: "src/styles/fonts.gen.css",
@@ -78,6 +80,24 @@ export const checkableExtensions = new Set([
 ]);
 
 export const gitHooksDirectory = ".vite-hooks";
+
+const lintProbeAppFiles = ["src/components/icon.tsx", "src/types/**"];
+
+const toolingPaths = [
+  ".agents/hooks/**",
+  "lint/**",
+  "scripts/**",
+  "*.config.ts",
+  "tsconfig*.json",
+  "package.json",
+  "package-lock.json",
+  ".gitignore",
+  ...lintProbeAppFiles,
+];
+
+export function isToolingPath(path) {
+  return toolingPaths.some((glob) => matchesGlob(path, glob));
+}
 
 const docLocations = [
   ".agents/",
