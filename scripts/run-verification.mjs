@@ -10,10 +10,16 @@ if (!taskAndFlags.some((argument) => !argument.startsWith("-"))) {
   process.exit(2);
 }
 
+// why: TanStack Start loads every environment variable into the build, so Vite Task fingerprints
+// them all, and the name of the npm script that started this run would miss the build cache.
+const taskEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !name.startsWith("npm_lifecycle_")),
+);
+
 function run(args) {
   return new Promise((resolve, reject) => {
     const child = spawn("vp", args, {
-      env: process.env,
+      env: taskEnv,
       stdio: ["inherit", "pipe", "pipe"],
     });
     let outputTail = "";
