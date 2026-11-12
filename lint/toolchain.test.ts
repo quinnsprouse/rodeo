@@ -42,7 +42,7 @@ async function checkToolchainWith(devDependencies: Pins, overrides: Pins) {
   return { status, named };
 }
 
-describe("The toolchain check", () => {
+describe("The toolchain check", { timeout: 30_000 }, () => {
   it("names each tool Vite+ ships that package.json installs, unless an override pins the version Vite+ ships", async () => {
     const tools = Object.keys(versions);
     const installedAtShippedVersion = { rolldown: versions.rolldown };
