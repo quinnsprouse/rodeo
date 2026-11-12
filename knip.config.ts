@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 
 import type { KnipConfig } from "knip";
 
+import { exampleFeatureDirectory } from "#tooling/project";
+
 import { lintConfig } from "./lint/config";
 
 const lintPluginPackages = lintConfig.jsPlugins
@@ -23,6 +25,7 @@ const starterHome = existsSync(new URL("src/demo", import.meta.url))
 
 export default {
   entry: [...loadedByPath, ...taughtHooks, ...starterHome],
+  ignore: [`${exampleFeatureDirectory}/**`],
   ignoreDependencies: [
     // why: The commit-msg shell hook runs this executable, outside Knip's JavaScript analysis.
     "@commitlint/cli",

@@ -34,9 +34,9 @@ Add UI components with the configured shadcn CLI. Three motion packages are inst
 
 ### Remove the demo
 
-The landing page and the philosophy page are a demo in `src/demo/` and `src/routes/(demo)/`. To start from a blank app, run `node scripts/remove-demo.mjs`, then `npm run check:push`.
+The landing page and the philosophy page are a demo in `src/demo/` and `src/routes/(demo)/`. To start from a blank app, run `node scripts/remove-demo.mjs`, then `npm run check:push`. The push checks need Chromium, so run `npm run test:e2e:install` first if you have not.
 
-The script deletes `src/demo/`, `src/routes/(demo)/`, the `e2e/demo-*.spec.ts` specs, `public/stickers/`, `public/og-rationale.png`, and itself with its test. It removes the demo's references from `src/styles/app.css` and `lint/exceptions.ts`, removes this section from the README, writes a starter home route, and regenerates the route tree. If anything is not where it expects, it changes nothing. `npm run check` runs the same check, so a change that would break the removal fails there.
+The script deletes `src/demo/`, `src/routes/(demo)/`, the `e2e/demo-*.spec.ts` specs, `public/stickers/`, `public/og-rationale.png`, the example feature in `scripts/example-feature/` that the kit's own CI builds on the blank starter, and itself with its test. It removes the demo's references from `src/styles/app.css` and `lint/exceptions.ts`, removes this section from the README, writes a starter home route, and regenerates the route tree. If anything is not where it expects, it changes nothing. `npm run check` runs the same check, so a change that would break the removal fails there.
 
 The starter home, in `src/components/starter-home.tsx`, shows the site name, the tagline, `ThemeToggle`, and a `Snippet` with `npm run dev`.
 

@@ -16,8 +16,9 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "node-html-parser";
 
+import { addTheExampleFeature, holdTheExampleFeature } from "#tooling/example-feature";
 import { hermeticGitEnv } from "#tooling/git-env";
-import { startBuiltServer } from "#tooling/server";
+import { reservePort, startBuiltServer } from "#tooling/server";
 
 const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 const appRoot = mkdtempSync(join(tmpdir(), "rodeo-template-"));
@@ -25,7 +26,7 @@ const artifactRoot = join(repoRoot, "test-results", "starter-journey");
 const journeyLog = join(artifactRoot, "journey.log");
 const keepTemplate = process.env.KEEP_TEMPLATE_TEST === "1";
 const npmExecPath = process.env.npm_execpath;
-const appEnv = { ...hermeticGitEnv(), CI: "1" };
+const appEnv = { ...hermeticGitEnv(), CI: "1", E2E_PORT: String(await reservePort()) };
 let phase = "with the demo";
 let currentCommand = "initialization";
 let succeeded = false;
@@ -81,9 +82,15 @@ function writeTree() {
 }
 
 function runNpm(args, options) {
+  console.log(`npm ${args.join(" ")}`);
   return npmExecPath
     ? run(process.execPath, [npmExecPath, ...args], options)
     : run("npm", args, options);
+}
+
+function runGitHook(name) {
+  console.log(`git hook run ${name}`);
+  return run("git", ["hook", "run", name]);
 }
 
 function hookOutput(hook, input) {
@@ -145,7 +152,7 @@ function installTheTemplate() {
   assert.equal(existsSync(join(appRoot, ".husky")), false);
 
   runNpm(["run", "setup"]);
-  run("git", ["hook", "run", "pre-commit"]);
+  runGitHook("pre-commit");
   assertTree(distributedTree, "pre-commit feedback");
 }
 
@@ -245,7 +252,7 @@ function proveTheIgnoredPaths() {
 
 async function proveThePushGate() {
   runNpm(["run", "test:e2e:install"]);
-  run("git", ["hook", "run", "pre-push"]);
+  runGitHook("pre-push");
   assert.equal(existsSync(join(appRoot, ".output", "server", "index.mjs")), true);
   const home = await servedHome("production-server.log");
   assert.equal(home.status, 200);
@@ -310,7 +317,11 @@ try {
 
   if (hasDemo) {
     startPhase("after demo removal");
+    const exampleFeature = holdTheExampleFeature(appRoot, artifactRoot);
     await proveTheStarterWithoutTheDemo();
+    startPhase("with an example feature");
+    addTheExampleFeature(appRoot, exampleFeature);
+    runNpm(["run", "check:push"]);
   }
 
   succeeded = true;

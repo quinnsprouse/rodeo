@@ -9,7 +9,7 @@ const serverEntry = ".output/server/index.mjs";
 const pollInterval = 200;
 const startTimeout = 30_000;
 
-function reservePort() {
+export function reservePort() {
   return new Promise((resolvePort, reject) => {
     const probe = createServer();
     probe.unref();

@@ -47,6 +47,8 @@ export const generatedGlobs = generatedFiles.map((file) =>
 
 export const scratchDirectory = ".scratch";
 
+export const exampleFeatureDirectory = "scripts/example-feature";
+
 export const ignoredDirectories = [
   ".git",
   "node_modules",
