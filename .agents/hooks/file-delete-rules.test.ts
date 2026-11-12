@@ -82,4 +82,30 @@ describe.concurrent("file delete rules", { timeout: 30_000 }, () => {
     ]);
     expect(actual).toEqual(expected);
   });
+
+  it("asks when a find -delete filter selects by time, size, owner, or file type", async ({
+    expect,
+  }) => {
+    const { actual, expected } = await decisions([
+      [rm("find drafts -type f -delete"), "ask"],
+      [rm("find app -type f -delete"), "ask"],
+      [rm("find drafts -newer lib/clean.ts -delete"), "ask"],
+      [rm("find drafts -mmin -60 -delete"), "ask"],
+      [rm("find drafts -newermt yesterday -delete"), "ask"],
+      [rm("find drafts -size +0 -delete"), "ask"],
+      [rm("find drafts -user rodeo -delete"), "ask"],
+      [rm("find drafts ! -name '*.keep' -delete"), "ask"],
+      [rm("find drafts -not -type d -delete"), "ask"],
+      [rm("find drafts -delete -name '*.tmp'"), "ask"],
+      [rm("find . -name '*.tmp' -o -type f -delete"), "ask"],
+      [rm("find lib -type f -delete"), "allow"],
+      [rm("find drafts -type d -delete"), "allow"],
+      [rm("find drafts -empty -delete"), "allow"],
+      [rm("find drafts -type f -empty -delete"), "allow"],
+      [rm("find drafts -type f -name '*.tmp' -delete"), "allow"],
+      [rm("find . -iname '*.orig' -delete"), "allow"],
+      [rm("find . -path './drafts/*.tmp' -delete"), "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
 });

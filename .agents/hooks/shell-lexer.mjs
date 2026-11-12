@@ -28,14 +28,18 @@ function redirectKind(operator, descriptor) {
   return readsStdin ? "stdin" : "file";
 }
 
+function emptyCommand(subshell) {
+  return { words: [], inputs: [], stdinFiles: [], pipedFrom: null, scripts: [], subshell };
+}
+
 class ShellLexer {
   constructor(source, start = 0, nested = false) {
     this.source = source;
     this.index = start;
     this.nested = nested;
     this.parens = 0;
+    this.subshell = 0;
     this.commands = [];
-    this.scripts = [];
     this.heredocs = [];
     this.word = null;
     this.redirect = null;
@@ -58,7 +62,7 @@ class ShellLexer {
   }
 
   startCommand() {
-    this.command = { words: [], inputs: [], stdinFiles: [], pipedFrom: null };
+    this.command = emptyCommand(this.subshell);
     this.commands.push(this.command);
   }
 
@@ -116,17 +120,25 @@ class ShellLexer {
   }
 
   ampersand() {
-    if (this.source[this.index + 1] === ">") this.redirection();
-    else this.separator();
+    const next = this.source[this.index + 1];
+    if (next === ">") {
+      this.redirection();
+      return;
+    }
+    if (next === "&") this.index++;
+    else this.command.background = true;
+    this.separator();
   }
 
   openParen() {
     if (this.nested) this.parens++;
+    this.subshell++;
     this.separator();
   }
 
   closeParen() {
     if (this.nested) this.parens--;
+    this.subshell = Math.max(0, this.subshell - 1);
     this.separator();
   }
 
@@ -220,7 +232,7 @@ class ShellLexer {
   readSubstitution() {
     const open = this.index;
     const inner = new ShellLexer(this.source, open + 2, true).run();
-    this.scripts.push(this.source.slice(open + 2, inner.closeAt));
+    this.command.scripts.push(this.source.slice(open + 2, inner.closeAt));
     this.index = Math.min(inner.closeAt + 1, this.source.length);
     return this.source.slice(open, this.index);
   }
@@ -237,7 +249,7 @@ class ShellLexer {
       this.index += escaped ? 2 : 1;
     }
     this.index++;
-    this.scripts.push(script);
+    this.command.scripts.push(script);
     return this.source.slice(open, this.index);
   }
 
@@ -292,7 +304,7 @@ class ShellLexer {
     for (const heredoc of this.heredocs.splice(0)) {
       const body = this.readHeredocBody(heredoc);
       heredoc.command.inputs.push(body);
-      if (heredoc.expands) this.scripts.push(...expansionsIn(body));
+      if (heredoc.expands) heredoc.command.scripts.push(...expansionsIn(body));
     }
   }
 
@@ -313,13 +325,12 @@ class ShellLexer {
 function expansionsIn(body) {
   const lexer = new ShellLexer(body);
   lexer.readExpanding(null);
-  return lexer.scripts;
+  return lexer.command.scripts;
 }
 
 export function lex(script) {
   const lexer = new ShellLexer(script.replaceAll("\r\n", "\n")).run();
   return {
-    commands: lexer.commands.filter((command) => command.words.length > 0),
-    scripts: lexer.scripts,
+    commands: lexer.commands.filter(({ words, scripts }) => words.length + scripts.length > 0),
   };
 }

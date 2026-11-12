@@ -48,6 +48,8 @@ export function guardProject() {
     symlinkSync(project, projectLink(), "dir");
     symlinkSync(join(project, "src"), join(project, "source-alias"), "dir");
     symlinkSync(outside, join(project, "outside-alias"), "dir");
+    mkdirSync(join(outside, "modules"));
+    symlinkSync(join(outside, "modules"), join(project, "node_modules"), "dir");
   });
 
   afterAll(() => {
@@ -74,6 +76,8 @@ export function guardProject() {
       toolInput: { file_path: projectFile(file) },
     }),
     reasonFor: async (command: string) => (await verdict(bash(command))).reason,
+    reasons: async (calls: ToolCall[]) =>
+      Promise.all(calls.map(async (call) => (await verdict(call)).reason)),
     decisions: async (cases: [ToolCall, Decision][]) => ({
       actual: await Promise.all(
         cases.map(async ([call]) => [label(call), (await verdict(call)).decision]),
@@ -95,6 +99,8 @@ export function guardGitFixture() {
   const gitEnv = hermeticGitEnv();
   let fixture = "";
   const fixtureLink = () => `${fixture}-link`;
+  const outside = () => `${fixture}-outside`;
+  const worktree = () => join(fixture, ".claude", "worktrees", "feat");
 
   function git(...args: string[]) {
     execFileSync("git", args, { cwd: fixture, env: gitEnv, stdio: "ignore" });
@@ -114,10 +120,18 @@ export function guardGitFixture() {
     writeFixture(".gitignore", "node_modules/\n.output/\ndist/\n");
     writeFixture("lib/clean.ts");
     writeFixture("app/page.ts");
+    writeFixture("app/routes/root.ts");
     git("init", "--quiet");
     git("add", ".");
     git("-c", "user.name=Rodeo", "-c", "user.email=rodeo@localhost", "commit", "-qm", "init");
     writeFixture("app/page.ts", "export const edited = true;\n");
+    writeFixture("app/routes/root.ts", "export const edited = true;\n");
+    writeFixture("dist/index.js");
+    mkdirSync(join(outside(), "modules"), { recursive: true });
+    mkdirSync(join(outside(), "output"));
+    git("worktree", "add", "--quiet", worktree());
+    symlinkSync(join(outside(), "modules"), join(worktree(), "node_modules"), "dir");
+    symlinkSync(join(outside(), "output"), join(worktree(), ".output"), "dir");
     writeFixture("drafts/new.ts");
     writeFixture("node_modules/pkg/index.js");
     writeFixture(".output/server.mjs");
@@ -129,11 +143,20 @@ export function guardGitFixture() {
   afterAll(() => {
     vi.unstubAllEnvs();
     rmSync(fixtureLink(), { force: true });
+    rmSync(outside(), { recursive: true, force: true });
     rmSync(fixture, { recursive: true, force: true });
   });
 
   return {
+    fixture: () => fixture,
     fixtureLink,
+    outside,
+    worktree,
+    write: (path: string, project = fixture): ToolCall => ({
+      toolName: "Write",
+      toolInput: { file_path: path.startsWith("/") ? path : join(fixture, path) },
+      project,
+    }),
     rm: (command: string, cwd = ""): ToolCall => ({
       ...bash(command),
       project: fixture,

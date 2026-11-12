@@ -23,7 +23,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 
 ## Hooks that check your work
 
-- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside the places `scripts/lib/project.mjs` allows, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a command that discards uncommitted work, such as `git checkout .`, `git restore`, or `rm -rf` on files Git can't restore. It reads a command the way a shell does, so a flag inside a commit message or a quoted string doesn't count.
+- `pre-tool-guard.mjs` blocks edits to generated files, new unit tests, new docs outside the places `scripts/lib/project.mjs` allows, Git hook bypasses, and package managers other than npm. It asks a human before a force push or a command that discards uncommitted work, such as `git checkout .`, `git restore`, or `rm -rf` on files Git can't restore. It reads a command the way a shell does, so a flag inside a commit message or a quoted string doesn't count. It follows `cd` through a command, and it asks before a relative delete when it can't tell where a `cd` leads.
 - `post-edit.mjs` formats, lints, and typechecks each file an edit tool writes. Shell edits skip it, so `lint/layout.repo.test.ts` fails the stop check on a doc or unit test in the wrong place.
 - `stop-check.mjs` runs before the turn ends and sends you back if a check fails: `vp check` on the files you changed, `tsc -b`, and the guardrail tests your change can break. In a checkout without dependencies or Git hooks, such as a new worktree, it sends you back to run `npm ci` or `npm run setup`.
 - Vite+ installs the Git hooks from `.vite-hooks/`. Don't add Husky.

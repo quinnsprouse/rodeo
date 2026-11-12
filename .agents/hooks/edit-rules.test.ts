@@ -2,9 +2,11 @@ import { join } from "node:path";
 
 import { describe, it } from "vite-plus/test";
 
-import { guardProject, patch, type ToolCall } from "./guard-harness";
+import { guardGitFixture, guardProject, patch, type ToolCall } from "./guard-harness";
 
 const { decisions, edit, projectFile, projectLink } = guardProject();
+const { worktree, write: writeInFixture } = guardGitFixture();
+const inWorktree = (file: string) => writeInFixture(join(worktree(), file));
 
 describe.concurrent("edit rules", { timeout: 30_000 }, () => {
   it("denies unit tests in app code", async ({ expect }) => {
@@ -86,6 +88,35 @@ describe.concurrent("edit rules", { timeout: 30_000 }, () => {
       ],
       [patch("*** Update File: src/lib/a.ts", "*** Move to: .output/a.ts"), "deny"],
       [patch("*** Add File: src/lib/new.ts"), "allow"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
+  it("denies writes under node_modules and .output when they are symlinks", async ({ expect }) => {
+    const { actual, expected } = await decisions([
+      [edit("node_modules/pkg/index.js"), "deny"],
+      [patch("*** Add File: node_modules/pkg/patched.js"), "deny"],
+      [inWorktree("node_modules/pkg/index.js"), "deny"],
+      [inWorktree(".output/server/index.mjs"), "deny"],
+    ]);
+    expect(actual).toEqual(expected);
+  });
+
+  it("judges an edit in a worktree nested in the project by its path in that worktree", async ({
+    expect,
+  }) => {
+    const { actual, expected } = await decisions([
+      [inWorktree("src/routeTree.gen.ts"), "deny"],
+      [inWorktree("src/lib/format.test.ts"), "deny"],
+      [inWorktree("docs/notes.md"), "deny"],
+      [inWorktree("package-lock.json"), "deny"],
+      [writeInFixture(join(worktree(), "src/lib/format.test.ts"), worktree()), "deny"],
+      [inWorktree("src/routes/index.tsx"), "allow"],
+      [inWorktree("lib/clean.ts"), "allow"],
+      [inWorktree(".scratch/plan.md"), "allow"],
+      [inWorktree("README.md"), "allow"],
+      [writeInFixture(".claude/notes.md"), "allow"],
+      [writeInFixture("lib/new.ts"), "allow"],
     ]);
     expect(actual).toEqual(expected);
   });

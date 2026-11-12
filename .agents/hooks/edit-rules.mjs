@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import {
   appUnitTestReason,
@@ -12,8 +12,8 @@ import {
   isMarkdown,
 } from "#tooling/project";
 
+import { checkoutPaths } from "./checkout-path.mjs";
 import { editTargets } from "./edit-targets.mjs";
-import { isWithin, physicalPath } from "./physical-path.mjs";
 
 const generatedPaths = generatedFiles.map((file) => ({
   test: (path) => generatedFileAt(path) === file,
@@ -32,35 +32,35 @@ const toolOwnedPaths = [
   },
 ];
 
-function protectedPaths(projectRoot) {
-  const isNewDoc = (path) =>
-    isMarkdown(path) && !isAllowedDoc(path) && !existsSync(resolve(projectRoot, path));
-  return [
-    ...generatedPaths,
-    ...toolOwnedPaths,
-    { test: isNewDoc, reason: docReason },
-    { test: isAppUnitTest, reason: appUnitTestReason },
-    {
-      test: (path) => path.startsWith(".output/") || path.startsWith("node_modules/"),
-      reason:
-        "Build output and node_modules are not source. Change the input that produced this file instead.",
-    },
-  ];
-}
+const buildOutput = {
+  test: (path) => path.startsWith(".output/") || path.startsWith("node_modules/"),
+  reason:
+    "Build output and node_modules are not source. Change the input that produced this file instead.",
+};
 
-function projectPath(filePath, projectRoot) {
-  const physical = physicalPath(projectRoot, filePath);
-  return isWithin(physical, projectRoot)
-    ? relative(projectRoot, physical).replaceAll("\\", "/")
-    : null;
+const isNewDoc = (path, root) =>
+  isMarkdown(path) && !isAllowedDoc(path) && !existsSync(resolve(root, path));
+
+const sourceRules = [
+  ...generatedPaths,
+  ...toolOwnedPaths,
+  { test: isNewDoc, reason: docReason },
+  { test: isAppUnitTest, reason: appUnitTestReason },
+  buildOutput,
+];
+
+function brokenRule(filePath, projectRoot) {
+  const { physical, logical } = checkoutPaths(filePath, projectRoot);
+  for (const { root, path } of physical) {
+    const hit = sourceRules.find((rule) => rule.test(path, root));
+    if (hit) return hit;
+  }
+  return logical.some(({ path }) => buildOutput.test(path)) ? buildOutput : null;
 }
 
 export function editVerdict(toolName, toolInput, { projectRoot }) {
-  const rules = protectedPaths(projectRoot);
   for (const target of editTargets(toolName, toolInput)) {
-    const path = projectPath(target.path, projectRoot);
-    if (path === null) continue;
-    const hit = rules.find((rule) => rule.test(path));
+    const hit = brokenRule(target.path, projectRoot);
     if (hit) return { decision: "deny", reason: hit.reason };
   }
   return null;

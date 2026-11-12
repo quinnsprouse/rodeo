@@ -27,6 +27,9 @@ describe.concurrent("uncommitted work rules", { timeout: 30_000 }, () => {
       [bash("git stash drop"), "ask"],
       [bash("git stash clear"), "ask"],
       [bash("git clean --force"), "ask"],
+      [bash("git rm -f src/routes/__root.tsx"), "ask"],
+      [bash("git rm -rf src"), "ask"],
+      [bash("git rm --force -r src"), "ask"],
     ]);
     expect(actual).toEqual(expected);
   });
@@ -44,6 +47,10 @@ describe.concurrent("uncommitted work rules", { timeout: 30_000 }, () => {
       [bash("git clean -n"), "allow"],
       [bash("git clean -nfd"), "allow"],
       [bash("git reset --soft HEAD~1"), "allow"],
+      [bash("git rm src/routes/__root.tsx"), "allow"],
+      [bash("git rm -r --cached src"), "allow"],
+      [bash("git rm -rf --cached src"), "allow"],
+      [bash("git rm -rfn src"), "allow"],
     ]);
     expect(actual).toEqual(expected);
   });

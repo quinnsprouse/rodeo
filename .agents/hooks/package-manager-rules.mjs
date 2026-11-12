@@ -4,7 +4,7 @@ const verdicts = {
   foreignPackageManager: {
     decision: "deny",
     reason:
-      "This project is npm-only (see devEngines in package.json). Use `vp add <pkg>` or `npm install`.",
+      "This project is npm-only (see devEngines in package.json), and other package managers write their own lockfiles and resolve other versions. Use npm: `vp add <pkg>` or `npm install` for dependencies, `npm run <script>` for scripts.",
   },
   downloadedTool: {
     decision: "deny",
@@ -13,22 +13,25 @@ const verdicts = {
   },
 };
 
-const PACKAGE_INSTALLS = new Set(["add", "install", "i", "remove", "rm"]);
+const QUERIES = new Set(["--version", "-v", "--help", "-h", "help"]);
 const DOWNLOADED_TOOLS = new Set(["oxlint", "oxfmt", "vitest", "eslint", "prettier"]);
 
-function packageManagerVerdict(args) {
-  const action = args.find((word) => !isFlag(word))?.text;
-  return PACKAGE_INSTALLS.has(action) ? verdicts.foreignPackageManager : null;
+function foreignPackageManagerVerdict(args) {
+  const query = args.length === 1 && QUERIES.has(args[0].text);
+  return query ? null : verdicts.foreignPackageManager;
 }
 
 function npxVerdict(args) {
   const tool = args.find((word) => !isFlag(word))?.text.replace(/(?<=.)@.*$/, "");
+  if (tool !== "npx" && packageManagerPrograms.has(tool)) return verdicts.foreignPackageManager;
   return DOWNLOADED_TOOLS.has(tool) ? verdicts.downloadedTool : null;
 }
 
 export const packageManagerPrograms = new Map([
-  ["pnpm", packageManagerVerdict],
-  ["yarn", packageManagerVerdict],
-  ["bun", packageManagerVerdict],
+  ["pnpm", foreignPackageManagerVerdict],
+  ["yarn", foreignPackageManagerVerdict],
+  ["bun", foreignPackageManagerVerdict],
+  ["pnpx", foreignPackageManagerVerdict],
+  ["bunx", foreignPackageManagerVerdict],
   ["npx", npxVerdict],
 ]);

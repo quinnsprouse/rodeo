@@ -2,6 +2,7 @@ import { join, relative } from "node:path";
 
 import { isWithin, physicalPath } from "./physical-path.mjs";
 import { expandHome, hasShort, isFlag, parseArgs } from "./simple-command.mjs";
+import { needsDirectory, unknownDirectory } from "./working-directory.mjs";
 
 const verdicts = {
   deletesProject: {
@@ -23,20 +24,49 @@ const verdicts = {
 
 const FIND_LEADING_OPTION = /^-(?:[EHLPXdsx]+|O\d)$/;
 const FIND_OPERATORS = new Set(["(", ")", "!", ","]);
-const FIND_DEPTH_LIMITS = new Set(["-mindepth", "-maxdepth"]);
-const FIND_WHOLE_TREE_PRIMARIES = new Set([
-  "-delete",
-  "-depth",
-  "-d",
-  "-xdev",
-  "-mount",
-  "-x",
-  "-print",
-  "-print0",
-  "-noleaf",
-  "-ignore_readdir_race",
-  "-follow",
+const FIND_NEGATIONS = new Set(["!", "-not"]);
+const FIND_ALTERNATIVES = new Set(["-o", "-or", ","]);
+const FIND_NAME_FILTERS = new Set([
+  "-name",
+  "-iname",
+  "-path",
+  "-ipath",
+  "-wholename",
+  "-iwholename",
+  "-regex",
+  "-iregex",
+  "-lname",
+  "-ilname",
+  "-samefile",
+  "-inum",
 ]);
+const FIND_VALUE_PRIMARIES = new Set([
+  ...FIND_NAME_FILTERS,
+  "-type",
+  "-xtype",
+  "-mindepth",
+  "-maxdepth",
+  "-newer",
+  "-anewer",
+  "-cnewer",
+  "-mtime",
+  "-mmin",
+  "-atime",
+  "-amin",
+  "-ctime",
+  "-cmin",
+  "-used",
+  "-size",
+  "-user",
+  "-group",
+  "-uid",
+  "-gid",
+  "-perm",
+  "-links",
+  "-fstype",
+  "-regextype",
+]);
+const FIND_NEWER_THAN = /^-newer[aBcmt]{2}$/;
 const CURRENT_DIRECTORY = { text: ".", quoted: false };
 
 function hasUncommittedWork(paths, projectRoot) {
@@ -52,9 +82,9 @@ function hasUncommittedWork(paths, projectRoot) {
 }
 
 function recursiveDeleteVerdict(words, { projectRoot, cwd }) {
-  const targets = words
-    .filter((word) => !word.runtime && !word.text.includes("$"))
-    .map((word) => physicalPath(cwd, expandHome(word)));
+  const literal = words.filter((word) => !word.runtime && !word.text.includes("$"));
+  if (cwd === null && literal.some(needsDirectory)) return unknownDirectory;
+  const targets = literal.map((word) => physicalPath(cwd ?? "/", expandHome(word)));
   const gitDir = join(projectRoot, ".git");
   if (targets.some((target) => isWithin(projectRoot, target) || isWithin(target, gitDir))) {
     return verdicts.deletesProject;
@@ -72,15 +102,28 @@ function rmVerdict(args, location) {
   return recursive ? recursiveDeleteVerdict([...operands, ...(afterDashes ?? [])], location) : null;
 }
 
-function deletesWholeTree(expression) {
-  let deletes = false;
-  for (let index = 0; index < expression.length; index++) {
-    const { text } = expression[index];
-    if (FIND_DEPTH_LIMITS.has(text)) index++;
-    else if (!FIND_WHOLE_TREE_PRIMARIES.has(text)) return false;
-    deletes ||= text === "-delete";
+function keepsFilesWithContent(primary, value) {
+  if (FIND_NAME_FILTERS.has(primary)) return true;
+  if (primary === "-type" || primary === "-xtype") return value === "d";
+  return primary === "-empty";
+}
+
+function narrowsBeforeDelete(texts) {
+  let negated = false;
+  for (let index = 0; index < texts.length && texts[index] !== "-delete"; index++) {
+    const primary = texts[index];
+    const takesValue = FIND_VALUE_PRIMARIES.has(primary) || FIND_NEWER_THAN.test(primary);
+    const value = takesValue ? texts[++index] : undefined;
+    if (!negated && keepsFilesWithContent(primary, value)) return true;
+    negated = FIND_NEGATIONS.has(primary) || (negated && primary === "(");
   }
-  return deletes;
+  return false;
+}
+
+function deletesWholeTree(expression) {
+  const texts = expression.map((word) => word.text);
+  if (!texts.includes("-delete")) return false;
+  return texts.some((text) => FIND_ALTERNATIVES.has(text)) || !narrowsBeforeDelete(texts);
 }
 
 function findVerdict(args, location) {

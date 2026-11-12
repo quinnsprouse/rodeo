@@ -33,10 +33,11 @@ function gitInvocation(args) {
 
 function gitDirectory(cwd, directories) {
   const path = directories.reduce(
-    (current, directory) => (isAbsolute(directory) ? directory : `${current}${sep}${directory}`),
+    (current, directory) =>
+      isAbsolute(directory) ? directory : current && `${current}${sep}${directory}`,
     cwd,
   );
-  return physicalPath(cwd, path);
+  return path === null ? null : physicalPath(path, path);
 }
 
 function gitVerdict(args, { cwd }) {

@@ -9,6 +9,7 @@ import {
   resolveCommand,
   resolveWithExecs,
 } from "./simple-command.mjs";
+import { directoryWalk, needsDirectory } from "./working-directory.mjs";
 
 const MAX_DEPTH = 5;
 const MAX_SCRIPT_BYTES = 256 * 1024;
@@ -34,10 +35,11 @@ function readScriptFile(path) {
   }
 }
 
-export function scriptReader(cwd) {
+function scriptReader() {
   const seen = new Set();
-  return (word) => {
-    const path = resolve(cwd, expandHome(word));
+  return (word, cwd) => {
+    if (cwd === null && needsDirectory(word)) return null;
+    const path = resolve(cwd ?? "/", expandHome(word));
     if (seen.has(path)) return null;
     seen.add(path);
     return readScriptFile(path);
@@ -139,23 +141,36 @@ function nestedScripts(command, readScript) {
   return executable?.text.includes("/") ? executableScript(executable, readScript) : [];
 }
 
-function withNestedScripts(command, readScript) {
-  const scripts = nestedScripts(command, readScript);
-  return {
-    command: { ...command, runsUnreadableScript: scripts.includes(UNREADABLE) },
-    scripts: scripts.filter((script) => script !== UNREADABLE),
-  };
+function runsInThisShell({ program }) {
+  return program === "eval" || program === "source" || program === ".";
 }
 
-export function simpleCommands(script, readScript = () => null, depth = 0) {
-  if (depth > MAX_DEPTH) return [];
-  const { commands, scripts } = lex(script);
-  const expanded = commands
-    .flatMap(resolveWithExecs)
-    .map((command) => withNestedScripts(command, readScript));
-  const nested = [...scripts, ...expanded.flatMap((entry) => entry.scripts)];
-  return [
-    ...expanded.map((entry) => entry.command),
-    ...nested.flatMap((inner) => simpleCommands(inner, readScript, depth + 1)),
-  ];
+function walkScript(script, directory, readScript, depth) {
+  if (depth > MAX_DEPTH) return { commands: [], directory };
+  const rawCommands = lex(script).commands;
+  const walk = directoryWalk(directory, rawCommands);
+  const commands = [];
+  const walkNested = (inner, cwd) => {
+    const nested = walkScript(inner, cwd, readScript, depth + 1);
+    commands.push(...nested.commands);
+    return nested.directory;
+  };
+  for (const raw of rawCommands) {
+    const resolved = resolveWithExecs(raw);
+    const cwd = walk.step(raw, resolved[0]);
+    for (const inner of raw.scripts) walkNested(inner, cwd);
+    for (const command of resolved) {
+      const scripts = nestedScripts(command, (word) => readScript(word, cwd));
+      commands.push({ ...command, cwd, runsUnreadableScript: scripts.includes(UNREADABLE) });
+      for (const inner of scripts.filter((entry) => entry !== UNREADABLE)) {
+        const after = walkNested(inner, cwd);
+        if (runsInThisShell(command)) walk.adopt(after);
+      }
+    }
+  }
+  return { commands, directory: walk.directory };
+}
+
+export function simpleCommands(script, directory) {
+  return walkScript(script, directory, scriptReader(), 0).commands;
 }
