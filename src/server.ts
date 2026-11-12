@@ -1,4 +1,12 @@
+import {
+  RouterServer,
+  defineHandlerCallback,
+  renderSsrHtmlResponse,
+} from "@tanstack/react-router/ssr/server";
+import { createStartHandler } from "@tanstack/react-start/server";
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
+import { createElement } from "react";
+import { prerender } from "react-dom/static";
 
 import { htmlToMarkdown, prefersMarkdown } from "@/lib/page-markdown.server";
 import {
@@ -19,10 +27,29 @@ function isHtml(response: Response) {
   return response.headers.get("content-type")?.startsWith("text/html") ?? false;
 }
 
+const inlineEveryBoundary = { progressiveChunkSize: Number.POSITIVE_INFINITY };
+
+const renderFinishedPage = createStartHandler(
+  defineHandlerCallback(({ request, router, responseHeaders }) =>
+    renderSsrHtmlResponse({
+      router,
+      responseHeaders,
+      render: async () => {
+        const page = createElement(RouterServer, { router });
+        const { prelude } = await prerender(page, {
+          ...inlineEveryBoundary,
+          signal: request.signal,
+        });
+        return new Response(prelude).text();
+      },
+    }),
+  ),
+);
+
 function fetchPage(request: Request, url: URL, pagePath: string) {
   const headers = new Headers(request.headers);
   headers.set("accept", "text/html");
-  return handler.fetch(new Request(new URL(`${pagePath}${url.search}`, url), { headers }));
+  return renderFinishedPage(new Request(new URL(`${pagePath}${url.search}`, url), { headers }));
 }
 
 function redirectToMarkdownTwin(page: Response, url: URL) {
