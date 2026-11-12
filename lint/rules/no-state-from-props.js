@@ -1,9 +1,72 @@
 import { defineRule } from "vite-plus/lint/plugins";
 
-import { calleeName, enclosingFunction } from "./ast.js";
+import { calleeName, enclosingFunction, isFunction } from "./ast.js";
 
 const INITIAL_PROP_PREFIXES = ["default", "initial"];
 const INITIAL_PROP = new RegExp(String.raw`^(?:${INITIAL_PROP_PREFIXES.join("|")})[A-Z_]`);
+
+function withoutDefault(node) {
+  return node?.type === "AssignmentPattern" ? node.left : node;
+}
+
+function staticKey(property) {
+  if (property.computed) return null;
+  if (property.key.type === "Identifier") return property.key.name;
+  return property.key.type === "Literal" ? String(property.key.value) : null;
+}
+
+function collectDestructuredProps(pattern, propByLocal) {
+  if (pattern?.type !== "ObjectPattern") return;
+  for (const property of pattern.properties) {
+    const local = property.type === "Property" ? withoutDefault(property.value) : null;
+    if (local?.type === "Identifier")
+      propByLocal.set(local.name, staticKey(property) ?? local.name);
+  }
+}
+
+function propsOf(component) {
+  const param = withoutDefault(component.params[0]);
+  const propByLocal = new Map();
+  collectDestructuredProps(param, propByLocal);
+  if (param?.type !== "Identifier" || component.body.type !== "BlockStatement") {
+    return { param, propByLocal };
+  }
+  for (const statement of component.body.body) {
+    if (statement.type !== "VariableDeclaration") continue;
+    for (const { id, init } of statement.declarations) {
+      if (init?.type === "Identifier" && init.name === param.name) {
+        collectDestructuredProps(id, propByLocal);
+      }
+    }
+  }
+  return { param, propByLocal };
+}
+
+function lazyResult(initializer) {
+  if (initializer.body.type !== "BlockStatement") return initializer.body;
+  const [statement] = initializer.body.body;
+  const returnsOnly = initializer.body.body.length === 1 && statement.type === "ReturnStatement";
+  return returnsOnly ? statement.argument : null;
+}
+
+function seedOf(initial) {
+  const seed = isFunction(initial) && initial.params.length === 0 ? lazyResult(initial) : initial;
+  const fallsBack =
+    seed?.type === "LogicalExpression" && (seed.operator === "??" || seed.operator === "||");
+  return fallsBack ? seed.left : seed;
+}
+
+function seedingProp(seed, { param, propByLocal }) {
+  if (seed?.type === "Identifier") return propByLocal.get(seed.name) ?? null;
+  const readsPropsObject =
+    seed?.type === "MemberExpression" &&
+    !seed.computed &&
+    seed.object.type === "Identifier" &&
+    param?.type === "Identifier" &&
+    seed.object.name === param.name &&
+    seed.property.type === "Identifier";
+  return readsPropsObject ? seed.property.name : null;
+}
 
 export const noStateFromProps = defineRule({
   meta: {
@@ -22,33 +85,9 @@ export const noStateFromProps = defineRule({
       CallExpression(node) {
         if (calleeName(node.callee) !== "useState") return;
         const [initial] = node.arguments;
-        if (!initial) return;
         const component = enclosingFunction(node);
-        if (!component) return;
-        const [param] = component.params;
-        if (!param) return;
-        let propName = null;
-        if (
-          initial.type === "Identifier" &&
-          param.type === "ObjectPattern" &&
-          param.properties.some(
-            (property) =>
-              property.type === "Property" &&
-              property.value.type === "Identifier" &&
-              property.value.name === initial.name,
-          )
-        ) {
-          propName = initial.name;
-        } else if (
-          initial.type === "MemberExpression" &&
-          !initial.computed &&
-          initial.object.type === "Identifier" &&
-          param.type === "Identifier" &&
-          initial.object.name === param.name &&
-          initial.property.type === "Identifier"
-        ) {
-          propName = initial.property.name;
-        }
+        if (!initial || !component) return;
+        const propName = seedingProp(seedOf(initial), propsOf(component));
         if (propName && !INITIAL_PROP.test(propName)) {
           const exempt = INITIAL_PROP_PREFIXES.map((prefix) => `${prefix}*`).join("/");
           context.report({ node: initial, messageId: "prop", data: { name: propName, exempt } });

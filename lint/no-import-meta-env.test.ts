@@ -23,6 +23,17 @@ export const d = env;`);
     );
   });
 
+  const rewrittenReads = probe(`const meta = import.meta;
+export const a = meta.env.VITE_APP_URL;
+export const { DEV, VITE_KEY } = import.meta.env;
+const {
+  env: { VITE_X },
+} = import.meta;
+export { VITE_X };`);
+  it("reports reads through an alias of import.meta and destructuring that mixes in VITE_* keys", () => {
+    expect(rulesHit(rewrittenReads)).toEqual(Array<RodeoRuleName>(3).fill("no-import-meta-env"));
+  });
+
   const builtInFlags = probe(`export const moduleUrl = import.meta.url;
 export const flags = [
   import.meta.env.DEV,
@@ -30,8 +41,14 @@ export const flags = [
   import.meta.env.SSR,
   import.meta.env.MODE,
   import.meta.env.BASE_URL,
-];`);
-  it("allows Vite's built-in flags", () => {
+];
+export const { DEV, MODE } = import.meta.env;
+const {
+  env: { PROD },
+} = import.meta;
+const meta = import.meta;
+export const viaAlias = [meta.url, meta.env.SSR, PROD];`);
+  it("allows Vite's built-in flags, read directly, destructured, or through an alias", () => {
     expect(rulesHit(builtInFlags)).toEqual([]);
   });
 });

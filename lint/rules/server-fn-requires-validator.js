@@ -43,6 +43,54 @@ function subtreeSome(node, predicate) {
   return false;
 }
 
+function isNamed(key, computed, name) {
+  if (computed) return key.type === "Literal" && key.value === name;
+  return key.type === "Identifier" && key.name === name;
+}
+
+function patternTakesData(pattern) {
+  return (
+    pattern?.type === "ObjectPattern" &&
+    pattern.properties.some(
+      (property) =>
+        property.type === "Property" && isNamed(property.key, property.computed, "data"),
+    )
+  );
+}
+
+function isIdentifierNamed(node, name) {
+  return node?.type === "Identifier" && node.name === name;
+}
+
+function takesDataFrom(name) {
+  return (node) =>
+    (node.type === "MemberExpression" &&
+      isIdentifierNamed(node.object, name) &&
+      isNamed(node.property, node.computed, "data")) ||
+    (node.type === "VariableDeclarator" &&
+      isIdentifierNamed(node.init, name) &&
+      patternTakesData(node.id));
+}
+
+function readsData(handler) {
+  const [first] = handler.params;
+  const param = first?.type === "AssignmentPattern" ? first.left : first;
+  if (patternTakesData(param)) return true;
+  return param?.type === "Identifier" && subtreeSome(handler.body, takesDataFrom(param.name));
+}
+
+function handlerFunction(context, argument) {
+  if (!argument || isFunction(argument)) return argument ?? null;
+  if (argument.type !== "Identifier") return null;
+  const reference = context.sourceCode
+    .getScope(argument)
+    .references.find((candidate) => candidate.identifier === argument);
+  const definition = reference?.resolved?.defs[0]?.node;
+  if (definition?.type === "FunctionDeclaration") return definition;
+  const init = definition?.type === "VariableDeclarator" ? definition.init : null;
+  return init && isFunction(init) ? init : null;
+}
+
 export const serverFnRequiresValidator = defineRule({
   meta: {
     type: "problem",
@@ -64,30 +112,9 @@ export const serverFnRequiresValidator = defineRule({
         if (root !== "createServerFn") return;
         // why: inputValidator is the deprecated name, and no-deprecated already reports it.
         if (methods.includes("validator") || methods.includes("inputValidator")) return;
-        const handler = node.arguments[0];
-        if (!handler || !isFunction(handler)) return;
-        const [param] = handler.params;
-        if (!param) return;
-        const readsData =
-          (param.type === "ObjectPattern" &&
-            param.properties.some(
-              (property) =>
-                property.type === "Property" &&
-                property.key.type === "Identifier" &&
-                property.key.name === "data",
-            )) ||
-          (param.type === "Identifier" &&
-            subtreeSome(
-              handler.body,
-              (candidate) =>
-                candidate.type === "MemberExpression" &&
-                candidate.object.type === "Identifier" &&
-                candidate.object.name === param.name &&
-                !candidate.computed &&
-                candidate.property.type === "Identifier" &&
-                candidate.property.name === "data",
-            ));
-        if (readsData) context.report({ node: node.callee, messageId: "missing" });
+        const handler = handlerFunction(context, node.arguments[0]);
+        if (handler && readsData(handler))
+          context.report({ node: node.callee, messageId: "missing" });
       },
     };
   },

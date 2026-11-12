@@ -18,6 +18,23 @@ export function B(props: { count: number }) { const [c] = useState(props.count);
     );
   });
 
+  const rewrittenSeeds = probe(`
+import { useState } from "react";
+export function A({ count = 0 }: { count?: number }) { const [v] = useState(count); return v; }
+export function B({ count }: { count: number }) { const [v] = useState(() => count); return v; }
+export function C(props: { count: number }) { const { count } = props; const [v] = useState(count); return v; }
+export function D({ count: initialCount }: { count: number }) { const [v] = useState(initialCount); return v; }
+export function E(props: { count?: number }) { const [v] = useState(() => { return props.count ?? 0; }); return v; }`);
+  it("reports a prop with a default, a lazy initializer, a fallback, and props destructured in the body or renamed", () => {
+    expect(lint(rewrittenSeeds).map((hit) => hit.message.split("`")[1])).toEqual([
+      "count",
+      "count",
+      "count",
+      "count",
+      "count",
+    ]);
+  });
+
   const seededFromDefaults = probe(`
 import { useState } from "react";
 export function A({ defaultValue, initialCount }: { defaultValue: number; initialCount: number }) {
@@ -25,6 +42,11 @@ export function A({ defaultValue, initialCount }: { defaultValue: number; initia
   const [c] = useState(initialCount);
   const [n] = useState(0);
   return v + c + n;
+}
+export function B({ initialCount: count = 0 }: { initialCount?: number }) {
+  const [c] = useState(() => count);
+  const [d] = useState(() => Date.now());
+  return c + d;
 }`);
   it("allows default*/initial* props and unrelated initializers", () => {
     expect(rulesHit(seededFromDefaults)).toEqual([]);

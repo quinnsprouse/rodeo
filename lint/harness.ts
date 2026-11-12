@@ -12,19 +12,13 @@ import { tmpdir } from "node:os";
 import { dirname, join, normalize, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import type { OxlintConfig, OxlintOverride } from "vite-plus/lint";
 import { afterAll, beforeAll } from "vite-plus/test";
 
 import { hermeticGitEnv } from "#tooling/git-env";
 import { run } from "#tooling/run";
 
-import {
-  commentScopes,
-  isRodeoRuleName,
-  pluginName,
-  rodeoPlugin,
-  rodeoRules,
-  type RodeoRuleName,
-} from "./rodeo-rules";
+import { isRodeoRuleName, pluginName, rodeoPlugin, type RodeoRuleName } from "./rodeo-rules";
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -138,6 +132,29 @@ function rodeoRule(code: string) {
   return rule;
 }
 
+function rodeoRulesIn(rules: OxlintConfig["rules"] = {}) {
+  return Object.fromEntries(
+    Object.entries(rules).filter(([id]) => id.startsWith(`${pluginName}/`)),
+  );
+}
+
+function probeOverrides({ files, excludeFiles, env, globals, rules }: OxlintOverride) {
+  const rodeo = rodeoRulesIn(rules);
+  const shapesProbes = env !== undefined || globals !== undefined || Object.keys(rodeo).length > 0;
+  return shapesProbes ? [{ files, excludeFiles, env, globals, rules: rodeo }] : [];
+}
+
+function probeConfig({ env, globals, rules, overrides = [] }: OxlintConfig) {
+  return {
+    jsPlugins: [{ ...rodeoPlugin, specifier: join(repoRoot, rodeoPlugin.specifier) }],
+    categories: { correctness: "off" },
+    env,
+    globals,
+    rules: rodeoRulesIn(rules),
+    overrides: overrides.flatMap(probeOverrides),
+  };
+}
+
 export function ruleProbes() {
   const probes: RuleProbe[] = [];
   const sandboxes = withSandbox();
@@ -165,15 +182,8 @@ export function ruleProbes() {
   beforeAll(async () => {
     sandbox = sandboxes.temporary("rodeo-lint-rules-");
     symlinkSync(join(repoRoot, "node_modules"), join(sandbox, "node_modules"), "dir");
-    writeFileSync(
-      join(sandbox, ".oxlintrc.json"),
-      JSON.stringify({
-        jsPlugins: [{ ...rodeoPlugin, specifier: join(repoRoot, rodeoPlugin.specifier) }],
-        categories: { correctness: "off" },
-        rules: { ...rodeoRules, ...commentScopes.rules },
-        overrides: commentScopes.overrides,
-      }),
-    );
+    const { lintConfig } = await import("./config");
+    writeFileSync(join(sandbox, ".oxlintrc.json"), JSON.stringify(probeConfig(lintConfig)));
     for (const { file, source } of probes) {
       mkdirSync(dirname(join(sandbox, file)), { recursive: true });
       writeFileSync(join(sandbox, file), source);
