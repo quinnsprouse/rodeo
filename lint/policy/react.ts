@@ -51,6 +51,24 @@ return null;
 }`,
   },
   {
+    name: "a try without a catch in a component",
+    rule: "react-hooks-js(todo)",
+    source: `import { useState } from "react";
+export function Probe({ save }: { save: () => Promise<void> }) {
+  const [saving, setSaving] = useState(false);
+  async function submit() {
+    setSaving(true);
+    try { await save(); } finally { setSaving(false); }
+  }
+  return <button type="button" disabled={saving} onClick={() => void submit()}>Save</button>;
+}`,
+  },
+  {
+    name: "a label with no control",
+    rule: "jsx-a11y(label-has-associated-control)",
+    source: `export function Probe() { return <label className="text-s">Bill yearly</label>; }`,
+  },
+  {
     name: "components React Compiler cannot compile",
     rule: "react-hooks-js(todo)",
     source: `import { lazy } from "react";
@@ -62,6 +80,36 @@ return <Panel />;
 ];
 
 const allowed: Probe[] = [
+  {
+    name: "a pending flag from useTransition around an async submit",
+    source: `import { useTransition } from "react";
+export function Probe({ save }: { save: () => Promise<void> }) {
+  const [saving, startSaving] = useTransition();
+  return (
+    <button type="button" disabled={saving} onClick={() => startSaving(async () => { await save(); })}>
+      Save
+    </button>
+  );
+}`,
+  },
+  {
+    name: "a label wrapped around a Base UI control",
+    source: `import { Checkbox } from "@base-ui/react/checkbox";
+import { Radio } from "@base-ui/react/radio";
+import { RadioGroup } from "@base-ui/react/radio-group";
+import { Switch } from "@base-ui/react/switch";
+export function Probe() {
+  return (
+    <>
+      <label className="flex gap-xs"><Switch.Root name="yearly" /> Bill yearly</label>
+      <label className="flex gap-xs"><Checkbox.Root name="terms" /> Accept the terms</label>
+      <RadioGroup name="plan">
+        <label className="flex gap-xs"><Radio.Root value="pro" /> Pro</label>
+      </RadioGroup>
+    </>
+  );
+}`,
+  },
   {
     name: "explicit behavior and external synchronization with cleanup",
     source: `import { useEffect, useState } from "react";

@@ -32,6 +32,23 @@ export function Probe({ total }: { total: number }) { return <NumberFlow value={
 export function Probe() { return <TransitionLink href="/">Home</TransitionLink>; }`,
   },
   {
+    name: "the bare cn package that shadcn add writes",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/components/ui",
+    source: `import { cn } from "cn";
+export function Probe({ className }: { className?: string }) {
+  return <span className={cn("text-s", className)} />;
+}`,
+  },
+  {
+    name: "drawing an icon with HugeiconsIcon instead of Icon",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/components",
+    source: `import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+export function Probe() { return <HugeiconsIcon icon={CheckmarkCircle02Icon} aria-hidden="true" />; }`,
+  },
+  {
     name: "classic Zod imports in src/lib",
     rule: "eslint(no-restricted-imports)",
     layer: "src/lib",
@@ -41,6 +58,17 @@ export const schema = z.object({ id: z.string() });`,
 ];
 
 const allowed: Probe[] = [
+  {
+    name: "the theme's cn, Icon, and a Hugeicons type",
+    layer: "src/components/ui",
+    source: `import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
+import type { IconSvgElement } from "@hugeicons/react";
+import { Icon } from "@/components/icon";
+import { cn } from "@/lib/utils";
+export function Probe({ icon = CheckmarkCircle02Icon, className }: { icon?: IconSvgElement; className?: string }) {
+  return <Icon icon={icon} className={cn("text-s", className)} aria-hidden="true" />;
+}`,
+  },
   {
     name: "text that morphs in place and skeletons drawn from the real component",
     source: `import { use, useState } from "react";

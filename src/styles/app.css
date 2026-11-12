@@ -241,6 +241,15 @@
   --spacing-xl: var(--space-xl);
   --spacing-xxl: var(--space-xxl);
 
+  --width-xs: var(--container-xs);
+  --width-xl: var(--container-xl);
+  --min-width-xs: var(--container-xs);
+  --min-width-xl: var(--container-xl);
+  --max-width-xs: var(--container-xs);
+  --max-width-xl: var(--container-xl);
+  --flex-basis-xs: var(--container-xs);
+  --flex-basis-xl: var(--container-xl);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);

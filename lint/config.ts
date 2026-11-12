@@ -1,6 +1,6 @@
 import type { OxlintConfig } from "vite-plus/lint";
 
-import { generatedFiles } from "#tooling/project";
+import { exampleFeatureDirectory, generatedFiles } from "#tooling/project";
 
 import { lintExceptions } from "./exceptions";
 import { layerOverrides, restrictImports } from "./layers";
@@ -91,6 +91,16 @@ const reactHooksRules = {
   "react-hooks-js/void-use-memo": "error",
 } as const;
 
+const baseUiControlsNamedByWrappingLabel = [
+  "Checkbox",
+  "Checkbox.Root",
+  "Input",
+  "Radio.Root",
+  "RadioGroupItem",
+  "Switch",
+  "Switch.Root",
+];
+
 export const lintConfig = {
   // why: Setting plugins replaces Oxlint's default set, so oxc and unicorn must stay listed.
   plugins: [...builtinPlugins],
@@ -167,6 +177,10 @@ export const lintConfig = {
     "max-depth": ["error", 4],
     "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
     "react/button-has-type": "error",
+    "jsx-a11y/label-has-associated-control": [
+      "error",
+      { controlComponents: baseUiControlsNamedByWrappingLabel },
+    ],
     "react/checked-requires-onchange-or-readonly": "error",
     "react/no-danger": "error",
     "no-console": ["error", { allow: ["warn", "error"] }],
@@ -272,5 +286,10 @@ export const lintConfig = {
     ...commentScopes.overrides,
     ...lintExceptions(),
   ],
-  ignorePatterns: ["dist", ".output", ...generatedFiles.map(({ path }) => path)],
+  ignorePatterns: [
+    "dist",
+    ".output",
+    exampleFeatureDirectory,
+    ...generatedFiles.map(({ path }) => path),
+  ],
 } satisfies OxlintConfig;

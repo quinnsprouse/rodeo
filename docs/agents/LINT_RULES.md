@@ -30,7 +30,9 @@ Nothing imports a route module, and only `src/demo/` and `src/routes/(demo)/` ma
 
 ## Errors that need more context
 
-- **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body. Move that code to module scope.
+- **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body or has a `try` without a `catch`. Move an `import()` to module scope. For a pending flag around an async submit, drop the `try`/`finally` and pass an async function to `startTransition` from `useTransition`, which tracks the pending state for you.
+- **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for Base UI's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it.
+- **`typescript/no-deprecated` on `FormEvent`.** The message drops the names of the replacements. Type a submit handler with `SubmitEvent<HTMLFormElement>`.
 - **`no-warning-comments`.** Finish the work. Rewording the TODO doesn't count.
 - **`complexity`, `max-depth`, `max-lines`.** Split by responsibility. Return early, or move one concern into its own module.
 - **`shadcn/no-unknown-classes` on `text-sm`, `rounded-md`, or `font-bold`.** The Untitled theme replaced Tailwind's default scales. Use its names, such as `text-s`, `rounded-s`, and `font-heavy`.

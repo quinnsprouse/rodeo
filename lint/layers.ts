@@ -2,18 +2,39 @@ import type { OxlintOverride } from "vite-plus/lint";
 
 import { appUnitTestReason } from "#tooling/project";
 
-type ImportPath = { name: string; importNames?: string[]; message: string };
+type ImportPath = {
+  name: string;
+  importNames?: string[];
+  allowTypeImports?: boolean;
+  message: string;
+};
 type ImportPattern = { group: string[]; message: string };
-type Restrictions = { paths?: ImportPath[]; patterns?: ImportPattern[] };
+type Restrictions = { paths?: ImportPath[]; patterns?: ImportPattern[]; allow?: string[] };
 type ImportRestriction = ["error", { paths: ImportPath[]; patterns: ImportPattern[] }];
 type Zone = { files: string[]; bans: string[]; message: string };
 
+const iconModule = "src/components/icon.tsx";
+const iconRenderer: ImportPath = {
+  name: "@hugeicons/react",
+  allowTypeImports: true,
+  message:
+    "Draw icons with Icon from @/components/icon, which gives them the theme's stroke width: <Icon icon={CheckIcon} />. See docs/agents/UI_MOTION.md",
+};
+
 const sharedRestrictions = {
-  paths: ["zod", "zod/v3", "zod/v4"].map((name) => ({
-    name,
-    message:
-      "Import schemas from zod/mini. Search schemas and client env ship in the entry chunk, and classic Zod adds about 14 KB to every route.",
-  })),
+  paths: [
+    ...["zod", "zod/v3", "zod/v4"].map((name) => ({
+      name,
+      message:
+        "Import schemas from zod/mini. Search schemas and client env ship in the entry chunk, and classic Zod adds about 14 KB to every route.",
+    })),
+    {
+      name: "cn",
+      message:
+        'Import cn from @/lib/utils. The bare cn package knows Tailwind\'s default scales, not the theme\'s: it turns cn("text-s", "text-muted-foreground") into text-muted-foreground and keeps both classes of cn("p-m", "p-l"). shadcn add writes this import, so change it in each file the CLI adds.',
+    },
+    iconRenderer,
+  ],
   patterns: [
     {
       group: [
@@ -119,11 +140,13 @@ const demoFiles = ["src/demo/**", "src/routes/(demo)/**"];
 export function restrictImports({
   paths = [],
   patterns = [],
+  allow = [],
 }: Restrictions = {}): ImportRestriction {
+  const shared = sharedRestrictions.paths.filter(({ name }) => !allow.includes(name));
   return [
     "error",
     {
-      paths: [...sharedRestrictions.paths, ...paths],
+      paths: [...shared, ...paths],
       patterns: [...sharedRestrictions.patterns, ...patterns],
     },
   ];
@@ -166,5 +189,14 @@ export function layerOverrides(): OxlintOverride[] {
       layerPair(files, [], [{ group: bans, message }, demoImports]),
     ),
     ...layerPair(demoFiles, [], []),
+    {
+      files: [iconModule],
+      rules: {
+        "no-restricted-imports": restrictImports({
+          patterns: [...appBaseline, demoImports],
+          allow: [iconRenderer.name],
+        }),
+      },
+    },
   ];
 }

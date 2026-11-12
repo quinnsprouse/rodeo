@@ -4,6 +4,7 @@ import { noComments } from "./rules/no-comments.js";
 import { noDisableDirectives } from "./rules/no-disable-directives.js";
 import { noImportMetaEnv } from "./rules/no-import-meta-env.js";
 import { noModuleScopeBrowserGlobals } from "./rules/no-module-scope-browser-globals.js";
+import { noOffThemeClasses } from "./rules/no-off-theme-classes.js";
 import { noStateFromProps } from "./rules/no-state-from-props.js";
 import { noWindowNavigation } from "./rules/no-window-navigation.js";
 import { serverFnRequiresValidator } from "./rules/server-fn-requires-validator.js";
@@ -140,6 +141,7 @@ export const rules = {
   "no-state-from-props": noStateFromProps,
   "no-module-scope-browser-globals": noModuleScopeBrowserGlobals,
   "no-window-navigation": noWindowNavigation,
+  "no-off-theme-classes": noOffThemeClasses,
 };
 
 export default definePlugin({ meta: { name: pluginName }, rules });

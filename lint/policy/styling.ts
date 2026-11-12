@@ -44,9 +44,41 @@ export function Probe() { return <ProbeButton className="bg-brand">Save</ProbeBu
     rule: "shadcn(no-unknown-classes)",
     source: `export function Probe() { return <span className="rounded-huge" />; }`,
   },
+  {
+    name: "CSS borders in the kit, which the theme draws as box shadows",
+    rule: "rodeo(no-off-theme-classes)",
+    layer: "src/components/ui",
+    source: `export function Probe() { return <div className="border border-input" />; }`,
+  },
+  {
+    name: "transition-all",
+    rule: "rodeo(no-off-theme-classes)",
+    source: `export function Probe() { return <p className="transition-all">Ready</p>; }`,
+  },
+  {
+    name: "removing the focus outline without a focus-visible replacement",
+    rule: "rodeo(no-off-theme-classes)",
+    source: `export function Probe() { return <a href="/" className="outline-none">Home</a>; }`,
+  },
+  {
+    name: "logical sizes whose names the spacing scale shadows",
+    rule: "rodeo(no-off-theme-classes)",
+    source: `export function Probe() { return <main className="max-inline-xl">Ready</main>; }`,
+  },
 ];
 
 const allowed: Probe[] = [
+  {
+    name: "themed edges, named transitions, and a replaced focus outline",
+    layer: "src/components/ui",
+    source: `export function Probe() {
+  return (
+    <div className="ring-1 ring-border divider-b transition-colors duration-(--motion-duration) ease-(--motion-easing)">
+      <span className="max-w-xl outline-none focus-visible:inset-ring-primary-transparent" />
+    </div>
+  );
+}`,
+  },
   {
     name: "dynamic values through CSS custom properties",
     source: `export function Probe({ value, fade }: { value: number; fade: number }) {

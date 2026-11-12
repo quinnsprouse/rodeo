@@ -58,6 +58,10 @@ const allowedFiles = [
     name: "the e2e fixtures module extending the base test from @playwright/test",
     path: join(repoRoot, "e2e", "fixtures.ts"),
   },
+  {
+    name: "the Icon component drawing HugeiconsIcon",
+    path: join(repoRoot, "src", "components", "icon.tsx"),
+  },
 ];
 
 const probes = [...rejected, ...allowed];
