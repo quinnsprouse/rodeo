@@ -3,7 +3,7 @@ import type { OxlintConfig } from "vite-plus/lint";
 import { generatedFiles } from "#tooling/project";
 
 import { lintExceptions } from "./exceptions";
-import { appFiles, layerOverrides, restrictImports } from "./layers";
+import { layerOverrides, restrictImports } from "./layers";
 import { commentScopes, rodeoPlugin, rodeoRules } from "./rodeo-rules";
 
 const builtinPlugins = [
@@ -165,6 +165,7 @@ export const lintConfig = {
     ],
     complexity: ["error", 20],
     "max-depth": ["error", 4],
+    "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
     "react/button-has-type": "error",
     "react/checked-requires-onchange-or-readonly": "error",
     "react/no-danger": "error",
@@ -235,12 +236,6 @@ export const lintConfig = {
       files: ["scripts/**"],
       rules: {
         "no-console": "off",
-      },
-    },
-    {
-      files: [appFiles],
-      rules: {
-        "max-lines": ["error", { max: 300, skipBlankLines: true, skipComments: true }],
       },
     },
     ...layerOverrides(),

@@ -74,7 +74,7 @@ const nodeGlobals = ["process", "Buffer", "global", "__dirname", "__filename", "
   }),
 );
 
-export const appFiles = "src/**";
+const appFiles = "src/**";
 
 const demoImports: ImportPattern = {
   group: [

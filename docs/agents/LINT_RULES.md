@@ -37,4 +37,4 @@ Nothing imports a route module, and only `src/demo/` and `src/routes/(demo)/` ma
 
 ## Add a rule
 
-When you correct the same mistake twice, make it a rule instead of more prose. Prefer a compiler check or a built-in rule, and prove its valid and invalid cases in `lint/policy.test.ts`. Write a custom rule in `lint/rules.js` only when nothing built in fits. Put the fix in its message, add it to the `rules` export, and test it in `lint/rules.test.ts`.
+When you correct the same mistake twice, make it a rule instead of more prose. Prefer a compiler check or a built-in rule, and prove its valid and invalid cases as probes in the matching topic under `lint/policy/`, which `lint/policy.test.ts` lints in one run. Write a custom rule only when nothing built in fits. Give it its own module in `lint/rules/`, put the fix in its message, add it to the `rules` export in `lint/rules.js`, and test it in `lint/<rule-name>.test.ts`.
