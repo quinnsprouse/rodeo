@@ -1,5 +1,5 @@
 import { realpathSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, sep } from "node:path";
 
 function realpathOrNull(path) {
   try {
@@ -20,4 +20,12 @@ export function physicalPath(base, path) {
   // why: The OS resolves `..` after a symlink from the link's target, and path.join would cancel
   // it against the link's name, so realpath gets the path unnormalized.
   return resolveFrom(isAbsolute(path) ? path : `${base}${sep}${path}`, []);
+}
+
+export function isWithin(path, base) {
+  const fromBase = relative(base, path);
+  return (
+    fromBase === "" ||
+    (fromBase !== ".." && !fromBase.startsWith(`..${sep}`) && !isAbsolute(fromBase))
+  );
 }

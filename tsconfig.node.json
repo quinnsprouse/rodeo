@@ -7,5 +7,5 @@
     "verbatimModuleSyntax": true,
     "allowJs": true
   },
-  "include": [".agents/hooks/*.test.ts", "lint/**/*.ts", "*.config.ts"]
+  "include": [".agents/hooks/*.ts", "lint/**/*.ts", "*.config.ts"]
 }
