@@ -52,7 +52,7 @@ export function PhilosophyArticle() {
         </p>
         <p>
           the thing i kept running into is that agents are really good at copying whatever's already
-          in your codebase.
+          in your codebase. the good parts and the bad parts.
         </p>
         <p>
           rodeo is where all of that ended up. it's the starting place i wanted for any web app.
@@ -61,11 +61,7 @@ export function PhilosophyArticle() {
           this isn't a setup guide. it's more about how i think about building with agents, and it's
           opinionated.
         </p>
-        <p>
-          everything in rodeo comes back to three ideas: teach with the codebase, catch mistakes
-          where they happen, and spend tokens on signal.
-        </p>
-        <p>none of them are new honestly. agents just made them matter a lot more.</p>
+        <p>none of it is new honestly. agents just made it matter a lot more.</p>
         <p>
           you'll probably disagree with some of it, and that's fine. it's a starter. rip out
           whatever doesn't work for you.

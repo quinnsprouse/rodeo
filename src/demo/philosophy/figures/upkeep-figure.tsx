@@ -39,7 +39,7 @@ export function UpkeepFigure() {
   return (
     <Figure
       figure={figure}
-      caption="the overhead piles up because every change has to read and fix more of it. also an illustration."
+      caption="it piles up because every change has more comments to read and more tests to fix. also an illustration."
     >
       <div {...handlers}>
         <p className="text-xs text-muted-foreground">tokens spent on upkeep, per change</p>
