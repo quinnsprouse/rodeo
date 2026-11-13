@@ -20,7 +20,7 @@ export function Contents() {
         <div className="flex items-center justify-between">
           <Link
             to="/"
-            className="text-s text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground"
+            className="relative text-s text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) after:absolute after:-inset-2.5 hover:text-foreground"
           >
             ↩ Home
           </Link>
@@ -34,7 +34,7 @@ export function Contents() {
                   href={`#${section.id}`}
                   aria-current={active === section.id ? "location" : undefined}
                   className={cn(
-                    "transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground",
+                    "relative block transition-colors duration-(--motion-duration) ease-(--motion-easing) after:absolute after:inset-x-0 after:-inset-y-1.5 hover:text-foreground",
                     active === section.id ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

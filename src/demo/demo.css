@@ -32,8 +32,18 @@
   --wipe-hidden: 100%;
 }
 
-@utility soft-focus {
-  filter: blur(2px);
+@utility draw {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: var(--draw-hidden, 0);
+  @media (prefers-reduced-motion: no-preference) {
+    transition-property: stroke-dashoffset;
+    transition-duration: var(--motion-large-duration);
+    transition-timing-function: var(--motion-large-easing);
+  }
+}
+
+@utility draw-hidden {
+  --draw-hidden: 1;
 }
 
 @utility sheen-sweep {
@@ -79,6 +89,20 @@
 .hold-still,
 .hold-still * {
   transition: none !important;
+}
+
+@utility hold-entrance {
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    & > * {
+      animation: hold-entrance 1ms 4s backwards;
+    }
+  }
+}
+
+@keyframes hold-entrance {
+  from {
+    visibility: hidden;
+  }
 }
 
 @keyframes shimmer-window {

@@ -1,33 +1,23 @@
 import type { ComponentType, ReactNode } from "react";
 
 import type { StickerProps } from "@/components/stickers/frame";
-import { ExternalLink } from "@/demo/external-link";
 import { links } from "@/demo/links";
+import { Acknowledgements } from "@/demo/philosophy/acknowledgements";
 import { CatchFigure } from "@/demo/philosophy/figures/catch-figure";
+import { LayersFigure } from "@/demo/philosophy/figures/layers-figure";
+import { LintFigure } from "@/demo/philosophy/figures/lint-figure";
 import { PyramidFigure } from "@/demo/philosophy/figures/pyramid-figure";
 import { RenameFigure } from "@/demo/philosophy/figures/rename-figure";
 import { TokenBarsFigure } from "@/demo/philosophy/figures/token-figure";
 import { UpkeepFigure } from "@/demo/philosophy/figures/upkeep-figure";
+import { InlineLink } from "@/demo/philosophy/inline-link";
 import { HeartSticker, ScissorsSticker, TokenSticker } from "@/demo/stickers/philosophy";
-import { CodebaseSticker, HumanReviewSticker, StaticAnalysisSticker } from "@/demo/stickers/topics";
-
-const pocockSkills = "https://github.com/mattpocock/skills";
-const stack = [
-  { name: "vite+", href: links.vitePlus },
-  { name: "tanstack start", href: links.tanstackStart },
-  { name: "react", href: links.react },
-  { name: "tailwind", href: links.tailwind },
-  { name: "shadcn/ui", href: links.shadcn },
-  { name: "base ui", href: links.baseUi },
-  { name: "nitro", href: links.nitro },
-];
-
-function stackSeparator(index: number) {
-  if (index === stack.length - 1) return ".";
-  return index === stack.length - 2 ? " and " : ", ";
-}
-const link =
-  "text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground";
+import {
+  CodebaseSticker,
+  HumanReviewSticker,
+  LintRulesSticker,
+  StaticAnalysisSticker,
+} from "@/demo/stickers/topics";
 
 function Subheading({ children }: { children: ReactNode }) {
   return <h3 className="pt-m font-medium text-foreground">{children}</h3>;
@@ -47,37 +37,69 @@ export const sections: {
       <>
         <p>
           this part comes straight from{" "}
-          <ExternalLink href={links.potetoPost} className={link}>
-            a post by poteto
-          </ExternalLink>{" "}
-          on x. the idea is you want most of your effort at the top, on the codebase itself. then
-          static analysis. then prose. human review goes last because it's the thing that scales the
-          worst.
+          <InlineLink href={links.potetoPost}>a post by poteto</InlineLink> on x. the idea is you
+          want most of your effort at the top, on the codebase itself. then static analysis. then
+          prose. human review goes last because it's the thing that scales the worst.
+        </p>
+        <PyramidFigure />
+        <p>
+          the codebase is on top because an agent learns more from your code than from anything you
+          tell it. ask for a new page and it goes and reads the pages you already have, then writes
+          one just like them.
         </p>
         <p>
-          so in rodeo, the codebase does most of the work. on top of that, lint checks everything,
-          even the design. if an agent reaches for a color or a size that isn't in the theme, lint
-          fails it, so you don't end up with little design papercuts everywhere.
+          so rodeo's code is set up to be copied. every folder has one job and imports only go one
+          way. routes use components, components use hooks, hooks use lib, and nothing reaches back
+          up.
+        </p>
+        <LayersFigure />
+      </>
+    ),
+  },
+  {
+    id: "lint",
+    title: "Letting lint be the strict one",
+    Sticker: StaticAnalysisSticker,
+    body: (
+      <>
+        <p>
+          the next layer down is lint, and rodeo's lint is very strict. normally that would be
+          really annoying as an engineer. but agents are able to put up with it and follow best
+          practices.
+        </p>
+        <p>
+          the part i think is pretty sweet is the linting on the design tokens. if an agent reaches
+          for a color or a size that isn't in the theme, lint fails it, so you don't end up with a
+          bunch of little design papercuts.
+        </p>
+        <p>
+          rodeo's errors name their fix, most of them anyway. an error that just says no teaches the
+          agent to sneak around it. write bg-gray-100 and the error lists the theme colors to use
+          instead.
         </p>
         <p>
           agents take the shortest path, every time. left alone, an agent will write a server
           function that trusts whatever the browser sends. in rodeo that fails lint until the
           function checks its input with a schema.
         </p>
-        <PyramidFigure />
+        <LintFigure />
+        <p>
+          the usual way around a rule is a disable comment, so those fail lint too. if a rule really
+          is wrong for a file, the exception goes in lint/exceptions.ts with a reason next to it.
+        </p>
       </>
     ),
   },
   {
     id: "catching",
     title: "Catching mistakes where they happen",
-    Sticker: StaticAnalysisSticker,
+    Sticker: LintRulesSticker,
     body: (
       <>
         <p>
-          an agent is at its best right after it writes something. the file's open, the context is
-          fresh, and fixing it costs one more edit. the same mistake caught in a pull request costs
-          a review comment, another commit, and another CI run.
+          an agent is at its best right after it writes something. the file's still open and it
+          remembers what it was going for, so a fix is one more edit. catch the same mistake in a
+          pull request and it's a review comment, another commit, and another CI run.
         </p>
         <p>
           so rodeo checks all the time. every edit gets formatted, linted and typechecked. the end
@@ -90,11 +112,6 @@ export const sections: {
           when you're done anyway.
         </p>
         <CatchFigure />
-        <p>
-          rodeo's errors name their fix, most of them anyway. an error that just says no teaches the
-          agent to sneak around it. write bg-gray-100 and the error lists the theme colors to use
-          instead.
-        </p>
         <p>
           it sounds small, but you stop finding the same mistake in every review, because the agent
           already heard about it the second it wrote it.
@@ -109,15 +126,14 @@ export const sections: {
     body: (
       <>
         <p>
-          agents read everything you give them: comments, tests, docs. all of it costs context they
-          could be spending on the actual task.
+          agents read everything you put in front of them. comments, tests, docs. all of it costs
+          context they could be spending on the actual task.
         </p>
         <TokenBarsFigure />
         <p>
           and it compounds. every comment is something the next agent reads, and probably copies.
-          every unit test is something the next change has to go fix. so the overhead isn't a one
-          time cost, it grows with the codebase. give it a year and a big chunk of every task is
-          upkeep on stuff that never caught a single bug.
+          every unit test is something the next change might have to go fix. so you never stop
+          paying for it. give it a year and a big chunk of every task is upkeep.
         </p>
         <UpkeepFigure />
         <p>so rodeo drops a few habits that are fine for people and kinda terrible for agents.</p>
@@ -180,8 +196,8 @@ export const sections: {
           are going to stop pulling their weight.
         </p>
         <p>
-          when a guardrail stops catching real mistakes, i'll take it out. rodeo should fit what the
-          current frontier models need, not what they needed a year ago.
+          when a guardrail stops catching real mistakes, i'll take it out. rodeo should fit the
+          models we have now.
         </p>
         <p>
           the goal is to keep rodeo as small as it can be. it's free, and ideally it saves you some
@@ -194,36 +210,6 @@ export const sections: {
     id: "thanks",
     title: "Acknowledgements",
     Sticker: HeartSticker,
-    body: (
-      <>
-        <p>
-          huge thanks to poteto. the pyramid comes from{" "}
-          <ExternalLink href={links.potetoPost} className={link}>
-            their post on x
-          </ExternalLink>
-          , and so does the idea of killing comments.
-        </p>
-        <p>
-          thanks to matt pocock too.{" "}
-          <ExternalLink href={pocockSkills} className={link}>
-            his skills
-          </ExternalLink>{" "}
-          and his focus on what matters now that agents write the code helped me narrow rodeo down a
-          lot.
-        </p>
-        <p>
-          rodeo is built on{" "}
-          {stack.map((tool, index) => (
-            <span key={tool.name}>
-              <ExternalLink href={tool.href} className={link}>
-                {tool.name}
-              </ExternalLink>
-              {stackSeparator(index)}
-            </span>
-          ))}{" "}
-          thank you all.
-        </p>
-      </>
-    ),
+    body: <Acknowledgements />,
   },
 ];

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 
 import { concealed, reveal } from "@/demo/motion-classes";
 import { Figure, timeline, useFigure } from "@/demo/philosophy/figures/figure";
+import { Highlight } from "@/demo/philosophy/figures/highlight";
 import { useHoveredData } from "@/demo/use-hovered-data";
 import { cn } from "@/lib/utils";
 
@@ -11,22 +12,9 @@ const beats = timeline({ withoutRodeo: 150, rodeo: 500, author: 650, admin: 450 
 
 function Mark({ idea, lit, children }: { idea: Idea; lit: boolean; children: ReactNode }) {
   return (
-    <span
-      data-idea={idea}
-      className={cn(
-        "relative isolate cursor-default transition-colors duration-300 ease-(--motion-large-easing)",
-        lit && "text-foreground",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "absolute -inset-x-0.5 inset-y-0 -z-10 origin-left rounded-xs bg-primary-transparent transition-transform duration-300 ease-(--motion-large-easing)",
-          !lit && "scale-x-0",
-        )}
-      />
+    <Highlight data-idea={idea} lit={lit} className="cursor-default">
       {children}
-    </span>
+    </Highlight>
   );
 }
 
