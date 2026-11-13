@@ -7,7 +7,7 @@ import { useHoveredData } from "@/demo/use-hovered-data";
 import { cn } from "@/lib/utils";
 
 const loadParticles = () => import("@/demo/philosophy/figures/particles");
-const CoinSpill = lazy(() => loadParticles().then((mod) => ({ default: mod.CoinSpill })));
+const CoinSpills = lazy(() => loadParticles().then((mod) => ({ default: mod.CoinSpills })));
 
 function preloadParticles() {
   void loadParticles();
@@ -76,6 +76,8 @@ export function TokenBarsFigure() {
   const figure = useFigure(beats);
   const { playback, beat } = figure;
   const { hovered: focused, handlers } = useHoveredData("part");
+  const spilled =
+    playback === "playing" ? overhead.filter((item) => beat >= beats.at(item.part)).length : 0;
 
   useEffect(() => {
     if (playback === "waiting") preloadParticles();
@@ -94,18 +96,14 @@ export function TokenBarsFigure() {
             overlay={
               <>
                 <span className={task.grow} />
-                {overhead.map((item, index) => (
-                  <span key={item.part} className={cn("relative", item.grow)}>
-                    {playback !== "static" && (
-                      <Suspense fallback={null}>
-                        <CoinSpill
-                          spill={index}
-                          play={playback === "playing" && beat >= beats.at(item.part)}
-                        />
-                      </Suspense>
-                    )}
-                  </span>
+                {overhead.map((item) => (
+                  <span key={item.part} data-spill className={item.grow} />
                 ))}
+                {playback !== "static" && (
+                  <Suspense fallback={null}>
+                    <CoinSpills spilled={spilled} />
+                  </Suspense>
+                )}
               </>
             }
           >

@@ -46,10 +46,6 @@
   --draw-hidden: 1;
 }
 
-@utility soft-focus {
-  filter: blur(2px);
-}
-
 @utility sheen-sweep {
   animation: sheen-sweep 1000ms cubic-bezier(0.645, 0.045, 0.355, 1) both;
 }
