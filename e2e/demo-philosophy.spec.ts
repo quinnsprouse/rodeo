@@ -79,6 +79,30 @@ test("each philosophy figure waits for the reader, then plays to a final state t
   await expect.poll(() => textHiddenInAnyFigure(page), settled).toEqual([]);
 });
 
+function noteWhenTheFirstFigureMoves() {
+  document.addEventListener("transitionrun", ({ target }) => {
+    const firstFigure = document.querySelector("figure");
+    if (target instanceof Node && firstFigure?.contains(target)) {
+      document.documentElement.dataset.firstFigure = "moved";
+    }
+  });
+}
+
+test("a figure already on screen when the page loads still plays, and the next one waits for the reader", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1500 });
+  await page.addInitScript(noteWhenTheFirstFigureMoves);
+  await page.goto("/philosophy");
+  const onScreen = page.getByRole("figure").first();
+  const belowThePlayLine = page.getByRole("figure").nth(1);
+
+  await expect(onScreen).toBeInViewport();
+  await expect(page.locator("html")).toHaveAttribute("data-first-figure", "moved");
+  await expect.poll(() => hiddenCounts(onScreen), settled).toEqual([0]);
+  await expect.poll(() => hiddenCounts(belowThePlayLine), often).not.toEqual([0]);
+});
+
 test.describe("server-rendered figures", () => {
   test.use({ javaScriptEnabled: false });
 

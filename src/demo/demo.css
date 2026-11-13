@@ -95,6 +95,20 @@
   transition: none !important;
 }
 
+@utility hold-entrance {
+  @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+    & > * {
+      animation: hold-entrance 1ms 4s backwards;
+    }
+  }
+}
+
+@keyframes hold-entrance {
+  from {
+    visibility: hidden;
+  }
+}
+
 @keyframes shimmer-window {
   from {
     transform: translateX(-150%);
