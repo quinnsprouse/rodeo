@@ -70,10 +70,10 @@
     "nitro": "^3.0.260903-beta",
     "react-doctor": "0.9.14",
     "typescript": "^7.0.2",
-    "vite-plus": "1.5.1"
+    "vite-plus": "1.7.0"
   },
   "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.5.1"
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
   },
   "devEngines": {
     "packageManager": {
