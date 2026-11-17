@@ -7,9 +7,12 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 const packageJson = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
-const { version: vitePlusVersion } = require("vite-plus/package.json");
+const {
+  version: vitePlusVersion,
+  dependencies: vitePlusDependencies,
+} = require("vite-plus/package.json");
 const { versions: bundledTools } = require("vite-plus/versions");
-const vitePlusCore = `npm:@voidzero-dev/vite-plus-core@${vitePlusVersion}`;
+const vitePlusCore = vitePlusDependencies.vite;
 const vitestPin = packageJson.overrides.vitest;
 
 function pinVitePlusExpects(name) {
