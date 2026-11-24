@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-
 import type { OxlintConfig } from "vite-plus/lint";
 
 import { exampleFeatureDirectory, generatedFiles } from "#tooling/project";
@@ -75,21 +72,18 @@ const playwrightRules = {
   "playwright/valid-title": "error",
 } as const;
 
-function landminesRecommendedRules() {
-  const recommended = createRequire(import.meta.url).resolve(
-    "@interfere/landmines/configs/recommended.json",
-  );
-  const config: unknown = JSON.parse(readFileSync(recommended, "utf8"));
-  const rules =
-    typeof config === "object" && config !== null && "rules" in config ? config.rules : {};
-  const names = Object.keys(rules ?? {});
-  if (names.length === 0) {
-    throw new Error(
-      `${recommended} lists no rules, so lint would run without landmines. Read the rule list from where this version of @interfere/landmines keeps it, in lint/config.ts.`,
-    );
-  }
-  return Object.fromEntries(names.map((rule) => [rule, "error" as const]));
-}
+export const declinedLandminesRules = {
+  "landmines/no-cold-start-in-test":
+    "A guardrail test runs the real tool on inputs it writes, so it starts a process in each test, and the rule misses the same start behind an imported helper.",
+  "landmines/strict-msw": "The starter does not use MSW. Turn this on with it.",
+  "landmines/no-project-max-workers": "The starter has no Vitest projects.",
+  "landmines/no-stale-render-assertion":
+    "It checks hook unit tests, which the starter bans in app code.",
+  "landmines/no-styling-class-assertion":
+    "It checks *.browser.test.tsx files. Browser tests here are Playwright specs.",
+  "landmines/no-clipboard-read-text":
+    "It checks *.browser.test.* files. Browser tests here are Playwright specs.",
+};
 
 const suitesThatRunRealProcesses = {
   ".agents/hooks/hook-process.test.ts": 1,
@@ -217,10 +211,20 @@ export const lintConfig = {
     "vitest/no-conditional-in-test": "error",
     "vitest/no-identical-title": "error",
 
-    ...landminesRecommendedRules(),
+    "landmines/no-cold-import-in-test": "error",
+    "landmines/no-conditional-expect": "error",
+    "landmines/no-elapsed-time-bound": "error",
+    "landmines/no-fixed-sleep": "error",
     // why: These suites run tsc, Vite, and the hooks as real processes, which takes up to 5
     // seconds on a quiet machine, so each keeps the one raised timeout landmines counts here.
     "landmines/no-flake-masking": ["error", { allow: suitesThatRunRealProcesses }],
+    "landmines/no-imported-mutation": "error",
+    "landmines/no-parameter-branch": "error",
+    "landmines/no-self-container-query": "error",
+    "landmines/no-shared-signal": "error",
+    "landmines/no-silent-catch": "error",
+    "landmines/no-test-doubles": "error",
+    "landmines/no-unsignaled-poll": "error",
 
     ...rodeoRules,
     ...commentScopes.rules,

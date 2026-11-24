@@ -2,6 +2,13 @@ import { type PolicyTopic, type RejectedProbe } from "./probe";
 
 const rejected: RejectedProbe[] = [
   {
+    name: "a discarded promise whose rejection handler does nothing",
+    rule: "landmines(no-silent-catch)",
+    source: `export function save(action: () => Promise<void>) {
+void action().catch(() => undefined);
+}`,
+  },
+  {
     name: "unexplained empty catch blocks",
     rule: "no-empty",
     source: `export async function save(action: () => Promise<void>) {

@@ -64,6 +64,66 @@ it("rejects bad JSON", ({ expect }) => {
 });`,
   },
   {
+    name: "an upper bound on how long the code took",
+    rule: "landmines(no-elapsed-time-bound)",
+    file: "elapsed-bound.test.ts",
+    source: `import { expect, it } from "vite-plus/test";
+it("parses quickly", () => {
+  const start = Date.now();
+  JSON.parse("{}");
+  expect(Date.now() - start).toBeLessThan(50);
+});`,
+  },
+  {
+    name: "polling a spy until it was called",
+    rule: "landmines(no-unsignaled-poll)",
+    file: "spy-poll.test.ts",
+    source: `import { expect, it, vi } from "vite-plus/test";
+it("calls the listener", async () => {
+  const listener = vi.fn<() => void>();
+  listener();
+  await vi.waitFor(() => { expect(listener).toHaveBeenCalled(); });
+});`,
+  },
+  {
+    name: "a timeout signal shared by a whole test file",
+    rule: "landmines(no-shared-signal)",
+    file: "shared-signal.test.ts",
+    source: `import { expect, it } from "vite-plus/test";
+const deadline = AbortSignal.timeout(5000);
+it("is not aborted yet", () => { expect(deadline.aborted).toBe(false); });`,
+  },
+  {
+    name: "a test changing an imported object",
+    rule: "landmines(no-imported-mutation)",
+    file: "imported-mutation.test.ts",
+    source: `import { env } from "node:process";
+import { expect, it } from "vite-plus/test";
+it("reads the flag", () => {
+  env.RODEO_PROBE = "1";
+  expect(env.RODEO_PROBE).toBe("1");
+});`,
+  },
+  {
+    name: "a module only a test imports, loaded inside the test",
+    rule: "landmines(no-cold-import-in-test)",
+    file: "cold-import.test.ts",
+    source: `import { expect, it } from "vite-plus/test";
+it("joins a path", async () => {
+  const { join } = await import("node:path");
+  expect(join("a", "b")).toBe("a/b");
+});`,
+  },
+  {
+    name: "an expected value chosen by branching on the case",
+    rule: "landmines(no-parameter-branch)",
+    file: "parameter-branch.test.ts",
+    source: `import { expect, it } from "vite-plus/test";
+it.each([1, 2])("names %i", (value) => {
+  expect(value === 1 ? "one" : "other").toBe(String(value) === "1" ? "one" : "other");
+});`,
+  },
+  {
     name: "browser tests that wait a fixed time",
     rule: "landmines(no-fixed-sleep)",
     layer: "e2e",
@@ -144,6 +204,16 @@ it("adds", () => { expect(1 + 1).toBe(2); });`,
 ];
 
 const allowed: Probe[] = [
+  {
+    name: "a guardrail test that runs the real tool in each test",
+    file: "real-process.test.ts",
+    source: `import { execFileSync } from "node:child_process";
+import { expect, it } from "vite-plus/test";
+it("adds two numbers", () => {
+  const printed = execFileSync(process.execPath, ["-p", "1 + 1"], { encoding: "utf8" });
+  expect(printed.trim()).toBe("2");
+});`,
+  },
   {
     name: "a browser test stubbing a browser API to reach an error the browser controls",
     layer: "e2e",
