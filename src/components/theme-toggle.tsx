@@ -16,12 +16,16 @@ function preloadClick() {
   return clickSound;
 }
 
+function blockedByAutoplayPolicy(error: unknown) {
+  return error instanceof DOMException && error.name === "NotAllowedError";
+}
+
 function playClick() {
   const audio = preloadClick();
   audio.currentTime = 0;
-  // why: play() rejects when the browser's autoplay policy blocks sound, and the toggle should
-  // still switch silently.
-  void audio.play().catch(() => undefined);
+  void audio.play().catch((error: unknown) => {
+    if (!blockedByAutoplayPolicy(error)) throw error;
+  });
 }
 
 const rayAngles = [0, 45, 90, 135, 180, 225, 270, 315];

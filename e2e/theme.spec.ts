@@ -45,6 +45,22 @@ test("the theme toggle repaints the page and the browser chrome, and a reload ke
   expect(await chromePaintedBackground(page)).toBe(chosen);
 });
 
+test("a second switch before the first finishes leaves a working switch", async ({ page }) => {
+  await page.goto("/");
+  const toggle = page.getByRole("button", { name: /^Switch to (dark|light) theme$/ });
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName("Switch to light theme");
+
+  await toggle.evaluate((button: HTMLElement) => {
+    button.click();
+    button.click();
+  });
+
+  await expect(toggle).toBeEnabled();
+  await toggle.click();
+  await expect(toggle).toHaveAccessibleName(/^Switch to (dark|light) theme$/);
+});
+
 test("a chosen theme overrides the system theme, after a reload and a system change", async ({
   page,
 }) => {
