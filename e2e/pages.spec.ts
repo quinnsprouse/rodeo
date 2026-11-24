@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
 
 import { appOrigin } from "./environment";
@@ -183,7 +185,10 @@ test("the sitemap lists exactly the listed pages", async ({ context, request }) 
   expect((await sitemapPaths(request)).toSorted()).toEqual(listedPaths.toSorted());
 });
 
-test("every page shares an image of the size it declares", async ({ context, request }) => {
+test("every page shares an image of the type, size, and version it declares", async ({
+  context,
+  request,
+}) => {
   await checkEveryPage(context, async (page) => {
     const imageUrl = new URL(
       String(await page.locator('meta[property="og:image"]').getAttribute("content")),
@@ -194,6 +199,14 @@ test("every page shares an image of the size it declares", async ({ context, req
     await expect(image).toBeOK();
     const png = await image.body();
     expect(png.toString("latin1", 12, 16), "The image is a PNG").toBe("IHDR");
+    await expect(page.locator('meta[property="og:image:type"]')).toHaveAttribute(
+      "content",
+      "image/png",
+    );
+    expect(
+      imageUrl.searchParams.get("v"),
+      `${imageUrl.pathname} has a version that is the first 12 characters of its SHA-256, so a changed image gets a new URL`,
+    ).toBe(createHash("sha256").update(png).digest("hex").slice(0, 12));
     await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute(
       "content",
       String(png.readUInt32BE(16)),

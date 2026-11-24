@@ -8,7 +8,8 @@ export const philosophyPage = {
     "how i think about building with agents, and why rodeo has strict lint and no code comments, unit tests, or long docs.",
   image: {
     path: "/og-rationale.png",
-    alt: "Rodeo Philosophy: how i think about building with agents. With coin, scissors, and codebase stickers.",
+    version: "e2240c55b59e",
+    alt: "Rodeo Philosophy: why rodeo has no code comments, unit tests, or long docs. With coin, scissors, and codebase stickers.",
   },
   structuredData: ({ url, title, description, imageUrl, author }) => ({
     "@context": "https://schema.org",
