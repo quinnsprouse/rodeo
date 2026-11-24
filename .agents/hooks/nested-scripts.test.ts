@@ -8,7 +8,7 @@ import { bash, guardProject, script, type ToolCall } from "./guard-harness";
 
 const { decisions, reasonFor } = guardProject();
 
-describe.concurrent("nested scripts", { timeout: 30_000 }, () => {
+describe.concurrent("nested scripts", () => {
   it("checks the commands in nested shells, substitutions, and heredocs", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash('sh -c "git commit --no-verify -m x"'), "deny"],
@@ -85,7 +85,7 @@ describe.concurrent("nested scripts", { timeout: 30_000 }, () => {
   });
 });
 
-describe.concurrent("nested scripts in script files", { timeout: 30_000 }, () => {
+describe.concurrent("nested scripts in script files", () => {
   let fixture = "";
   const scriptFiles = {
     "push.sh": "git push --force origin main\n",

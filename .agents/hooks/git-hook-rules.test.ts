@@ -4,7 +4,7 @@ import { bash, guardProject } from "./guard-harness";
 
 const { decisions } = guardProject();
 
-describe.concurrent("Git hook and history rules", { timeout: 30_000 }, () => {
+describe.concurrent("Git hook and history rules", () => {
   it("denies hook bypasses", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash('git commit -m "feat: x" --no-verify'), "deny"],

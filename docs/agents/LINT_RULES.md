@@ -28,6 +28,12 @@ routes → components → components/ui, hooks → lib, config
 
 Nothing imports a route module, and only `src/demo/` and `src/routes/(demo)/` may import `@/demo`. Server-only code lives in `*.server.ts`, the only place `process`, `Buffer`, and `node:*` imports are allowed. Read `VITE_*` values from `clientEnv`, never from `import.meta.env`.
 
+## Honest tests
+
+`@interfere/landmines` rejects a test that can pass without proving anything: a fixed sleep, a retry, a raised timeout, a test double, or an assertion behind a branch. Fix the test the way the message says, by waiting on the event or using the real implementation. CI does not retry a failed test.
+
+`lint/config.ts` reads the rule list from the package's `recommended` set, so a version bump can add rules. `suitesThatRunRealProcesses` in that file names the guardrail suites that may keep a raised timeout and how many each may have.
+
 ## Errors that need more context
 
 - **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body or has a `try` without a `catch`. Move an `import()` to module scope. For a pending flag around an async submit, drop the `try`/`finally` and pass an async function to `startTransition` from `useTransition`, which tracks the pending state for you.

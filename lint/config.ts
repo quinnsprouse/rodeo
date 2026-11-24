@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { createRequire } from "node:module";
+
 import type { OxlintConfig } from "vite-plus/lint";
 
 import { exampleFeatureDirectory, generatedFiles } from "#tooling/project";
@@ -24,6 +27,7 @@ const jsPlugins = [
   { name: "playwright", specifier: "eslint-plugin-playwright" },
   { name: "shadcn", specifier: "@shadcn/lint" },
   { name: "eslint-tanstack-router", specifier: "@tanstack/eslint-plugin-router" },
+  { name: "landmines", specifier: "@interfere/landmines" },
   rodeoPlugin,
 ] as const;
 
@@ -49,6 +53,7 @@ const playwrightRules = {
   "playwright/no-networkidle": "error",
   "playwright/no-page-pause": "error",
   "playwright/no-skipped-test": "error",
+  "playwright/no-slowed-test": "error",
   "playwright/no-standalone-expect": "error",
   "playwright/no-unsafe-references": "error",
   "playwright/no-unused-locators": "error",
@@ -69,6 +74,23 @@ const playwrightRules = {
   "playwright/valid-test-tags": "error",
   "playwright/valid-title": "error",
 } as const;
+
+function landminesRecommendedRules() {
+  const recommended = createRequire(import.meta.url).resolve(
+    "@interfere/landmines/configs/recommended.json",
+  );
+  const config: unknown = JSON.parse(readFileSync(recommended, "utf8"));
+  const rules =
+    typeof config === "object" && config !== null && "rules" in config ? config.rules : {};
+  return Object.fromEntries(Object.keys(rules ?? {}).map((rule) => [rule, "error" as const]));
+}
+
+const suitesThatRunRealProcesses = {
+  ".agents/hooks/hook-process.test.ts": 1,
+  ".agents/hooks/route-tree.test.ts": 1,
+  ".agents/hooks/stop-check.test.ts": 2,
+  "lint/toolchain.test.ts": 1,
+};
 
 const reactHooksRules = {
   "react-hooks-js/rules-of-hooks": "error",
@@ -188,6 +210,11 @@ export const lintConfig = {
     "unicorn/no-abusive-eslint-disable": "error",
     "vitest/no-conditional-in-test": "error",
     "vitest/no-identical-title": "error",
+
+    ...landminesRecommendedRules(),
+    // why: These suites run tsc, Vite, and the hooks as real processes, which takes up to 5
+    // seconds on a quiet machine, so each keeps the one raised timeout landmines counts here.
+    "landmines/no-flake-masking": ["error", { allow: suitesThatRunRealProcesses }],
 
     ...rodeoRules,
     ...commentScopes.rules,
