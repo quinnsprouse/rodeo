@@ -8,16 +8,18 @@ const assetKinds = [
 ];
 const quietMilliseconds = 500;
 
-function isAssetRequest(request: Request) {
-  return assetKinds.some(({ resourceType }) => resourceType === request.resourceType());
-}
-
-function watchAssetRequests(page: Page) {
+function watchAssetRequests(page: Page, appOrigin: string) {
+  function isAppAsset(request: Request) {
+    return (
+      new URL(request.url()).origin === appOrigin &&
+      assetKinds.some(({ resourceType }) => resourceType === request.resourceType())
+    );
+  }
   const inFlight = new Set<Request>();
   const finished: Request[] = [];
   const quiet = { since: Date.now() };
   page.on("request", (request) => {
-    if (!isAssetRequest(request)) return;
+    if (!isAppAsset(request)) return;
     inFlight.add(request);
     quiet.since = Date.now();
   });
@@ -35,9 +37,9 @@ function watchAssetRequests(page: Page) {
   };
 }
 
-function mainThreadIdle() {
-  return new Promise<void>((resolve) => {
-    requestIdleCallback(() => resolve());
+function mainThreadGoesIdle() {
+  return new Promise<boolean>((resolve) => {
+    requestIdleCallback((deadline) => resolve(!deadline.didTimeout), { timeout: 5000 });
   });
 }
 
@@ -54,23 +56,23 @@ export async function firstLoadDownloads(browser: Browser, url: string) {
   const firstVisit = await browser.newContext();
   try {
     const page = await firstVisit.newPage();
-    const requests = watchAssetRequests(page);
+    const appOrigin = new URL(url).origin;
+    const requests = watchAssetRequests(page, appOrigin);
     const document = await page.goto(url);
     expect(document?.status(), `${url} renders`).toBe(200);
-    await page.evaluate(mainThreadIdle);
+    expect(
+      await page.evaluate(mainThreadGoesIdle),
+      `${url} lets its main thread go idle within 5 seconds of loading`,
+    ).toBe(true);
     requests.restartQuiet();
     await expect
-      .poll(
-        async () => {
-          await page.evaluate(mainThreadIdle);
-          return requests.isQuiet();
-        },
-        { message: `${url} starts up and stops downloading JavaScript and CSS` },
-      )
+      .poll(async () => (await page.evaluate(mainThreadGoesIdle)) && requests.isQuiet(), {
+        message: `${url} stops downloading its JavaScript and CSS`,
+      })
       .toBe(true);
 
     const fromTheApp = requests.finished.filter(
-      (request) => new URL(request.url()).origin === new URL(url).origin,
+      (request) => new URL(request.url()).origin === appOrigin,
     );
     const downloads = await Promise.all(fromTheApp.map(download));
     // why: Playwright reports a negative body size for a response the browser's cache answered,
