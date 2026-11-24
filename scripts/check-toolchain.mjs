@@ -9,7 +9,7 @@ const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.ur
 const packageJson = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
 const {
   version: vitePlusVersion,
-  dependencies: vitePlusDependencies,
+  dependencies: vitePlusDependencies = {},
 } = require("vite-plus/package.json");
 const { versions: bundledTools } = require("vite-plus/versions");
 const vitePlusCore = vitePlusDependencies.vite;
@@ -34,7 +34,11 @@ assert.ok(
   vitePlusCore,
   `Vite+ ${vitePlusVersion} no longer lists vite as a dependency, so this check cannot tell which core the vite override must pin. Update scripts/check-toolchain.mjs to read the pin from where Vite+ now declares it.`,
 );
-assert.equal(packageJson.overrides.vite, vitePlusCore);
+assert.equal(
+  packageJson.overrides.vite,
+  vitePlusCore,
+  `Set overrides.vite in package.json to ${vitePlusCore}, the core that Vite+ ${vitePlusVersion} depends on. Run vp migrate to write it.`,
+);
 assert.ok(
   vitestPin === undefined || vitestPin === pinVitePlusExpects("vitest"),
   `The vitest override must pin the Vitest that Vite+ bundles, ${bundledTools.vitest}. Run vp migrate to re-pin or remove it.`,

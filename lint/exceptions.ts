@@ -37,11 +37,6 @@ export const exceptions: LintException[] = [
     rules: ["react-doctor/no-layout-property-animation"],
     why: "CSS cannot composite width, and the hero chip has to resize so the sentence reflows around each word.",
   },
-  {
-    files: ["e2e/first-load.ts"],
-    rules: ["playwright/no-networkidle"],
-    why: "The size budget counts every file a first visit downloads, including chunks a component imports after hydration, and no element on the page marks when those downloads end.",
-  },
 ];
 
 function runsInOxlint(rule: RuleId) {
