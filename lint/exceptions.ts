@@ -38,6 +38,11 @@ export const exceptions: LintException[] = [
     why: "The font audit samples which glyphs a page draws while its animations play, so real time has to pass between samples.",
   },
   {
+    files: ["e2e/**"],
+    rules: ["landmines/no-test-doubles"],
+    why: "A browser test reaches an error the browser controls, such as a denied clipboard, only by stubbing that API with page.addInitScript, as docs/agents/TESTING.md teaches.",
+  },
+  {
     files: ["src/components/theme-toggle.tsx", "src/components/theme-reveal.ts"],
     rules: ["landmines/no-silent-catch"],
     why: "Each promise rejects for a reason the reader should not see: the browser blocks the click sound before a gesture, and a second theme switch interrupts the first view transition.",

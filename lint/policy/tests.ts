@@ -1,6 +1,6 @@
 import { appUnitTestReason } from "#tooling/project";
 
-import { type PolicyTopic, type RejectedProbe } from "./probe";
+import { type PolicyTopic, type Probe, type RejectedProbe } from "./probe";
 
 const rejected: RejectedProbe[] = [
   {
@@ -51,6 +51,18 @@ test("loads the home page", async ({ page }) => {
 });`,
   },
   {
+    name: "browser tests that wait a fixed time or for network idle",
+    rule: "landmines(no-fixed-sleep)",
+    layer: "e2e",
+    file: "timed-wait.spec.ts",
+    source: `import { expect, test } from "../fixtures";
+test("loads the home page", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await page.waitForTimeout(500);
+  await expect(page).toHaveTitle("Rodeo");
+});`,
+  },
+  {
     name: "browser tests marked slow",
     rule: "playwright(no-slowed-test)",
     layer: "e2e",
@@ -83,4 +95,18 @@ it("adds", () => { expect(1 + 1).toBe(2); });`,
   },
 ];
 
-export const testProbes: PolicyTopic = { rejected };
+const allowed: Probe[] = [
+  {
+    name: "a browser test stubbing a browser API to reach an error the browser controls",
+    layer: "e2e",
+    file: "browser-stub.spec.ts",
+    source: `import type { Page } from "@playwright/test";
+export async function withoutClipboard(page: Page) {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+  });
+}`,
+  },
+];
+
+export const testProbes: PolicyTopic = { rejected, allowed };

@@ -50,7 +50,6 @@ const playwrightRules = {
   "playwright/no-focused-test": "error",
   "playwright/no-force-option": "error",
   "playwright/no-nested-step": "error",
-  "playwright/no-networkidle": "error",
   "playwright/no-page-pause": "error",
   "playwright/no-skipped-test": "error",
   "playwright/no-slowed-test": "error",
@@ -61,7 +60,6 @@ const playwrightRules = {
   "playwright/no-useless-not": "error",
   "playwright/no-wait-for-navigation": "error",
   "playwright/no-wait-for-selector": "error",
-  "playwright/no-wait-for-timeout": "error",
   "playwright/prefer-hooks-in-order": "error",
   "playwright/prefer-hooks-on-top": "error",
   "playwright/prefer-locator": "error",
@@ -82,13 +80,19 @@ function landminesRecommendedRules() {
   const config: unknown = JSON.parse(readFileSync(recommended, "utf8"));
   const rules =
     typeof config === "object" && config !== null && "rules" in config ? config.rules : {};
-  return Object.fromEntries(Object.keys(rules ?? {}).map((rule) => [rule, "error" as const]));
+  const names = Object.keys(rules ?? {});
+  if (names.length === 0) {
+    throw new Error(
+      `${recommended} lists no rules, so lint would run without landmines. Read the rule list from where this version of @interfere/landmines keeps it, in lint/config.ts.`,
+    );
+  }
+  return Object.fromEntries(names.map((rule) => [rule, "error" as const]));
 }
 
 const suitesThatRunRealProcesses = {
   ".agents/hooks/hook-process.test.ts": 1,
   ".agents/hooks/route-tree.test.ts": 1,
-  ".agents/hooks/stop-check.test.ts": 2,
+  ".agents/hooks/stop-check.test.ts": 1,
   "lint/toolchain.test.ts": 1,
 };
 
@@ -215,6 +219,9 @@ export const lintConfig = {
     // why: These suites run tsc, Vite, and the hooks as real processes, which takes up to 5
     // seconds on a quiet machine, so each keeps the one raised timeout landmines counts here.
     "landmines/no-flake-masking": ["error", { allow: suitesThatRunRealProcesses }],
+    // why: The vitest and playwright plugins already reject a conditional expect, and the
+    // landmines message tells a Playwright test to call expect.assertions, which it lacks.
+    "landmines/no-conditional-expect": "off",
 
     ...rodeoRules,
     ...commentScopes.rules,

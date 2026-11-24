@@ -208,7 +208,7 @@ afterAll(() => {
   rmSync(fixtures, { recursive: true, force: true });
 });
 
-describe.concurrent("stop check in a checkout that is not set up", { timeout: 30_000 }, () => {
+describe.concurrent("stop check in a checkout that is not set up", () => {
   it("passes when nothing changed", async ({ expect }) => {
     expect(await stop("unchanged")).toBeNull();
   });
