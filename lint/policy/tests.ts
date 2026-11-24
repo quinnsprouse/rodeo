@@ -51,14 +51,62 @@ test("loads the home page", async ({ page }) => {
 });`,
   },
   {
-    name: "browser tests that wait a fixed time or for network idle",
+    name: "an assertion that runs only in a catch block",
+    rule: "landmines(no-conditional-expect)",
+    file: "catch-expect.test.ts",
+    source: `import { it } from "vite-plus/test";
+it("rejects bad JSON", ({ expect }) => {
+  try {
+    JSON.parse("{}");
+  } catch (error) {
+    expect(error).toBeInstanceOf(SyntaxError);
+  }
+});`,
+  },
+  {
+    name: "browser tests that wait a fixed time",
     rule: "landmines(no-fixed-sleep)",
     layer: "e2e",
     file: "timed-wait.spec.ts",
     source: `import { expect, test } from "../fixtures";
 test("loads the home page", async ({ page }) => {
-  await page.goto("/", { waitUntil: "networkidle" });
+  await page.goto("/");
   await page.waitForTimeout(500);
+  await expect(page).toHaveTitle("Rodeo");
+});`,
+  },
+  {
+    name: "browser tests that wait for network idle",
+    rule: "landmines(no-fixed-sleep)",
+    layer: "e2e",
+    file: "network-idle.spec.ts",
+    source: `import { expect, test } from "../fixtures";
+test("loads the home page", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page).toHaveTitle("Rodeo");
+});`,
+  },
+  {
+    name: "a fixed wait called through a computed name",
+    rule: "playwright(no-wait-for-timeout)",
+    layer: "e2e",
+    file: "computed-wait.spec.ts",
+    source: `import { expect, test } from "../fixtures";
+test("loads the home page", async ({ page }) => {
+  await page.goto("/");
+  await page["waitForTimeout"](500);
+  await expect(page).toHaveTitle("Rodeo");
+});`,
+  },
+  {
+    name: "network idle written as a template string",
+    rule: "playwright(no-networkidle)",
+    layer: "e2e",
+    file: "template-idle.spec.ts",
+    source: `import { expect, test } from "../fixtures";
+test("loads the home page", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForLoadState(\`networkidle\`);
   await expect(page).toHaveTitle("Rodeo");
 });`,
   },

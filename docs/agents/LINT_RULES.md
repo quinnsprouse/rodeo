@@ -30,9 +30,9 @@ Nothing imports a route module, and only `src/demo/` and `src/routes/(demo)/` ma
 
 ## Honest tests
 
-Lint rejects a test that can pass without proving anything. `@interfere/landmines` rejects a fixed sleep or a timed wait, a retry, a `timeout` option on a test or suite, and a test double in a guardrail test. `playwright/no-slowed-test` rejects `test.slow()`. Fix the test the way the message says, by waiting on the event or using the real implementation. CI does not retry a failed test. Lint does not catch `test.setTimeout` or a `timeout` on a single assertion, and the same reasoning rules them out.
+Lint rejects a test that can pass without proving anything. `@interfere/landmines` rejects a fixed sleep or a timed wait, a retry, a `timeout` option on a test or suite, and a test double in a guardrail test. `playwright/no-slowed-test` rejects `test.slow()`. Fix the test the way the message says, by waiting on the event or using the real implementation. CI does not retry a failed test. Lint does not catch `test.setTimeout`, `test.describe.configure({ timeout })`, or a `timeout` on a single assertion, and the same reasoning rules them out.
 
-`lint/config.ts` reads the rule list from the package's `recommended` set, so a version bump can add rules. `suitesThatRunRealProcesses` in that file names the guardrail suites that may keep a raised timeout and how many each may have. When a message says to lower an allowlist entry in `.oxlintrc.jsonc`, lower it there.
+`lint/config.ts` reads the rule list from the package's `recommended` set, so a version bump can add rules. `suitesThatRunRealProcesses` in that file names the guardrail suites that may keep a raised timeout and how many each may have. A message that says to lower an allowlist entry in `.oxlintrc.jsonc` means that list.
 
 ## Errors that need more context
 

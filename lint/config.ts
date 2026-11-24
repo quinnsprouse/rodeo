@@ -50,6 +50,7 @@ const playwrightRules = {
   "playwright/no-focused-test": "error",
   "playwright/no-force-option": "error",
   "playwright/no-nested-step": "error",
+  "playwright/no-networkidle": "error",
   "playwright/no-page-pause": "error",
   "playwright/no-skipped-test": "error",
   "playwright/no-slowed-test": "error",
@@ -60,6 +61,7 @@ const playwrightRules = {
   "playwright/no-useless-not": "error",
   "playwright/no-wait-for-navigation": "error",
   "playwright/no-wait-for-selector": "error",
+  "playwright/no-wait-for-timeout": "error",
   "playwright/prefer-hooks-in-order": "error",
   "playwright/prefer-hooks-on-top": "error",
   "playwright/prefer-locator": "error",
@@ -219,9 +221,6 @@ export const lintConfig = {
     // why: These suites run tsc, Vite, and the hooks as real processes, which takes up to 5
     // seconds on a quiet machine, so each keeps the one raised timeout landmines counts here.
     "landmines/no-flake-masking": ["error", { allow: suitesThatRunRealProcesses }],
-    // why: The vitest and playwright plugins already reject a conditional expect, and the
-    // landmines message tells a Playwright test to call expect.assertions, which it lacks.
-    "landmines/no-conditional-expect": "off",
 
     ...rodeoRules,
     ...commentScopes.rules,
