@@ -47,7 +47,7 @@ Some landmines messages name things the starter does not have. Read them this wa
 - **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for Base UI's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it.
 - **`typescript/no-deprecated` on `FormEvent`.** The message drops the names of the replacements. Type a submit handler with `SubmitEvent<HTMLFormElement>`.
 - **`no-warning-comments`.** Finish the work. Rewording the TODO doesn't count.
-- **`landmines/no-silent-catch`.** A rejection handler that does nothing hides every failure, including the ones you did not expect. Name the one rejection the code expects and rethrow the rest, as `src/components/theme-toggle.tsx` does for a click sound the browser blocks.
+- **`landmines/no-silent-catch`.** A rejection handler that does nothing hides every failure, including the ones you did not expect. Name the rejections the code expects and rethrow the rest, as `src/components/theme-toggle.tsx` does for a click sound that the browser blocks or cannot load.
 - **`complexity`, `max-depth`, `max-lines`.** Split by responsibility. Return early, or move one concern into its own module.
 - **`shadcn/no-unknown-classes` on `text-sm`, `rounded-md`, or `font-bold`.** The Untitled theme replaced Tailwind's default scales. Use its names, such as `text-s`, `rounded-s`, and `font-heavy`.
 

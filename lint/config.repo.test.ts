@@ -89,7 +89,7 @@ describe("The landmines rules", () => {
 
     expect(
       Object.keys(recommended.rules).filter((rule) => !decided.has(rule)),
-      "This version of @interfere/landmines recommends rules that lint/config.ts has not decided on. Turn each one on in the rules of lint/config.ts with a rejected sample in lint/policy/tests.ts, or add it to declinedLandminesRules with the reason it does not fit the starter.",
+      "This version of @interfere/landmines recommends rules that lint/config.ts has not decided on. Turn each one on in the rules of lint/config.ts with a rejected sample in lint/policy/, or add it to declinedLandminesRules with the reason it does not fit the starter.",
     ).toEqual([]);
   });
 });

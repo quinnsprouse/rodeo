@@ -16,15 +16,17 @@ function preloadClick() {
   return clickSound;
 }
 
-function blockedByAutoplayPolicy(error: unknown) {
-  return error instanceof DOMException && error.name === "NotAllowedError";
+const soundThatCouldNotPlay = new Set(["NotAllowedError", "NotSupportedError", "AbortError"]);
+
+function clickSoundCouldNotPlay(error: unknown) {
+  return error instanceof DOMException && soundThatCouldNotPlay.has(error.name);
 }
 
 function playClick() {
   const audio = preloadClick();
   audio.currentTime = 0;
   void audio.play().catch((error: unknown) => {
-    if (!blockedByAutoplayPolicy(error)) throw error;
+    if (!clickSoundCouldNotPlay(error)) throw error;
   });
 }
 

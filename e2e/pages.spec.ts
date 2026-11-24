@@ -14,7 +14,12 @@ const firstLoadBudgets = [
   { kind: "CSS", bytes: 20_000, toShrink: "Remove the styles and imports no page uses" },
 ];
 
-const pagesWithALargerBudget: { path: string; kind: string; bytes: number; why: string }[] = [];
+const pagesWithALargerBudget: {
+  path: string;
+  kind: "JavaScript" | "CSS";
+  bytes: number;
+  why: string;
+}[] = [];
 
 function budgetFor(path: string, kind: string, sharedBytes: number) {
   const larger = pagesWithALargerBudget.find((page) => page.path === path && page.kind === kind);

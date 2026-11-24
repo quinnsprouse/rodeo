@@ -56,9 +56,24 @@ test("a second switch before the first finishes leaves a working switch", async 
     button.click();
   });
 
-  await expect(toggle).toBeEnabled();
+  await expect(toggle).toHaveAccessibleName("Switch to dark theme");
   await toggle.click();
-  await expect(toggle).toHaveAccessibleName(/^Switch to (dark|light) theme$/);
+  await expect(toggle).toHaveAccessibleName("Switch to light theme");
+});
+
+test.describe("when the click sound cannot load", () => {
+  test.use({ expectedBrowserErrors: [/Failed to load resource/] });
+
+  test("the theme still switches, without an error", async ({ page }) => {
+    await page.route("**/sounds/click.wav", (route) => route.abort());
+    await page.goto("/");
+    const system = await chromePaintedBackground(page);
+
+    await page.getByRole("button", { name: "Switch to dark theme" }).click();
+
+    const chosen = await backgroundChangesFrom(page, system);
+    expect(brightness(chosen)).toBeLessThan(brightness(system));
+  });
 });
 
 test("a chosen theme overrides the system theme, after a reload and a system change", async ({
