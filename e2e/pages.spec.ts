@@ -14,6 +14,13 @@ const firstLoadBudgets = [
   { kind: "CSS", bytes: 20_000, toShrink: "Remove the styles and imports no page uses" },
 ];
 
+const pagesWithALargerBudget: { path: string; kind: string; bytes: number; why: string }[] = [];
+
+function budgetFor(path: string, kind: string, sharedBytes: number) {
+  const larger = pagesWithALargerBudget.find((page) => page.path === path && page.kind === kind);
+  return larger?.bytes ?? sharedBytes;
+}
+
 function kilobytes(bytes: number) {
   return `${(bytes / 1000).toFixed(1)} kB`;
 }
@@ -40,10 +47,13 @@ async function checkPage(
   await page.close();
 }
 
-async function checkEveryPage(context: BrowserContext, check: PageCheck, { search = "" } = {}) {
+async function checkEveryRoute(
+  context: BrowserContext,
+  check: (route: PageRoute) => Promise<void>,
+) {
   const routes = await pageRoutes(context);
   const outcomes = await Promise.allSettled(
-    routes.map((route) => test.step(route.path, () => checkPage(context, route, check, search))),
+    routes.map((route) => test.step(route.path, () => check(route))),
   );
   const failedPaths = routes
     .filter((_, index) => outcomes[index]?.status === "rejected")
@@ -54,6 +64,10 @@ async function checkEveryPage(context: BrowserContext, check: PageCheck, { searc
   if (firstFailure) {
     throw new Error(`Failed on ${failedPaths.join(", ")}`, { cause: firstFailure.reason });
   }
+}
+
+function checkEveryPage(context: BrowserContext, check: PageCheck, { search = "" } = {}) {
+  return checkEveryRoute(context, (route) => checkPage(context, route, check, search));
 }
 
 test("every page renders one main landmark that the skip link reaches", async ({ context }) => {
@@ -191,29 +205,25 @@ test("every page's first load stays within its JavaScript and CSS budgets", asyn
   browser,
   context,
 }) => {
-  const routes = await pageRoutes(context);
-  await Promise.all(
-    routes.map(({ path }) =>
-      test.step(path, async () => {
-        const downloads = await firstLoadDownloads(browser, new URL(path, baseURL).href);
-        expect(downloads, `${path} downloads JavaScript or CSS the app serves`).not.toEqual([]);
+  await checkEveryRoute(context, async ({ path }) => {
+    const downloads = await firstLoadDownloads(browser, new URL(path, baseURL).href);
+    expect(downloads, `${path} downloads JavaScript or CSS the app serves`).not.toEqual([]);
 
-        for (const { kind, bytes: budget, toShrink } of firstLoadBudgets) {
-          const ofKind = downloads
-            .filter((asset) => asset.kind === kind)
-            .toSorted((heavier, lighter) => lighter.bytes - heavier.bytes);
-          const total = ofKind.reduce((sum, { bytes }) => sum + bytes, 0);
-          const largest = ofKind
-            .slice(0, 3)
-            .map((asset) => `${asset.file} ${kilobytes(asset.bytes)}`)
-            .join(", ");
+    for (const { kind, bytes: sharedBudget, toShrink } of firstLoadBudgets) {
+      const budget = budgetFor(path, kind, sharedBudget);
+      const ofKind = downloads
+        .filter((asset) => asset.kind === kind)
+        .toSorted((heavier, lighter) => lighter.bytes - heavier.bytes);
+      const total = ofKind.reduce((sum, { bytes }) => sum + bytes, 0);
+      const largest = ofKind
+        .slice(0, 3)
+        .map((asset) => `${asset.file} ${kilobytes(asset.bytes)}`)
+        .join(", ");
 
-          expect(
-            total,
-            `A first visit to ${path} downloads ${kilobytes(total)} of ${kind}, over the ${kilobytes(budget)} budget in e2e/pages.spec.ts. The largest files are ${largest}. ${toShrink}, and raise the budget only when the first view needs what it loads.`,
-          ).toBeLessThanOrEqual(budget);
-        }
-      }),
-    ),
-  );
+      expect(
+        total,
+        `A first visit to ${path} downloads ${kilobytes(total)} of ${kind}, over the ${kilobytes(budget)} budget in e2e/pages.spec.ts. The largest files are ${largest}. ${toShrink}. If the first view needs what it loads, give this page its own budget and the reason in pagesWithALargerBudget, and leave the limit for other pages alone.`,
+      ).toBeLessThanOrEqual(budget);
+    }
+  });
 });
