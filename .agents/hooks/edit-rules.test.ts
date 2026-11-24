@@ -8,7 +8,7 @@ const { decisions, edit, projectFile, projectLink } = guardProject();
 const { worktree, write: writeInFixture } = guardGitFixture();
 const inWorktree = (file: string) => writeInFixture(join(worktree(), file));
 
-describe.concurrent("edit rules", { timeout: 30_000 }, () => {
+describe.concurrent("edit rules", () => {
   it("denies unit tests in app code", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [edit("src/lib/format.test.ts"), "deny"],

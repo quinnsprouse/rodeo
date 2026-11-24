@@ -5,7 +5,7 @@ import { bash, guardGitFixture, guardProject } from "./guard-harness";
 const { decisions } = guardProject();
 const { rm } = guardGitFixture();
 
-describe.concurrent("uncommitted work rules", { timeout: 30_000 }, () => {
+describe.concurrent("uncommitted work rules", () => {
   it("asks before git commands that discard uncommitted work", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash("git reset --hard HEAD~1"), "ask"],

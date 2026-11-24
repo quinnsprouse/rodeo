@@ -7,9 +7,12 @@ import { fileURLToPath } from "node:url";
 const require = createRequire(import.meta.url);
 const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
 const packageJson = JSON.parse(readFileSync(resolve(repoRoot, "package.json"), "utf8"));
-const { version: vitePlusVersion } = require("vite-plus/package.json");
+const {
+  version: vitePlusVersion,
+  dependencies: vitePlusDependencies = {},
+} = require("vite-plus/package.json");
 const { versions: bundledTools } = require("vite-plus/versions");
-const vitePlusCore = `npm:@voidzero-dev/vite-plus-core@${vitePlusVersion}`;
+const vitePlusCore = vitePlusDependencies.vite;
 const vitestPin = packageJson.overrides.vitest;
 
 function pinVitePlusExpects(name) {
@@ -27,7 +30,15 @@ const secondCopies = ["dependencies", "devDependencies", "optionalDependencies"]
 );
 
 assert.equal(packageJson.devDependencies["vite-plus"], vitePlusVersion);
-assert.equal(packageJson.overrides.vite, vitePlusCore);
+assert.ok(
+  vitePlusCore,
+  `Vite+ ${vitePlusVersion} no longer lists vite as a dependency, so this check cannot tell which core the vite override must pin. Update scripts/check-toolchain.mjs to read the pin from where Vite+ now declares it.`,
+);
+assert.equal(
+  packageJson.overrides.vite,
+  vitePlusCore,
+  `Set overrides.vite in package.json to ${vitePlusCore}, the core that Vite+ ${vitePlusVersion} depends on. Run vp migrate to write it.`,
+);
 assert.ok(
   vitestPin === undefined || vitestPin === pinVitePlusExpects("vitest"),
   `The vitest override must pin the Vitest that Vite+ bundles, ${bundledTools.vitest}. Run vp migrate to re-pin or remove it.`,

@@ -10,7 +10,7 @@ const { fixture, outside, rm } = guardGitFixture();
 
 const deletesProject = /project root/;
 
-describe.concurrent("working directory", { timeout: 30_000 }, () => {
+describe.concurrent("working directory", () => {
   it("follows cd and pushd to judge the commands after them", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [rm(`cd .. && rm -rf ${basename(fixture())}`), "ask"],

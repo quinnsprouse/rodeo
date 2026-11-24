@@ -24,6 +24,7 @@ const jsPlugins = [
   { name: "playwright", specifier: "eslint-plugin-playwright" },
   { name: "shadcn", specifier: "@shadcn/lint" },
   { name: "eslint-tanstack-router", specifier: "@tanstack/eslint-plugin-router" },
+  { name: "landmines", specifier: "@interfere/landmines" },
   rodeoPlugin,
 ] as const;
 
@@ -49,6 +50,7 @@ const playwrightRules = {
   "playwright/no-networkidle": "error",
   "playwright/no-page-pause": "error",
   "playwright/no-skipped-test": "error",
+  "playwright/no-slowed-test": "error",
   "playwright/no-standalone-expect": "error",
   "playwright/no-unsafe-references": "error",
   "playwright/no-unused-locators": "error",
@@ -69,6 +71,26 @@ const playwrightRules = {
   "playwright/valid-test-tags": "error",
   "playwright/valid-title": "error",
 } as const;
+
+export const declinedLandminesRules = {
+  "landmines/no-cold-start-in-test":
+    "A guardrail test runs the real tool on inputs it writes, so it starts a process in each test, and the rule misses the same start behind an imported helper.",
+  "landmines/strict-msw": "The starter does not use MSW. Turn this on with it.",
+  "landmines/no-project-max-workers": "The starter has no Vitest projects.",
+  "landmines/no-stale-render-assertion":
+    "It checks hook unit tests, which the starter bans in app code.",
+  "landmines/no-styling-class-assertion":
+    "It checks *.browser.test.tsx files. Browser tests here are Playwright specs.",
+  "landmines/no-clipboard-read-text":
+    "It checks *.browser.test.* files. Browser tests here are Playwright specs.",
+};
+
+const suitesThatRunRealProcesses = {
+  ".agents/hooks/hook-process.test.ts": 1,
+  ".agents/hooks/route-tree.test.ts": 1,
+  ".agents/hooks/stop-check.test.ts": 1,
+  "lint/toolchain.test.ts": 1,
+};
 
 const reactHooksRules = {
   "react-hooks-js/rules-of-hooks": "error",
@@ -188,6 +210,21 @@ export const lintConfig = {
     "unicorn/no-abusive-eslint-disable": "error",
     "vitest/no-conditional-in-test": "error",
     "vitest/no-identical-title": "error",
+
+    "landmines/no-cold-import-in-test": "error",
+    "landmines/no-conditional-expect": "error",
+    "landmines/no-elapsed-time-bound": "error",
+    "landmines/no-fixed-sleep": "error",
+    // why: These suites run tsc, Vite, and the hooks as real processes, which takes up to 5
+    // seconds on a quiet machine, so each keeps the one raised timeout landmines counts here.
+    "landmines/no-flake-masking": ["error", { allow: suitesThatRunRealProcesses }],
+    "landmines/no-imported-mutation": "error",
+    "landmines/no-parameter-branch": "error",
+    "landmines/no-self-container-query": "error",
+    "landmines/no-shared-signal": "error",
+    "landmines/no-silent-catch": "error",
+    "landmines/no-test-doubles": "error",
+    "landmines/no-unsignaled-poll": "error",
 
     ...rodeoRules,
     ...commentScopes.rules,

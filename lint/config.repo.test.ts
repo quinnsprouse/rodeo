@@ -4,9 +4,11 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vite-plus/test";
+import * as z from "zod/mini";
 
 import { ignoredDirectories } from "#tooling/project";
 
+import { declinedLandminesRules, lintConfig } from "./config";
 import { exceptions } from "./exceptions";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -64,6 +66,30 @@ describe("Lint exceptions", () => {
     expect(
       stale,
       "Update or delete each exception in lint/exceptions.ts whose files moved.",
+    ).toEqual([]);
+  });
+});
+
+describe("The landmines rules", () => {
+  it("are each turned on in lint/config.ts or declined there with a reason", () => {
+    const recommended = z
+      .object({ rules: z.record(z.string(), z.unknown()) })
+      .parse(
+        JSON.parse(
+          readFileSync(
+            requireFromRoot.resolve("@interfere/landmines/configs/recommended.json"),
+            "utf8",
+          ),
+        ),
+      );
+    const decided = new Set([
+      ...Object.keys(lintConfig.rules),
+      ...Object.keys(declinedLandminesRules),
+    ]);
+
+    expect(
+      Object.keys(recommended.rules).filter((rule) => !decided.has(rule)),
+      "This version of @interfere/landmines recommends rules that lint/config.ts has not decided on. Turn each one on in the rules of lint/config.ts with a rejected sample in lint/policy/, or add it to declinedLandminesRules with the reason it does not fit the starter.",
     ).toEqual([]);
   });
 });

@@ -28,6 +28,12 @@ function growCircle({ x, y }: RevealOrigin) {
   );
 }
 
+const skippedTransitionErrors = new Set(["AbortError", "InvalidStateError"]);
+
+function transitionWasSkipped(error: unknown) {
+  return error instanceof DOMException && skippedTransitionErrors.has(error.name);
+}
+
 export function revealTheme(theme: Theme, origin: RevealOrigin, reducedMotion: boolean) {
   if (reducedMotion || !("startViewTransition" in document)) {
     snapToTheme(theme);
@@ -43,7 +49,9 @@ export function revealTheme(theme: Theme, origin: RevealOrigin, reducedMotion: b
   });
   void transition.ready.then(
     () => growCircle(origin),
-    () => undefined,
+    (error: unknown) => {
+      if (!transitionWasSkipped(error)) throw error;
+    },
   );
   latestReveal = transition;
   void transition.finished.finally(() => {

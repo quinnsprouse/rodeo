@@ -4,7 +4,7 @@ import { bash, guardProject } from "./guard-harness";
 
 const { decisions, sameVerdicts } = guardProject();
 
-describe.concurrent("pre-tool guard", { timeout: 30_000 }, () => {
+describe.concurrent("pre-tool guard", () => {
   it("checks every command in a script, and lets a deny win over an ask", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash("echo ok && git commit -n -m x"), "deny"],

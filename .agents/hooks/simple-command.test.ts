@@ -4,7 +4,7 @@ import { bash, guardProject } from "./guard-harness";
 
 const { decisions, reasonFor } = guardProject();
 
-describe.concurrent("simple command resolution", { timeout: 30_000 }, () => {
+describe.concurrent("simple command resolution", () => {
   it("reads assignments made through env and declarations", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash("env HUSKY=0 git commit -m x"), "deny"],

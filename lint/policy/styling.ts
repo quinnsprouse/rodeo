@@ -2,6 +2,11 @@ import { kitStandIn, type Probe, type PolicyTopic, type RejectedProbe } from "./
 
 const rejected: RejectedProbe[] = [
   {
+    name: "a container query variant on the element that declares the container",
+    rule: "landmines(no-self-container-query)",
+    source: `export function Probe() { return <div className="@container @md:flex">Ready</div>; }`,
+  },
+  {
     name: "raw palette colors outside the theme",
     rule: "shadcn(no-raw-colors)",
     source: `export function Probe() { return <span className="bg-emerald-500" />; }`,

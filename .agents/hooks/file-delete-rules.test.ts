@@ -7,7 +7,7 @@ import { bash, guardGitFixture, guardProject } from "./guard-harness";
 const { decisions } = guardProject();
 const { fixtureLink, rm, rmFromLink } = guardGitFixture();
 
-describe.concurrent("file delete rules", { timeout: 30_000 }, () => {
+describe.concurrent("file delete rules", () => {
   it("asks before rm -r deletes the project root or its .git directory", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash("rm -rf ."), "ask"],

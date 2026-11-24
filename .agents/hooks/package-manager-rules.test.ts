@@ -4,7 +4,7 @@ import { bash, guardProject } from "./guard-harness";
 
 const { decisions, reasonFor } = guardProject();
 
-describe.concurrent("package manager rules", { timeout: 30_000 }, () => {
+describe.concurrent("package manager rules", () => {
   it("denies foreign package managers and one-off tool downloads", async ({ expect }) => {
     const { actual, expected } = await decisions([
       [bash("pnpm add left-pad"), "deny"],
