@@ -30,6 +30,10 @@ const secondCopies = ["dependencies", "devDependencies", "optionalDependencies"]
 );
 
 assert.equal(packageJson.devDependencies["vite-plus"], vitePlusVersion);
+assert.ok(
+  vitePlusCore,
+  `Vite+ ${vitePlusVersion} no longer lists vite as a dependency, so this check cannot tell which core the vite override must pin. Update scripts/check-toolchain.mjs to read the pin from where Vite+ now declares it.`,
+);
 assert.equal(packageJson.overrides.vite, vitePlusCore);
 assert.ok(
   vitestPin === undefined || vitestPin === pinVitePlusExpects("vitest"),

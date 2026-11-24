@@ -1,5 +1,5 @@
 import { AxeBuilder } from "@axe-core/playwright";
-import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 
 import { expect } from "./fixtures";
 
@@ -99,28 +99,4 @@ export function brightness(color: string) {
     .split(",")
     .slice(0, 3)
     .reduce((sum, channel) => sum + Number(channel), 0);
-}
-
-export function firstLoadAssets(servedHtml: string) {
-  const served = new DOMParser().parseFromString(servedHtml, "text/html");
-  const kindBySelector = {
-    'script[src], link[rel="modulepreload"]': "JavaScript",
-    'link[rel="stylesheet"]': "CSS",
-  };
-  const kindByPath = new Map<string, string>();
-  for (const [selector, kind] of Object.entries(kindBySelector)) {
-    for (const tag of served.querySelectorAll(selector)) {
-      const url = new URL(tag.getAttribute("src") ?? tag.getAttribute("href") ?? "", location.href);
-      if (url.origin === location.origin) kindByPath.set(url.pathname, kind);
-    }
-  }
-  return [...kindByPath].map(([path, kind]) => ({ path, kind }));
-}
-
-export async function transferredBytes(request: APIRequestContext, path: string) {
-  const response = await request.get(path, { headers: { "accept-encoding": "br" } });
-  await expect(response).toBeOK();
-  const bytes = Number(response.headers()["content-length"]);
-  expect(bytes, `${path} is served with its length`).toBeGreaterThan(0);
-  return bytes;
 }

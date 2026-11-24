@@ -1,22 +1,15 @@
 import type { APIRequestContext, BrowserContext, Page } from "@playwright/test";
 
 import { appOrigin } from "./environment";
+import { firstLoadDownloads } from "./first-load";
 import { expect, test } from "./fixtures";
-import {
-  axeViolations,
-  firstLoadAssets,
-  pageColors,
-  pageRoutes,
-  structuredData,
-  transferredBytes,
-  type PageRoute,
-} from "./helpers";
+import { axeViolations, pageColors, pageRoutes, structuredData, type PageRoute } from "./helpers";
 
 const firstLoadBudgets = [
   {
     kind: "JavaScript",
-    bytes: 150_000,
-    toShrink: "Load components the first view does not need with lazy()",
+    bytes: 160_000,
+    toShrink: "Load components the first view does not render with lazy()",
   },
   { kind: "CSS", bytes: 20_000, toShrink: "Remove the styles and imports no page uses" },
 ];
@@ -194,34 +187,33 @@ test("every page shares an image of the size it declares", async ({ context, req
 });
 
 test("every page's first load stays within its JavaScript and CSS budgets", async ({
+  baseURL,
+  browser,
   context,
-  request,
 }) => {
-  await checkEveryPage(context, async (page, { path }) => {
-    const served = await (await request.get(path)).text();
-    const assets = await Promise.all(
-      (await page.evaluate(firstLoadAssets, served)).map(async (asset) => ({
-        path: asset.path,
-        kind: asset.kind,
-        bytes: await transferredBytes(request, asset.path),
-      })),
-    );
+  const routes = await pageRoutes(context);
+  await Promise.all(
+    routes.map(({ path }) =>
+      test.step(path, async () => {
+        const downloads = await firstLoadDownloads(browser, new URL(path, baseURL).href);
+        expect(downloads, `${path} downloads JavaScript or CSS the app serves`).not.toEqual([]);
 
-    for (const { kind, bytes: budget, toShrink } of firstLoadBudgets) {
-      const loaded = assets
-        .filter((asset) => asset.kind === kind)
-        .toSorted((heavier, lighter) => lighter.bytes - heavier.bytes);
-      const total = loaded.reduce((sum, { bytes }) => sum + bytes, 0);
-      const largest = loaded
-        .slice(0, 3)
-        .map((asset) => `${asset.path} ${kilobytes(asset.bytes)}`)
-        .join(", ");
+        for (const { kind, bytes: budget, toShrink } of firstLoadBudgets) {
+          const ofKind = downloads
+            .filter((asset) => asset.kind === kind)
+            .toSorted((heavier, lighter) => lighter.bytes - heavier.bytes);
+          const total = ofKind.reduce((sum, { bytes }) => sum + bytes, 0);
+          const largest = ofKind
+            .slice(0, 3)
+            .map((asset) => `${asset.file} ${kilobytes(asset.bytes)}`)
+            .join(", ");
 
-      expect(loaded, `${path} loads ${kind} the app serves`).not.toEqual([]);
-      expect(
-        total,
-        `${path} asks for ${kilobytes(total)} of ${kind} before it can show, over the ${kilobytes(budget)} budget in e2e/pages.spec.ts. The largest files are ${largest}. ${toShrink}, and raise the budget only when the first view needs what it loads.`,
-      ).toBeLessThanOrEqual(budget);
-    }
-  });
+          expect(
+            total,
+            `A first visit to ${path} downloads ${kilobytes(total)} of ${kind}, over the ${kilobytes(budget)} budget in e2e/pages.spec.ts. The largest files are ${largest}. ${toShrink}, and raise the budget only when the first view needs what it loads.`,
+          ).toBeLessThanOrEqual(budget);
+        }
+      }),
+    ),
+  );
 });

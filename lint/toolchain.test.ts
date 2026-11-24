@@ -60,4 +60,10 @@ describe("The toolchain check", { timeout: 30_000 }, () => {
       ),
     ).toEqual({ status: 1, named: tools.filter((tool) => !Object.hasOwn(pinnedAsShipped, tool)) });
   });
+
+  it("fails when the vite override pins a core other than the one Vite+ depends on", async () => {
+    const driftedCore = `${manifest.overrides.vite}1`;
+    expect(await checkToolchainWith({}, { vite: driftedCore })).toMatchObject({ status: 1 });
+    expect(await checkToolchainWith({}, {})).toMatchObject({ status: 0 });
+  });
 });
