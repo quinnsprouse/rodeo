@@ -22,9 +22,8 @@ function watchAssetRequests(page: Page) {
     quiet.since = Date.now();
   });
   page.on("requestfinished", (request) => {
-    inFlight.delete(request);
     finished.push(request);
-    quiet.since = Date.now();
+    if (inFlight.delete(request)) quiet.since = Date.now();
   });
   page.on("requestfailed", (request) => inFlight.delete(request));
   return {
