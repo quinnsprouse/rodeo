@@ -7,12 +7,14 @@ import { site } from "@/config/site";
 import { ExternalLink } from "@/demo/external-link";
 import { ChecksSection } from "@/demo/landing/checks-section";
 import { Hero } from "@/demo/landing/hero";
+import { LighthouseSection } from "@/demo/landing/lighthouse-section";
 import { OpinionsSection } from "@/demo/landing/opinions-section";
 import { homePage } from "@/demo/landing/page";
 import { PageSection } from "@/demo/landing/page-section";
 import { PyramidSection } from "@/demo/landing/pyramid-section";
 import { ScrollHint } from "@/demo/landing/scroll-hint";
 import { StartCta } from "@/demo/landing/start-cta";
+import { WebMcpSection } from "@/demo/landing/web-mcp-section";
 import { links } from "@/demo/links";
 
 export const Route = createFileRoute("/(demo)/")({
@@ -79,6 +81,10 @@ function Home() {
         <OpinionsSection />
 
         <ChecksSection />
+
+        <LighthouseSection />
+
+        <WebMcpSection />
 
         <PageSection>
           <StartCta />

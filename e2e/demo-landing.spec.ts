@@ -103,6 +103,17 @@ test.describe("server-rendered introduction", () => {
     await expect(page.getByText("Format, lint, and types pass")).toBeVisible();
   });
 
+  test("shows the four Lighthouse scores without JavaScript", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("term")).toHaveText([
+      "Performance",
+      "Accessibility",
+      "Best practices",
+      "SEO",
+    ]);
+    await expect(page.getByRole("definition")).toHaveText(["100", "100", "100", "100"]);
+  });
+
   test("marks only the current checks stage before the tab indicator is placed", async ({
     page,
   }) => {
@@ -157,6 +168,19 @@ test("a browser agent reads the checks stages and switches one by name through W
         }),
       ]),
     );
+
+  const shown = await page
+    .getByRole("table", { name: "What an agent sees here" })
+    .locator("tbody tr")
+    .evaluateAll((rows) => rows.map((row) => Array.from(row.children, (cell) => cell.textContent)));
+  expect(shown).toHaveLength(3);
+  expect(await callTool(page, "snapshot", {})).toEqual(
+    expect.arrayContaining(
+      shown.map(([component, label, action]) =>
+        expect.objectContaining({ component, label, actions: [action] }),
+      ),
+    ),
+  );
 
   expect(
     await callTool(page, "act", {
