@@ -68,6 +68,6 @@ Small motion uses `--motion-duration` and `--motion-easing`; Large uses the exis
 
 For authored React animation, use Motion for React (`motion/react`) with the theme’s motion values when the app supports it. Easing uses a tween with duration in seconds and the authored Bézier; springs use `visualDuration` in seconds and `bounce`. Theme easing duration is recorded in milliseconds. Avoid stiffness/damping/mass when preserving visual duration. Keep the receiving app’s dependency policy.
 
-The reference includes resolved CSS duration/easing variables, including the spring’s settling tail, alongside the authored spring values. Use these for CSS-based primitives; keep mode and theme changes live. Preserve the primitive’s mounting and animation lifecycle, transition only the intended properties, and honor reduced motion. See [UI SDK](ui-sdk.md) or [Custom components](custom-components.md) for integration guidance.
+The reference includes resolved CSS duration/easing variables, including the spring’s settling tail, alongside the authored spring values. Use these for CSS-based primitives; keep mode and theme changes live. Preserve the primitive’s mounting and animation lifecycle, transition only the intended properties, and honor reduced motion. See [Base UI](base-ui.md) or [Custom components](custom-components.md) for integration guidance.
 
 Keep real keyboard focus indicators even when adding selected, checked, hover, or pressed styles. Disabled, read-only, invalid, loading, and complete are distinct states, not interchangeable opacity treatments.

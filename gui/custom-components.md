@@ -8,7 +8,7 @@ Prefer the app’s existing shared components and patterns. A card, report, tool
 
 When an app uses another component library, inspect its installed APIs, styling hooks, state selectors, and portal behavior. Preserve working interaction and accessibility behavior. Use a small adapter at its existing shared component boundary when possible. Replacing the primitive library is a separate migration decision, not a prerequisite for consuming theme variables.
 
-Do not pass UI SDK-specific props, state attributes, or mounting recipes to unrelated components. Do not assume matching variable names produce the same appearance: a component’s dimensions, state treatments, and shadow composition may need explicit adaptation. Report unsupported styling or behavioral differences rather than silently claiming complete theme fidelity.
+Do not pass Base UI-specific props, state attributes, or mounting recipes to unrelated components. Do not assume matching variable names produce the same appearance: a component’s dimensions, state treatments, and shadow composition may need explicit adaptation. Report unsupported styling or behavioral differences rather than silently claiming complete theme fidelity.
 
 ## Style from the active scope
 

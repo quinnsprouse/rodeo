@@ -49,7 +49,7 @@ For interface creation or revision, read Interface judgment and Foundations, the
 | Hierarchy, composition, navigation, charts, and clear controls | [Interface judgment](gui/interface-judgment.md) |
 | Color, typography, spacing, surfaces, icons, and motion | [Foundations](gui/foundations.md) |
 | Installing selected free fonts/icons and handling licensed selections | [Font and icon setup](gui/assets.md) |
-| Working with UI SDK primitives | [UI SDK](gui/ui-sdk.md) |
+| Working with Base UI primitives | [Base UI](gui/base-ui.md) |
 | Custom markup and existing component libraries | [Custom components](gui/custom-components.md) |
 | The downloaded project’s concrete values and assignments | [Theme reference](gui/themes.md) |
 | Proportional checks and integration failures | [Verification](gui/verification.md) |

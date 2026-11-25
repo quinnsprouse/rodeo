@@ -14,7 +14,7 @@ Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on UI SDK, Tailw
 - **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add a file-scoped exception with its `why` to `lint/exceptions.ts`.
 - **No comments.** Make the code say it with a clearer name, a smaller function, or a type. A `why:` comment is a last resort, only for a constraint outside the code that you can't fix, such as a browser bug.
 - **No unit tests in app code.** Test behavior end to end with Playwright in `e2e/`.
-- **UI work follows `GUI.md`.** Use the `graphical-ui`, `graphical-convert`, or `graphical-audit` skill as the task needs.
+- **UI work follows `GUI.md`.** Use the `graphical-ui`, `graphical-convert`, or `graphical-audit` skill as the task needs, and the `ui-sdk` skill when you add or change a component.
 - **No new docs.** `docs/agents/` holds the only guides, and `GUI.md` with `gui/` holds the theme guidance. Plans, notes, PRDs, experiments, and generated output go in `.scratch/`.
 - **Commits** follow Conventional Commits, `type(scope): description`, with no Co-Authored-By trailer.
 
