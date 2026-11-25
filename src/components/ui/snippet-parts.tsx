@@ -37,10 +37,12 @@ export function SnippetRoot({
 }
 
 export function SnippetCopyButton({
+  label,
   status,
   onCopy,
   iconClassName,
 }: {
+  label: string;
   status: CopyStatus;
   onCopy: () => Promise<void>;
   iconClassName: string;
@@ -52,7 +54,7 @@ export function SnippetCopyButton({
       size="icon"
       onClick={onCopy}
       className="mr-xs"
-      aria-label={copied ? "Copied" : "Copy to clipboard"}
+      aria-label={copied ? "Copied" : label}
     >
       <span aria-hidden="true" className={cn("relative", iconClassName)}>
         <Icon

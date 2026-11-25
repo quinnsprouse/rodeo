@@ -4,6 +4,7 @@ const rejected: RejectedProbe[] = [
   {
     name: "checked inputs without a change handler or read-only intent",
     rule: "react(checked-requires-onchange-or-readonly)",
+    layer: "src/components/ui",
     source: `export function Probe() {
 return <input type="checkbox" aria-label="Notifications" checked />;
 }`,
@@ -148,14 +149,6 @@ export async function removeCache(remove: () => Promise<void>) {
     // why: Cache removal is best-effort, and a failure must not block signing out.
   }
 }
-export function ReadOnly() {
-  return <input type="checkbox" aria-label="Notifications" checked readOnly />;
-}
-export function Editable() {
-  const [checked, setChecked] = useState(false);
-  return <input type="checkbox" aria-label="Notifications" checked={checked}
-    onChange={(event) => setChecked(event.currentTarget.checked)} />;
-}
 export function Themed() {
   return (
     <>
@@ -163,6 +156,19 @@ export function Themed() {
       <p className="text-s font-medium text-success">Ready</p>
     </>
   );
+}`,
+  },
+  {
+    name: "a kit checkbox that is read-only or controlled",
+    layer: "src/components/ui",
+    source: `import { useState } from "react";
+export function ReadOnly() {
+  return <input type="checkbox" aria-label="Notifications" checked readOnly />;
+}
+export function Editable() {
+  const [checked, setChecked] = useState(false);
+  return <input type="checkbox" aria-label="Notifications" checked={checked}
+    onChange={(event) => setChecked(event.currentTarget.checked)} />;
 }`,
   },
 ];

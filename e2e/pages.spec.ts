@@ -6,6 +6,7 @@ import { appOrigin } from "./environment";
 import { firstLoadDownloads } from "./first-load";
 import { expect, test } from "./fixtures";
 import { axeViolations, pageColors, pageRoutes, structuredData, type PageRoute } from "./helpers";
+import { offerWebMcp } from "./web-mcp";
 
 const firstLoadBudgets = [
   {
@@ -15,6 +16,14 @@ const firstLoadBudgets = [
   },
   { kind: "CSS", bytes: 20_000, toShrink: "Remove the styles and imports no page uses" },
 ];
+
+const agentBridgeBudget = 20_000;
+
+function scriptBytes(downloads: Awaited<ReturnType<typeof firstLoadDownloads>>) {
+  return downloads
+    .filter(({ kind }) => kind === "JavaScript")
+    .reduce((sum, { bytes }) => sum + bytes, 0);
+}
 
 const pagesWithALargerBudget: {
   path: string;
@@ -243,5 +252,26 @@ test("every page's first load stays within its JavaScript and CSS budgets", asyn
         `A first visit to ${path} downloads ${kilobytes(total)} of ${kind}, over the ${kilobytes(budget)} budget in e2e/pages.spec.ts. The largest files are ${largest}. ${toShrink}. If the first view needs what it loads, give this page its own budget and the reason in pagesWithALargerBudget, and leave the limit for other pages alone.`,
       ).toBeLessThanOrEqual(budget);
     }
+  });
+});
+
+test("a browser that offers WebMCP downloads only the agent bridge on top of a first load", async ({
+  baseURL,
+  browser,
+  context,
+}) => {
+  await checkEveryRoute(context, async ({ path }) => {
+    const url = new URL(path, baseURL).href;
+    const added =
+      scriptBytes(await firstLoadDownloads(browser, url, offerWebMcp)) -
+      scriptBytes(await firstLoadDownloads(browser, url));
+
+    expect(added, `${path} loads the agent bridge when the browser offers WebMCP`).toBeGreaterThan(
+      0,
+    );
+    expect(
+      added,
+      `In a browser that offers WebMCP, ${path} downloads ${kilobytes(added)} more JavaScript, over the ${kilobytes(agentBridgeBudget)} the agent bridge is allowed in e2e/pages.spec.ts. src/lib/agent-bridge.ts should import only createAgent and registerTools.`,
+    ).toBeLessThanOrEqual(agentBridgeBudget);
   });
 });

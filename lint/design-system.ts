@@ -2,12 +2,29 @@ import type { OxlintConfig } from "vite-plus/lint";
 
 const uiSdkPackages = ["@ui-sdk/react", "@ui-sdk/core"];
 
+// why: Left to find the kit's files itself, outtrue sends a native checkbox to Input as soon as
+// the kit has an Input and no Checkbox, and reads any fixed inset-0 layer as a rebuilt Dialog
+// as soon as the kit has one. Every control is named here and the overlay guess is off.
+const kitComponentForEachNativeControl = {
+  button: "Button",
+  input: "Input",
+  "input[type=checkbox]": "Checkbox",
+  "input[type=radio]": "Radio",
+  "input[type=range]": "Slider",
+  "input[type=file]": "",
+  "input[type=hidden]": "",
+  textarea: "Textarea",
+};
+
 export const designSystemRules: NonNullable<OxlintConfig["rules"]> = {
   "design-system/closed-variants": "error",
   "design-system/icon-button-label": "error",
   "design-system/no-boolean-variants": "error",
   "design-system/no-important": "error",
-  "design-system/no-rebuilt-primitives": "error",
+  "design-system/no-rebuilt-primitives": [
+    "error",
+    { elements: kitComponentForEachNativeControl, overlay: "" },
+  ],
   "design-system/primitive-naming": "error",
   "design-system/wrapped-libraries": ["error", { libraries: uiSdkPackages }],
 };

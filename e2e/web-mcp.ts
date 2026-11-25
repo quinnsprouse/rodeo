@@ -13,7 +13,7 @@ declare global {
   }
 }
 
-export async function openWithWebMcp(page: Page, path: string) {
+export async function offerWebMcp(page: Page) {
   await page.addInitScript(() => {
     const tools = new Map<string, BrowserTool>();
     document.modelContext = {
@@ -24,6 +24,10 @@ export async function openWithWebMcp(page: Page, path: string) {
       },
     };
   });
+}
+
+export async function openWithWebMcp(page: Page, path: string) {
+  await offerWebMcp(page);
   await page.goto(path);
   await expect
     .poll(() => page.evaluate(() => [...(document.modelContext?.tools.keys() ?? [])].toSorted()))

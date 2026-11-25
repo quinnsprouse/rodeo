@@ -85,8 +85,8 @@ export function LighthouseSection() {
         All four scores start at 100.
       </h2>
       <p className="mt-s max-w-[520px] text-muted-foreground">
-        Rodeo renders on the server and subsets fonts, so this site scores 100 in every Lighthouse
-        category on mobile. Push checks don't run Lighthouse, just a size budget and an axe scan.
+        This site scores 100 in every mobile Lighthouse category. No check runs Lighthouse, but push
+        checks include a JS/CSS size budget and an axe scan.
       </p>
 
       <dl
@@ -108,12 +108,12 @@ export function LighthouseSection() {
       </dl>
 
       <p className="mt-xl text-s text-muted-foreground">
-        Lighthouse 13.6, mobile, five runs per page.{" "}
+        Lighthouse 13.6, mobile, five local production runs.{" "}
         <ExternalLink
           href={links.pageSpeed}
           className="text-foreground underline decoration-neutral-4 underline-offset-4 transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:decoration-foreground"
         >
-          Run it yourself
+          Run PageSpeed on the live site
         </ExternalLink>
       </p>
     </PageSection>

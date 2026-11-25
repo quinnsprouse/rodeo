@@ -1,10 +1,10 @@
 import type { Page } from "@playwright/test";
 
-import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./copy-command";
+import { copyFallbacks, copyState, snippetHolding, withCopyFallback } from "./copy-command";
 import { expect, test } from "./fixtures";
 
 function kitSnippet(page: Page) {
-  return snippetAround(page.getByRole("status").last());
+  return snippetHolding(page.getByRole("code").last());
 }
 
 test.describe(() => {
@@ -29,6 +29,6 @@ for (const fallback of copyFallbacks) {
     const shown = String(await snippet.command.textContent());
 
     await snippet.copy.click();
-    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown));
+    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown, `Copy ${shown}`));
   });
 }

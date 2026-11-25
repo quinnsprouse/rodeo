@@ -10,7 +10,7 @@ function componentsAnAgentSees(theme: "light" | "dark") {
       action: "press",
     },
     { component: "tabs", label: "When Rodeo checks", action: "setValue" },
-    { component: "button", label: "Copy to clipboard", action: "press" },
+    { component: "button", label: "Copy the install command", action: "press" },
   ];
 }
 
@@ -24,14 +24,14 @@ export function WebMcpSection() {
         Agents can use the app too.
       </h2>
       <p className="mt-s max-w-[520px] text-muted-foreground">
-        Rodeo's components are built on UI SDK, so each one registers its name, state, and actions
-        with WebMCP. In browsers with WebMCP, an agent switches a tab by calling its action instead
-        of clicking coordinates from a screenshot. Other browsers never download the bridge.
+        UI SDK components report their name, state, and actions to one bridge registered with WebMCP
+        as three tools. In browsers with WebMCP, an agent switches a tab by calling its action
+        instead of clicking coordinates from a screenshot. Other browsers never download the bridge.
       </p>
 
       <table className="mt-xl w-full max-w-[520px] text-left font-data text-s">
         <caption className="mb-s text-left font-ui text-s text-muted-foreground">
-          What an agent sees here
+          Three controls an agent sees here
         </caption>
         <thead className="sr-only">
           <tr>

@@ -9,6 +9,13 @@ const rejected: RejectedProbe[] = [
 }`,
   },
   {
+    name: "a native checkbox, which the kit owns even before it has a Checkbox",
+    rule: "design-system(no-rebuilt-primitives)",
+    source: `export function Probe() {
+  return <input type="checkbox" aria-label="Notifications" checked readOnly />;
+}`,
+  },
+  {
     name: "a UI SDK part imported outside the kit",
     rule: "design-system(wrapped-libraries)",
     layer: "src/components",
@@ -66,6 +73,12 @@ export function Probe({ onSave }: { onSave: () => void }) {
 ];
 
 const allowed: Probe[] = [
+  {
+    name: "a decorative layer that covers the screen",
+    source: `export function Probe() {
+  return <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-muted" />;
+}`,
+  },
   {
     name: "a named icon Button with the quiet variant, placed by its className",
     source: `import { Tick02Icon } from "@hugeicons/core-free-icons";

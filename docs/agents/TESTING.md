@@ -11,6 +11,7 @@ Test what a user can observe, end to end. App code has no unit tests. A unit tes
 **Write browser tests this way:**
 
 - Run `npm run test:e2e:install` once. `npm run test:e2e` builds with `--mode e2e`, then tests the built server. It skips the build when nothing changed. `.env.e2e` gives its `VITE_` keys to the build and every other key to that server, so put the test value of a server secret there. To run a second copy at the same time, set `E2E_PORT`.
+- A spec named `demo-*.spec.ts` runs only while the demo exists. Every other spec has to pass twice: with the demo, where `/` is the landing page, and on the blank starter, where `/` is `StarterHome`. `npm run test:template` runs both.
 - Select elements by role or text. Import `test` and `expect` from `e2e/fixtures.ts`, so a test fails on any browser error not in `expectedBrowserErrors`.
 - To reach an error that a browser API controls, stub the API with `page.addInitScript` before you load the page.
 - To test a streamed skeleton, set a desktop browser `userAgent` on the test. TanStack Router holds a bot's response until the data is ready, and headless Chromium's default user agent counts as a bot. Assert the skeleton through its `label` text, which is in the page while the data loads and gone after.

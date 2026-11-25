@@ -29,6 +29,7 @@ export function InstallCommand() {
           </code>
         </div>
         <SnippetCopyButton
+          label="Copy the install command"
           status={status}
           onCopy={copy}
           iconClassName="size-[calc(var(--text-install)*1.1)]"

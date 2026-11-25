@@ -52,10 +52,15 @@ async function download(request: Request) {
   return { kind, file: new URL(request.url()).pathname, bytes: responseBodySize };
 }
 
-export async function firstLoadDownloads(browser: Browser, url: string) {
+export async function firstLoadDownloads(
+  browser: Browser,
+  url: string,
+  prepare: (page: Page) => Promise<void> = () => Promise.resolve(),
+) {
   const firstVisit = await browser.newContext();
   try {
     const page = await firstVisit.newPage();
+    await prepare(page);
     const appOrigin = new URL(url).origin;
     const requests = watchAssetRequests(page, appOrigin);
     const document = await page.goto(url);
