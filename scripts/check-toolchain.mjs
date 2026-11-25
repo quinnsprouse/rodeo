@@ -15,13 +15,12 @@ const { versions: bundledTools } = require("vite-plus/versions");
 const vitePlusCore = vitePlusDependencies.vite;
 const vitestPin = packageJson.overrides.vitest;
 
-function installedOxlint() {
-  try {
-    return require("oxlint/package.json").version;
-  } catch (error) {
-    if (error.code !== "MODULE_NOT_FOUND") throw error;
-    return bundledTools.oxlint;
-  }
+// why: vp lint resolves oxlint from the project before its own directory, so this resolves it the
+// same way to read the version that lint runs.
+function oxlintThatLintRuns() {
+  const fromTheProjectThenVitePlus = [repoRoot, dirname(require.resolve("vite-plus/package.json"))];
+  const manifest = require.resolve("oxlint/package.json", { paths: fromTheProjectThenVitePlus });
+  return JSON.parse(readFileSync(manifest, "utf8")).version;
 }
 
 function pinVitePlusExpects(name) {
@@ -67,9 +66,9 @@ assert.deepEqual(
   `Each lint plugin must resolve to the Oxlint that Vite+ ${vitePlusVersion} ships, ${bundledTools.oxlint}: ${driftedPluginPins.join(", ")}. Set each one to ${bundledTools.oxlint} and reinstall.`,
 );
 assert.equal(
-  installedOxlint(),
+  oxlintThatLintRuns(),
   bundledTools.oxlint,
-  `node_modules/oxlint is not the ${bundledTools.oxlint} that Vite+ ${vitePlusVersion} ships, and vp lint runs the copy in node_modules. A lint plugin's peer dependency installed it. For that plugin, add overrides["<plugin>"].oxlint: "${bundledTools.oxlint}" to package.json and reinstall.`,
+  `vp lint would run an Oxlint other than the ${bundledTools.oxlint} that Vite+ ${vitePlusVersion} ships, because it runs the copy at the top of node_modules. A lint plugin's peer dependency installed it. For that plugin, add overrides["<plugin>"].oxlint: "${bundledTools.oxlint}" to package.json and reinstall.`,
 );
 assert.equal(
   packageJson.devDependencies["@oxlint/plugins"],

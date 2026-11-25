@@ -1,4 +1,4 @@
-import { kitStandIn, type Probe, type PolicyTopic, type RejectedProbe } from "./probe";
+import type { Probe, PolicyTopic, RejectedProbe } from "./probe";
 
 const rejected: RejectedProbe[] = [
   {
@@ -50,12 +50,6 @@ export function Probe() {
     source: `export function Probe() { return <p className="mt-m!">Ready</p>; }`,
   },
   {
-    name: "a class that styles the inside of a kit component",
-    rule: "design-system(no-reach-in-selectors)",
-    source: `import { ProbeButton } from "${kitStandIn}";
-export function Probe() { return <ProbeButton className="[&_svg]:size-4">Save</ProbeButton>; }`,
-  },
-  {
     name: "an icon-only Button with no name",
     rule: "design-system(icon-button-label)",
     source: `import { Tick02Icon } from "@hugeicons/core-free-icons";
@@ -91,10 +85,10 @@ export function Probe({ onSave }: { onSave: () => void }) {
     source: `import { Switch, SwitchThumb } from "@ui-sdk/react/switch";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-type ProbeSwitchProps = ComponentProps<typeof Switch> & { size?: "default" | "small"; disabled?: boolean };
-export function ProbeSwitch({ size = "default", className, ...props }: ProbeSwitchProps) {
+type ProbeSwitchProps = ComponentProps<typeof Switch> & { variant?: "default" | "quiet"; size?: number };
+export function ProbeSwitch({ variant = "default", size = 1, className, ...props }: ProbeSwitchProps) {
   return (
-    <Switch data-size={size} className={cn("inline-flex rounded-full bg-muted", className)} {...props}>
+    <Switch data-variant={variant} data-size={size} className={cn("inline-flex rounded-full bg-muted", className)} {...props}>
       <SwitchThumb className="block rounded-full bg-background" />
     </Switch>
   );

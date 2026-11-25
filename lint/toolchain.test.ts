@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, it } from "vite-plus/test";
@@ -21,11 +21,25 @@ const sandboxes = withSandbox();
 type Pins = Record<string, string>;
 type Overrides = Record<string, string | Pins>;
 
-async function checkToolchainWith(devDependencies: Pins, overrides: Overrides) {
+function installWithOxlint(root: string, version: string) {
+  const installed = join(repoRoot, "node_modules");
+  const modules = join(root, "node_modules");
+  mkdirSync(join(modules, "oxlint"), { recursive: true });
+  writeFileSync(join(modules, "oxlint", "package.json"), JSON.stringify({ version }));
+  for (const name of readdirSync(installed).filter((entry) => entry !== "oxlint")) {
+    symlinkSync(join(installed, name), join(modules, name));
+  }
+}
+
+async function checkToolchainWith(
+  devDependencies: Pins,
+  overrides: Overrides,
+  installedOxlint: string = versions.oxlint,
+) {
   const root = sandboxes.temporary("rodeo-toolchain-");
   mkdirSync(join(root, "scripts"));
   cpSync(join(repoRoot, toolchainCheck), join(root, toolchainCheck));
-  symlinkSync(join(repoRoot, "node_modules"), join(root, "node_modules"), "dir");
+  installWithOxlint(root, installedOxlint);
   writeFileSync(
     join(root, "package.json"),
     JSON.stringify({
@@ -75,5 +89,9 @@ describe("The toolchain check", { timeout: 30_000 }, () => {
     expect(await checkToolchainWith({}, { outtrue: { oxlint: versions.oxlint } })).toMatchObject({
       status: 0,
     });
+  });
+
+  it("fails when the Oxlint at the top of node_modules is not the one Vite+ ships", async () => {
+    expect(await checkToolchainWith({}, {}, "1.81.0")).toMatchObject({ status: 1 });
   });
 });

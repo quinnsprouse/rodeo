@@ -50,7 +50,7 @@ const sharedRestrictions = {
     {
       group: ["@base-ui/react", "@base-ui/react/*"],
       message:
-        "This app's components are UI SDK, which lets a browser agent operate them. Import the parts from @ui-sdk/react/<component> and read node_modules/@ui-sdk/react/docs/components/<component>.md for their names, then uninstall @base-ui/react. shadcn add writes this import, so change it in each file the CLI adds. See docs/agents/UI_MOTION.md",
+        "This app's components are UI SDK, which lets a browser agent operate them. In src/components/ui, import the parts from @ui-sdk/react/<component> and read node_modules/@ui-sdk/react/docs/components/<component>.md for their names, then uninstall @base-ui/react. shadcn add writes this import, so change it in each file the CLI adds. See docs/agents/UI_MOTION.md",
     },
     {
       group: ["framer-motion"],
