@@ -1,8 +1,7 @@
-import { Button as ButtonPrimitive } from "@ui-sdk/react/button";
 import type { MouseEvent } from "react";
 
 import { revealTheme } from "@/components/theme-reveal";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { useTheme } from "@/hooks/use-theme";
 import { setTheme } from "@/lib/theme";
@@ -78,15 +77,13 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
   }
 
   return (
-    <ButtonPrimitive
+    <Button
+      variant="quiet"
+      size="icon"
       onClick={toggle}
       onPointerEnter={preloadClick}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
-      className={cn(
-        buttonVariants({ variant: "ghost", size: "icon" }),
-        "size-10 text-muted-foreground hover:text-foreground",
-        className,
-      )}
+      className={cn("size-10", className)}
     >
       <span className="relative flex size-5 items-center justify-center">
         <span
@@ -106,6 +103,6 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
           <MoonIcon />
         </span>
       </span>
-    </ButtonPrimitive>
+    </Button>
   );
 }

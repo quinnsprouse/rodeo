@@ -19,8 +19,9 @@ const toolchainCheck = join("scripts", "check-toolchain.mjs");
 const sandboxes = withSandbox();
 
 type Pins = Record<string, string>;
+type Overrides = Record<string, string | Pins>;
 
-async function checkToolchainWith(devDependencies: Pins, overrides: Pins) {
+async function checkToolchainWith(devDependencies: Pins, overrides: Overrides) {
   const root = sandboxes.temporary("rodeo-toolchain-");
   mkdirSync(join(root, "scripts"));
   cpSync(join(repoRoot, toolchainCheck), join(root, toolchainCheck));
@@ -65,5 +66,14 @@ describe("The toolchain check", { timeout: 30_000 }, () => {
     const driftedCore = `${manifest.overrides.vite}1`;
     expect(await checkToolchainWith({}, { vite: driftedCore })).toMatchObject({ status: 1 });
     expect(await checkToolchainWith({}, {})).toMatchObject({ status: 0 });
+  });
+
+  it("fails when a lint plugin is pinned to an Oxlint other than the one Vite+ ships", async () => {
+    expect(await checkToolchainWith({}, { outtrue: { oxlint: "1.0.0" } })).toMatchObject({
+      status: 1,
+    });
+    expect(await checkToolchainWith({}, { outtrue: { oxlint: versions.oxlint } })).toMatchObject({
+      status: 0,
+    });
   });
 });

@@ -16,6 +16,7 @@ const buttonVariants = cva(
         outline:
           "text-foreground inset-ring inset-ring-input hover:bg-neutral-3-transparent disabled:inset-ring-neutral-4-transparent",
         ghost: "text-foreground hover:bg-neutral-3-transparent",
+        quiet: "text-muted-foreground hover:bg-neutral-3-transparent hover:text-foreground",
         destructive:
           "bg-destructive text-destructive-foreground inset-ring inset-ring-destructive-transparent hover:shadow-s disabled:bg-muted disabled:inset-ring-neutral-4-transparent",
         link: "text-primary underline-offset-4 hover:underline",

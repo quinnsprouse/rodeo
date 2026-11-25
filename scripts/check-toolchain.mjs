@@ -15,6 +15,15 @@ const { versions: bundledTools } = require("vite-plus/versions");
 const vitePlusCore = vitePlusDependencies.vite;
 const vitestPin = packageJson.overrides.vitest;
 
+function installedOxlint() {
+  try {
+    return require("oxlint/package.json").version;
+  } catch (error) {
+    if (error.code !== "MODULE_NOT_FOUND") throw error;
+    return bundledTools.oxlint;
+  }
+}
+
 function pinVitePlusExpects(name) {
   return name === "vite" ? vitePlusCore : bundledTools[name];
 }
@@ -47,6 +56,20 @@ assert.deepEqual(
   secondCopies,
   [],
   `package.json installs a second copy of a tool Vite+ ${vitePlusVersion} ships (see vite-plus/versions): ${secondCopies.join(", ")}. Remove each one and run the tool through vp or import it from vite-plus. A second copy drifts from the version Vite+ runs.`,
+);
+const driftedPluginPins = Object.entries(packageJson.overrides)
+  .filter(([, pin]) => typeof pin === "object" && pin.oxlint !== undefined)
+  .filter(([, pin]) => pin.oxlint !== bundledTools.oxlint)
+  .map(([plugin, pin]) => `overrides.${plugin}.oxlint: ${pin.oxlint}`);
+assert.deepEqual(
+  driftedPluginPins,
+  [],
+  `Each lint plugin must resolve to the Oxlint that Vite+ ${vitePlusVersion} ships, ${bundledTools.oxlint}: ${driftedPluginPins.join(", ")}. Set each one to ${bundledTools.oxlint} and reinstall.`,
+);
+assert.equal(
+  installedOxlint(),
+  bundledTools.oxlint,
+  `node_modules/oxlint is not the ${bundledTools.oxlint} that Vite+ ${vitePlusVersion} ships, and vp lint runs the copy in node_modules. A lint plugin's peer dependency installed it. For that plugin, add overrides["<plugin>"].oxlint: "${bundledTools.oxlint}" to package.json and reinstall.`,
 );
 assert.equal(
   packageJson.devDependencies["@oxlint/plugins"],

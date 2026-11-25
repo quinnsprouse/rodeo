@@ -83,17 +83,19 @@ const allowed: Probe[] = [
   {
     name: "a pending flag from useTransition around an async submit",
     source: `import { useTransition } from "react";
+import { ProbeButton } from "${kitStandIn}";
 export function Probe({ save }: { save: () => Promise<void> }) {
   const [saving, startSaving] = useTransition();
   return (
-    <button type="button" disabled={saving} onClick={() => startSaving(async () => { await save(); })}>
+    <ProbeButton disabled={saving} onClick={() => startSaving(async () => { await save(); })}>
       Save
-    </button>
+    </ProbeButton>
   );
 }`,
   },
   {
     name: "a label wrapped around a UI SDK control",
+    layer: "src/components/ui",
     source: `import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox";
 import { Radio, RadioGroup, RadioIndicator } from "@ui-sdk/react/radio";
 import { Switch, SwitchThumb } from "@ui-sdk/react/switch";
@@ -121,7 +123,7 @@ export function Probe({ delay }: { delay: number }) {
     const timer = window.setInterval(() => setTicks((value) => value + 1), delay);
     return () => window.clearInterval(timer);
   }, [delay]);
-  return <button type="button">{ticks}</button>;
+  return <ProbeButton>{ticks}</ProbeButton>;
 }
 export function label(status: "ready" | "failed") {
   switch (status) {

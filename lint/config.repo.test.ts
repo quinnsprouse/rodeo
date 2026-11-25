@@ -9,6 +9,7 @@ import * as z from "zod/mini";
 import { ignoredDirectories } from "#tooling/project";
 
 import { declinedLandminesRules, lintConfig } from "./config";
+import { declinedDesignSystemRules } from "./design-system";
 import { exceptions } from "./exceptions";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -66,6 +67,23 @@ describe("Lint exceptions", () => {
     expect(
       stale,
       "Update or delete each exception in lint/exceptions.ts whose files moved.",
+    ).toEqual([]);
+  });
+});
+
+describe("The outtrue design-system rules", () => {
+  it("are each turned on in lint/config.ts or declined there with a reason", () => {
+    const every = z
+      .object({ rules: z.record(z.string(), z.unknown()) })
+      .parse(JSON.parse(readFileSync(requireFromRoot.resolve("outtrue/configs/all.json"), "utf8")));
+    const decided = new Set([
+      ...Object.keys(lintConfig.rules),
+      ...Object.keys(declinedDesignSystemRules),
+    ]);
+
+    expect(
+      Object.keys(every.rules).filter((rule) => !decided.has(rule)),
+      "This version of outtrue ships rules that lint/config.ts has not decided on. Turn each one on in the rules of lint/config.ts with a rejected sample in lint/policy/, or add it to declinedDesignSystemRules with the reason it does not fit the starter.",
     ).toEqual([]);
   });
 });

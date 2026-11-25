@@ -146,6 +146,23 @@ test("the checks demo shows what Rodeo catches at each stage", async ({ page }) 
   await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
 });
 
+test("a browser agent presses a hero chip by its name through WebMCP", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openWithWebMcp(page, "/");
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: "button", label: "edit", actions: ["press"] }),
+      ]),
+    );
+
+  expect(await callTool(page, "act", { steps: [{ ref: "edit", action: "press" }] })).toMatchObject({
+    ok: true,
+  });
+  await expect(chip(page, "commit")).toBeVisible();
+});
+
 test("a browser agent reads the checks stages and switches one by name through WebMCP", async ({
   page,
 }) => {

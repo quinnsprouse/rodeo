@@ -9,6 +9,7 @@ import { scratchDirectory } from "#tooling/project";
 import { diagnosticsByFile, ignoredByGit, repoRoot, runJson, withSandbox } from "./harness";
 import { codeShapeProbes } from "./policy/code-shape";
 import { correctnessProbes } from "./policy/correctness";
+import { designSystemProbes } from "./policy/design-system";
 import { layerProbes } from "./policy/layers";
 import { libraryProbes } from "./policy/libraries";
 import { layerPrefix, standIns, type PolicyTopic, type Probe } from "./policy/probe";
@@ -25,6 +26,7 @@ const topics: PolicyTopic[] = [
   correctnessProbes,
   reactProbes,
   stylingProbes,
+  designSystemProbes,
   libraryProbes,
   layerProbes,
   codeShapeProbes,

@@ -48,6 +48,21 @@ export const exceptions: LintException[] = [
     why: "Playwright's own rule already rejects a conditional expect in a browser test, and the landmines message tells the author to call expect.assertions, which Playwright's expect lacks.",
   },
   {
+    files: ["src/lib/agent-bridge.ts"],
+    rules: ["design-system/wrapped-libraries"],
+    why: "UI SDK's agent entry is the bridge to WebMCP, not a component, so the kit has nothing to wrap.",
+  },
+  {
+    files: ["src/demo/landing/checks-demo.tsx"],
+    rules: ["design-system/wrapped-libraries"],
+    why: "The demo's stage switcher draws a one-off clipped indicator. The kit gets tabs when an app needs them.",
+  },
+  {
+    files: ["src/demo/landing/swap-sentence.tsx"],
+    rules: ["design-system/wrapped-libraries"],
+    why: "The hero chip is a one-off control set inside a sentence, with a face the kit's Button does not have, and it still has to be a UI SDK button so an agent can press it.",
+  },
+  {
     files: ["src/demo/landing/swap-chip-motion.tsx"],
     rules: ["react-doctor/no-layout-property-animation"],
     why: "CSS cannot composite width, and the hero chip has to resize so the sentence reflows around each word.",

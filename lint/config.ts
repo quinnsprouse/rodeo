@@ -2,6 +2,7 @@ import type { OxlintConfig } from "vite-plus/lint";
 
 import { exampleFeatureDirectory, generatedFiles } from "#tooling/project";
 
+import { designSystemRules } from "./design-system";
 import { lintExceptions } from "./exceptions";
 import { layerOverrides, restrictImports } from "./layers";
 import { commentScopes, rodeoPlugin, rodeoRules } from "./rodeo-rules";
@@ -25,6 +26,7 @@ const jsPlugins = [
   { name: "shadcn", specifier: "@shadcn/lint" },
   { name: "eslint-tanstack-router", specifier: "@tanstack/eslint-plugin-router" },
   { name: "landmines", specifier: "@interfere/landmines" },
+  { name: "design-system", specifier: "outtrue" },
   rodeoPlugin,
 ] as const;
 
@@ -136,6 +138,7 @@ export const lintConfig = {
     respectEslintDisableDirectives: false,
   },
   jsPlugins: [...jsPlugins],
+  settings: { "design-system": { primitives: "src/components/ui" } },
   rules: {
     "typescript/no-deprecated": "error",
 
@@ -217,6 +220,8 @@ export const lintConfig = {
     "landmines/no-silent-catch": "error",
     "landmines/no-test-doubles": "error",
     "landmines/no-unsignaled-poll": "error",
+
+    ...designSystemRules,
 
     ...rodeoRules,
     ...commentScopes.rules,
