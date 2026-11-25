@@ -113,15 +113,7 @@ const reactHooksRules = {
   "react-hooks-js/void-use-memo": "error",
 } as const;
 
-const baseUiControlsNamedByWrappingLabel = [
-  "Checkbox",
-  "Checkbox.Root",
-  "Input",
-  "Radio.Root",
-  "RadioGroupItem",
-  "Switch",
-  "Switch.Root",
-];
+const controlsNamedByWrappingLabel = ["Checkbox", "Input", "Radio", "RadioGroupItem", "Switch"];
 
 export const lintConfig = {
   // why: Setting plugins replaces Oxlint's default set, so oxc and unicorn must stay listed.
@@ -151,7 +143,7 @@ export const lintConfig = {
     "react/react-in-jsx-scope": "off",
 
     // why: Inline objects, functions, and JSX in props are normal in React 19. Motion props take
-    // objects, Base UI composes through render={<Link />}, and React Compiler memoizes them.
+    // objects, UI SDK composes through render={<Link />}, and React Compiler memoizes them.
     "react-perf/jsx-no-new-object-as-prop": "off",
     "react-perf/jsx-no-new-function-as-prop": "off",
     "react-perf/jsx-no-new-array-as-prop": "off",
@@ -201,7 +193,7 @@ export const lintConfig = {
     "react/button-has-type": "error",
     "jsx-a11y/label-has-associated-control": [
       "error",
-      { controlComponents: baseUiControlsNamedByWrappingLabel },
+      { controlComponents: controlsNamedByWrappingLabel },
     ],
     "react/checked-requires-onchange-or-readonly": "error",
     "react/no-danger": "error",

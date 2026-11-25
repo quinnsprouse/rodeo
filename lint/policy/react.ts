@@ -93,18 +93,17 @@ export function Probe({ save }: { save: () => Promise<void> }) {
 }`,
   },
   {
-    name: "a label wrapped around a Base UI control",
-    source: `import { Checkbox } from "@base-ui/react/checkbox";
-import { Radio } from "@base-ui/react/radio";
-import { RadioGroup } from "@base-ui/react/radio-group";
-import { Switch } from "@base-ui/react/switch";
+    name: "a label wrapped around a UI SDK control",
+    source: `import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox";
+import { Radio, RadioGroup, RadioIndicator } from "@ui-sdk/react/radio";
+import { Switch, SwitchThumb } from "@ui-sdk/react/switch";
 export function Probe() {
   return (
     <>
-      <label className="flex gap-xs"><Switch.Root name="yearly" /> Bill yearly</label>
-      <label className="flex gap-xs"><Checkbox.Root name="terms" /> Accept the terms</label>
+      <label className="flex gap-xs"><Switch name="yearly"><SwitchThumb /></Switch> Bill yearly</label>
+      <label className="flex gap-xs"><Checkbox name="terms"><CheckboxIndicator /></Checkbox> Accept the terms</label>
       <RadioGroup name="plan">
-        <label className="flex gap-xs"><Radio.Root value="pro" /> Pro</label>
+        <label className="flex gap-xs"><Radio value="pro"><RadioIndicator /></Radio> Pro</label>
       </RadioGroup>
     </>
   );
