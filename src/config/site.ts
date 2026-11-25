@@ -12,7 +12,8 @@ export const site = {
     "Lint, hooks, and browser tests catch an agent's mistakes before you review them. Free, and built on Vite+ and TanStack Start.",
   image: {
     path: "/og-home.png",
-    alt: "The Rodeo logo: a purple bull sticker beside the word rodeo.",
+    version: "10180a93b944",
+    alt: "Rodeo: React starter for Claude Code and Codex. Beside it, the purple bull sticker.",
   },
   repository,
   installCommand,

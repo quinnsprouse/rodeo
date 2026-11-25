@@ -16,7 +16,7 @@ interface PageFacts {
 export interface Page {
   title?: string;
   description?: string;
-  image?: { path: string; alt: string };
+  image?: { path: string; version: string; alt: string };
   structuredData?: (page: PageFacts) => object;
   listed?: false;
 }
@@ -78,8 +78,9 @@ function textMeta({ title, description }: ReturnType<typeof pageText>): HeadTag[
 function imageMeta(imageUrl: string, alt: string): HeadTag[] {
   return [
     { property: "og:image", content: imageUrl },
-    { property: "og:image:width", content: "1200" },
-    { property: "og:image:height", content: "630" },
+    { property: "og:image:type", content: "image/png" },
+    { property: "og:image:width", content: "2400" },
+    { property: "og:image:height", content: "1260" },
     { property: "og:image:alt", content: alt },
     { name: "twitter:image", content: imageUrl },
     { name: "twitter:image:alt", content: alt },
@@ -100,7 +101,7 @@ export function pageHead(match: PageMatch | undefined, origin: string | undefine
   if (!origin) return { meta: [...textMeta(text), ...siteMeta], links: [], scripts: [] };
 
   const image = page.image ?? site.image;
-  const imageUrl = absoluteUrl(image.path, origin);
+  const imageUrl = `${absoluteUrl(image.path, origin)}?v=${image.version}`;
   const meta = [...textMeta(text), ...imageMeta(imageUrl, image.alt), ...siteMeta];
   if (!match) return { meta, links: [], scripts: [] };
 
