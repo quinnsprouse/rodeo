@@ -1,11 +1,10 @@
-import { useRef } from "react";
+import { useId, useRef } from "react";
 
 import { ExternalLink } from "@/demo/external-link";
 import { PageSection } from "@/demo/landing/page-section";
 import { links } from "@/demo/links";
-import { useFigurePlayback } from "@/demo/philosophy/figures/use-figure-playback";
 import { LighthouseSticker } from "@/demo/stickers/reach";
-import type { Playback } from "@/hooks/use-play-on-view";
+import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { cn } from "@/lib/utils";
 
 const scores = [
@@ -16,6 +15,11 @@ const scores = [
 ];
 
 const arc = "M 12 60 A 48 48 0 0 1 108 60";
+const gradientSteps = 6;
+const gradientStops = Array.from({ length: gradientSteps + 1 }, (_, step) => ({
+  offset: `${(step / gradientSteps) * 100}%`,
+  start: `${100 - (step / gradientSteps) * 100}%`,
+}));
 
 function Gauge({
   category,
@@ -28,6 +32,7 @@ function Gauge({
   order: number;
   playback: Playback;
 }) {
+  const gradient = useId();
   return (
     <div
       data-empty={playback === "waiting" ? "" : undefined}
@@ -37,13 +42,26 @@ function Gauge({
       <dt className="text-s text-muted-foreground">{category}</dt>
       <dd className="relative w-full max-w-36">
         <svg viewBox="0 0 120 66" fill="none" aria-hidden="true" className="w-full">
+          <defs>
+            <linearGradient id={gradient} gradientUnits="userSpaceOnUse" x1="12" x2="108">
+              {gradientStops.map(({ offset, start }) => (
+                <stop
+                  key={offset}
+                  offset={offset}
+                  style={{ "--gauge-stop-start": start }}
+                  className="gauge-stop"
+                />
+              ))}
+            </linearGradient>
+          </defs>
           <path d={arc} strokeWidth="10" strokeLinecap="round" className="stroke-muted" />
           <path
             d={arc}
             pathLength="100"
+            stroke={`url(#${gradient})`}
             strokeWidth="10"
             strokeLinecap="round"
-            className="stroke-success gauge-arc"
+            className="gauge-arc"
           />
         </svg>
         <span className="sr-only">{score}</span>
@@ -58,11 +76,11 @@ function Gauge({
 
 export function LighthouseSection() {
   const gauges = useRef<HTMLDListElement>(null);
-  const { playback, held } = useFigurePlayback(gauges);
+  const playback = usePlayOnView(gauges);
 
   return (
     <PageSection>
-      <LighthouseSticker className="size-14" />
+      <LighthouseSticker className="-ml-1 h-16 w-auto" />
       <h2 className="mt-s font-brand text-l font-heavy text-foreground">
         All four scores start at 100.
       </h2>
@@ -75,7 +93,6 @@ export function LighthouseSection() {
         ref={gauges}
         className={cn(
           "mt-xl grid grid-cols-2 gap-x-l gap-y-xl sm:grid-cols-4",
-          held && "hold-entrance",
           playback === "waiting" && "hold-still",
         )}
       >

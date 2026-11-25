@@ -19,7 +19,7 @@ export function WebMcpSection() {
 
   return (
     <PageSection>
-      <WebMcpSticker className="size-14" />
+      <WebMcpSticker className="-ml-1 h-16 w-auto" />
       <h2 className="mt-s font-brand text-l font-heavy text-foreground">
         Agents can use the app too.
       </h2>

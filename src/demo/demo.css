@@ -126,6 +126,10 @@
   stroke-dashoffset: calc(100 - var(--gauge-fill));
 }
 
+@utility gauge-stop {
+  stop-color: color-mix(in oklch, var(--primary) var(--gauge-stop-start), var(--success));
+}
+
 @utility gauge-count {
   counter-reset: gauge var(--gauge-count);
   &::after {
