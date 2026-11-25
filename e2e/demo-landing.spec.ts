@@ -140,21 +140,23 @@ test("a browser agent reads the checks stages and switches one by name through W
 }) => {
   await openWithWebMcp(page, "/");
 
-  expect(await callTool(page, "snapshot", {})).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        component: "tabs",
-        label: "When Rodeo checks",
-        value: "edit",
-        actions: ["setValue"],
-        items: [
-          { value: "edit", label: "Every edit" },
-          { value: "push", label: "Every push" },
-          { value: "pull-request", label: "Every pull request" },
-        ],
-      }),
-    ]),
-  );
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          component: "tabs",
+          label: "When Rodeo checks",
+          value: "edit",
+          actions: ["setValue"],
+          items: [
+            { value: "edit", label: "Every edit" },
+            { value: "push", label: "Every push" },
+            { value: "pull-request", label: "Every pull request" },
+          ],
+        }),
+      ]),
+    );
 
   expect(
     await callTool(page, "act", {

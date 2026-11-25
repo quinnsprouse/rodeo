@@ -4,15 +4,17 @@ import { callTool, openWithWebMcp } from "./web-mcp";
 test("a browser agent finds the theme switch and presses it through WebMCP", async ({ page }) => {
   await openWithWebMcp(page, "/");
 
-  expect(await callTool(page, "snapshot", {})).toEqual(
-    expect.arrayContaining([
-      expect.objectContaining({
-        component: "button",
-        label: "Switch to dark theme",
-        actions: ["press"],
-      }),
-    ]),
-  );
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          component: "button",
+          label: "Switch to dark theme",
+          actions: ["press"],
+        }),
+      ]),
+    );
 
   expect(
     await callTool(page, "act", { steps: [{ ref: "Switch to dark theme", action: "press" }] }),
