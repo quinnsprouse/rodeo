@@ -19,11 +19,11 @@ test.describe(() => {
 
   test("the install command in the header copies to the clipboard", async ({ page }) => {
     await page.goto("/");
-    const { command, copy } = installCommand(page);
+    const { command, copy, status } = installCommand(page);
     const shown = await command.textContent();
 
     await copy.click();
-    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    await expect(status).toHaveText("Copied to clipboard.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
   });
 });
@@ -121,6 +121,7 @@ test.describe("server-rendered introduction", () => {
         const arc = gauge.querySelector("path:last-of-type");
         return {
           count: getComputedStyle(gauge).getPropertyValue("--gauge-count"),
+          counter: count && getComputedStyle(count).counterReset,
           digits: count && getComputedStyle(count, "::after").content,
           arcOffset: arc && Number.parseFloat(getComputedStyle(arc).strokeDashoffset),
           arcOpacity: arc && getComputedStyle(arc).opacity,
@@ -130,6 +131,7 @@ test.describe("server-rendered introduction", () => {
     expect(drawn).toEqual(
       Array.from({ length: 4 }, () => ({
         count: "100",
+        counter: "gauge 100",
         digits: "counter(gauge)",
         arcOffset: 0,
         arcOpacity: "1",
@@ -256,6 +258,9 @@ test("a browser agent can use each control the homepage says it sees, by the nam
   await expect(page.getByText("Unused export: formatPrice")).toBeVisible();
   await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
   expect((await rows())[0]).toEqual(["button", "Switch to light theme", "press"]);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    await installCommand(page).command.textContent(),
+  );
 });
 
 test("switching checks stages keeps the page where the reader left it", async ({ page }) => {

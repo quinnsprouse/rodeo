@@ -16,6 +16,17 @@ const rejected: RejectedProbe[] = [
 }`,
   },
   {
+    name: "a native select, which the kit owns even before it has a Select",
+    rule: "design-system(no-rebuilt-primitives)",
+    source: `export function Probe() {
+  return (
+    <select aria-label="Plan" defaultValue="pro">
+      <option value="pro">Pro</option>
+    </select>
+  );
+}`,
+  },
+  {
     name: "a UI SDK part imported outside the kit",
     rule: "design-system(wrapped-libraries)",
     layer: "src/components",

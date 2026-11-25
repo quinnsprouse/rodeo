@@ -9,9 +9,9 @@ export function snippetHolding(command: Locator) {
   return { root, command, status: root.getByRole("status"), copy: root.getByRole("button") };
 }
 
-function copiedThroughSelection(command: string) {
+function copiedThroughSelection(command: string, copyButton: string) {
   return {
-    screenReader: ['- button "Copied"', "- status: Copied to clipboard."],
+    screenReader: [`- button "${copyButton}"`, "- status: Copied to clipboard."],
     shownMessage: null,
     shownIcons: { copy: false, tick: true },
     copied: command,

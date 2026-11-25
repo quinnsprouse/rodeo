@@ -12,11 +12,11 @@ test.describe(() => {
 
   test("the copy button puts the command shown beside it on the clipboard", async ({ page }) => {
     await page.goto("/");
-    const { command, copy } = kitSnippet(page);
+    const { command, copy, status } = kitSnippet(page);
     const shown = await command.textContent();
 
     await copy.click();
-    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    await expect(status).toHaveText("Copied to clipboard.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
   });
 });

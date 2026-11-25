@@ -13,6 +13,7 @@ const kitComponentForEachNativeControl = {
   "input[type=range]": "Slider",
   "input[type=file]": "",
   "input[type=hidden]": "",
+  select: "Select",
   textarea: "Textarea",
 };
 
