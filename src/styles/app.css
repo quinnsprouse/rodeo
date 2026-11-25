@@ -1,3 +1,5 @@
+@layer ui-sdk;
+
 @import "tailwindcss" source("../");
 @import "tw-animate-css";
 @import "./fonts.gen.css";

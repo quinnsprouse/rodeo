@@ -8,7 +8,7 @@ const stack = [
   { name: "react", href: links.react },
   { name: "tailwind", href: links.tailwind },
   { name: "shadcn/ui", href: links.shadcn },
-  { name: "base ui", href: links.baseUi },
+  { name: "ui sdk", href: links.uiSdk },
   { name: "nitro", href: links.nitro },
 ];
 

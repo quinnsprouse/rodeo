@@ -48,10 +48,9 @@ export function SnippetCopyButton({
   const copied = status === "copied";
   return (
     <Button
-      type="button"
       variant="ghost"
       size="icon"
-      onClick={() => void onCopy()}
+      onClick={onCopy}
       className="mr-xs"
       aria-label={copied ? "Copied" : "Copy to clipboard"}
     >

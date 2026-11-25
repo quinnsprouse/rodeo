@@ -4,6 +4,7 @@ import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./cop
 import { appOrigin as origin } from "./environment";
 import { expect, test } from "./fixtures";
 import { structuredData } from "./helpers";
+import { callTool, openWithWebMcp } from "./web-mcp";
 
 function chip(page: Page, name: string) {
   return page.getByRole("button", { name, exact: true });
@@ -131,6 +132,35 @@ test("the checks demo shows what Rodeo catches at each stage", async ({ page }) 
   await expect(page.getByText("process.env in browser code")).toBeHidden();
 
   await stages.getByRole("tab", { name: "Every pull request" }).press("Enter");
+  await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
+});
+
+test("a browser agent reads the checks stages and switches one by name through WebMCP", async ({
+  page,
+}) => {
+  await openWithWebMcp(page, "/");
+
+  expect(await callTool(page, "snapshot", {})).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        component: "tabs",
+        label: "When Rodeo checks",
+        value: "edit",
+        actions: ["setValue"],
+        items: [
+          { value: "edit", label: "Every edit" },
+          { value: "push", label: "Every push" },
+          { value: "pull-request", label: "Every pull request" },
+        ],
+      }),
+    ]),
+  );
+
+  expect(
+    await callTool(page, "act", {
+      steps: [{ ref: "When Rodeo checks", action: "setValue", args: ["Every pull request"] }],
+    }),
+  ).toMatchObject({ ok: true });
   await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
 });
 

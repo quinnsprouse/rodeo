@@ -44,7 +44,7 @@ Some landmines messages name things the starter does not have. Read them this wa
 ## Errors that need more context
 
 - **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body or has a `try` without a `catch`. Move an `import()` to module scope. For a pending flag around an async submit, drop the `try`/`finally` and pass an async function to `startTransition` from `useTransition`, which tracks the pending state for you.
-- **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for Base UI's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it.
+- **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for UI SDK's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it.
 - **`typescript/no-deprecated` on `FormEvent`.** The message drops the names of the replacements. Type a submit handler with `SubmitEvent<HTMLFormElement>`.
 - **`no-warning-comments`.** Finish the work. Rewording the TODO doesn't count.
 - **`landmines/no-silent-catch`.** A rejection handler that does nothing hides every failure, including the ones you did not expect. Name the rejections the code expects and rethrow the rest, as `src/components/theme-toggle.tsx` does for a click sound that the browser blocks or cannot load.

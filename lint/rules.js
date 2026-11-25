@@ -118,7 +118,7 @@ const SERVICE_CAUSES = [
   "algolia",
   "discord",
 ];
-const DEPENDENCY_DISPLAY_NAMES = ["base ui", "tailwind"];
+const DEPENDENCY_DISPLAY_NAMES = ["ui sdk", "tailwind"];
 const KNOWN_CAUSES = [
   ...BROWSER_AND_OS_CAUSES,
   ...WEB_STANDARD_CAUSES,

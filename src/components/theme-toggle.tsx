@@ -1,3 +1,4 @@
+import { Button as ButtonPrimitive } from "@ui-sdk/react/button";
 import type { MouseEvent } from "react";
 
 import { revealTheme } from "@/components/theme-reveal";
@@ -69,7 +70,7 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
   const reducedMotion = usePrefersReducedMotion();
   const isDark = theme === "dark";
 
-  function toggle(event: MouseEvent<HTMLButtonElement>) {
+  function toggle(event: MouseEvent<HTMLElement>) {
     playClick();
     const box = event.currentTarget.getBoundingClientRect();
     const origin = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
@@ -77,8 +78,7 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
   }
 
   return (
-    <button
-      type="button"
+    <ButtonPrimitive
       onClick={toggle}
       onPointerEnter={preloadClick}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
@@ -106,6 +106,6 @@ export function ThemeToggle({ className }: { className?: string | undefined }) {
           <MoonIcon />
         </span>
       </span>
-    </button>
+    </ButtonPrimitive>
   );
 }

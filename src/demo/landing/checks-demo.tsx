@@ -95,9 +95,12 @@ export function ChecksDemo({ className }: { className?: string }) {
 const tabFace = "flex h-9 items-center rounded-full px-s text-s font-medium sm:px-m";
 
 function TabLabel({ scenario }: { scenario: Scenario }) {
+  if (!scenario.shortLabel) return scenario.label;
   return (
     <>
-      <span className="xs:hidden">{scenario.shortLabel ?? scenario.label}</span>
+      <span data-agent-hidden className="xs:hidden">
+        {scenario.shortLabel}
+      </span>
       <span className="max-xs:hidden">{scenario.label}</span>
     </>
   );

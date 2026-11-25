@@ -41,6 +41,19 @@ export function Probe({ className }: { className?: string }) {
 }`,
   },
   {
+    name: "the Base UI parts that shadcn add writes",
+    rule: "eslint(no-restricted-imports)",
+    layer: "src/components/ui",
+    source: `import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+export function Probe() {
+  return (
+    <DialogPrimitive.Root>
+      <DialogPrimitive.Trigger>Open</DialogPrimitive.Trigger>
+    </DialogPrimitive.Root>
+  );
+}`,
+  },
+  {
     name: "drawing an icon with HugeiconsIcon instead of Icon",
     rule: "eslint(no-restricted-imports)",
     layer: "src/components",

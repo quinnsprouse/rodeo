@@ -15,7 +15,7 @@ Locate the active theme definitions, mode wiring, shared components, and a nearb
 
 Read `gui/theme-contract.md` when changing assignments or simplifying shared styles. Preserve established values and relationships while consolidating equivalent roles; a cleanup request does not authorize a new scale.
 
-Read `gui/base-ui.md` for Base UI or `gui/custom-components.md` for custom markup and other primitive libraries. For initial adoption, follow `GUI.md` and graphical-convert.
+Read `gui/ui-sdk.md` for UI SDK or `gui/custom-components.md` for custom markup and other primitive libraries. For initial adoption, follow `GUI.md` and graphical-convert.
 
 For required fonts or icons, follow `gui/assets.md` and the theme’s **Font and icon setup**. The asset guide owns the licensed-font file request, fallback decision, and setup; honor known answers and existing assets.
 

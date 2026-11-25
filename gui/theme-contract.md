@@ -28,7 +28,7 @@ During initial or incomplete conversion, use the agreed target theme and compone
 
 A shared token change can affect many screens. For a single element, prefer another existing token or the relevant component variant. When the user requests a theme change, edit its shared definition and explain the affected scope. Do not invent a parallel scale to work around it.
 
-Retain the app’s primitive library, focus, labels, keyboard interaction, values, mode behavior, and portalled theme scope. Use [Base UI](base-ui.md) for that library or [Custom components](custom-components.md) for another implementation.
+Retain the app’s primitive library, focus, labels, keyboard interaction, values, mode behavior, and portalled theme scope. Use [UI SDK](ui-sdk.md) for that library or [Custom components](custom-components.md) for another implementation.
 
 ## Resolve styles in context
 
