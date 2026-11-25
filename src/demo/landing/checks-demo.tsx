@@ -68,13 +68,16 @@ export function ChecksDemo({ className }: { className?: string }) {
             value={scenario.value}
             className={cn(
               tabFace,
-              "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground noscript:data-selected:bg-background noscript:data-selected:text-foreground noscript:data-selected:ring noscript:data-selected:ring-border",
+              "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground indicator-unplaced:data-selected:bg-background indicator-unplaced:data-selected:text-foreground indicator-unplaced:data-selected:ring indicator-unplaced:data-selected:ring-border",
             )}
           >
             <TabLabel scenario={scenario} />
           </TabsTab>
         ))}
-        <TabsIndicator aria-hidden="true" className="pointer-events-none absolute inset-0">
+        <TabsIndicator
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 indicator-unplaced:invisible"
+        >
           <span className="absolute inset-0 bg-border clip-to-active-tab clip-outset-border" />
           <span className="absolute inset-0 flex bg-background p-xxs text-foreground clip-to-active-tab">
             {scenarios.map((scenario) => (

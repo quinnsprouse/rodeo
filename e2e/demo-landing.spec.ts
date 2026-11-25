@@ -101,6 +101,19 @@ test.describe("server-rendered introduction", () => {
     await expect(page.getByRole("code").first()).toHaveText(/\S/);
     await expect(page.getByText("Format, lint, and types pass")).toBeVisible();
   });
+
+  test("marks only the current checks stage before the tab indicator is placed", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const stages = page.getByRole("tablist", { name: "When Rodeo checks" });
+    const background = (name: string) =>
+      stages.getByRole("tab", { name }).evaluate((tab) => getComputedStyle(tab).backgroundColor);
+
+    await expect(stages.locator('[data-slot="tabs-indicator"]')).toBeHidden();
+    expect(await background("Every edit")).not.toBe(await background("Every push"));
+    expect(await background("Every push")).toBe(await background("Every pull request"));
+  });
 });
 
 test("the checks demo shows what Rodeo catches at each stage", async ({ page }) => {

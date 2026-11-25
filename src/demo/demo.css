@@ -59,11 +59,13 @@
   }
 }
 
+@custom-variant indicator-unplaced (&:where([role="tablist"]:has(> [data-slot="tabs-indicator"]:not([style*="--active-tab-left"])) *));
+
 @utility clip-to-active-tab {
   clip-path: inset(
     calc(var(--active-tab-top) - var(--clip-outset, 0px))
-      calc(var(--active-tab-right) - var(--clip-outset, 0px))
-      calc(var(--active-tab-bottom) - var(--clip-outset, 0px))
+      calc(100% - var(--active-tab-left) - var(--active-tab-width) - var(--clip-outset, 0px))
+      calc(100% - var(--active-tab-top) - var(--active-tab-height) - var(--clip-outset, 0px))
       calc(var(--active-tab-left) - var(--clip-outset, 0px)) round var(--radius-full)
   );
   @media (prefers-reduced-motion: no-preference) {
