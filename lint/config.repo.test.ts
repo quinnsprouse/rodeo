@@ -83,7 +83,7 @@ function undecided(shipped: string[], declined: Record<string, string>) {
 }
 
 describe("The outtrue design-system rules", () => {
-  it("are each turned on in lint/config.ts or declined there with a reason", () => {
+  it("are each turned on in lint/design-system.ts or declined there with a reason", () => {
     const every = z
       .object({ rules: z.record(z.string(), z.unknown()) })
       .parse(JSON.parse(readFileSync(requireFromRoot.resolve("outtrue/configs/all.json"), "utf8")));

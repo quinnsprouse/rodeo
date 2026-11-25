@@ -85,8 +85,8 @@ export function Probe({ onSave }: { onSave: () => void }) {
     source: `import { Switch, SwitchThumb } from "@ui-sdk/react/switch";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
-type ProbeSwitchProps = ComponentProps<typeof Switch> & { variant?: "default" | "quiet"; size?: number };
-export function ProbeSwitch({ variant = "default", size = 1, className, ...props }: ProbeSwitchProps) {
+type ProbeSwitchProps = ComponentProps<typeof Switch> & { variant?: "default" | "quiet"; size?: "default" | "small" };
+export function ProbeSwitch({ variant = "default", size = "default", className, ...props }: ProbeSwitchProps) {
   return (
     <Switch data-variant={variant} data-size={size} className={cn("inline-flex rounded-full bg-muted", className)} {...props}>
       <SwitchThumb className="block rounded-full bg-background" />

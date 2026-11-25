@@ -2,12 +2,8 @@ import type { OxlintConfig } from "vite-plus/lint";
 
 const uiSdkPackages = ["@ui-sdk/react", "@ui-sdk/core"];
 
-// why: HTML's own size attribute on input and select takes a number, so only variant is held to a
-// fixed set of values.
-const propsThatNeedFixedValues = ["variant"];
-
 export const designSystemRules: NonNullable<OxlintConfig["rules"]> = {
-  "design-system/closed-variants": ["error", { props: propsThatNeedFixedValues }],
+  "design-system/closed-variants": "error",
   "design-system/icon-button-label": "error",
   "design-system/no-boolean-variants": "error",
   "design-system/no-important": "error",
@@ -20,7 +16,7 @@ export const declinedDesignSystemRules = {
   "design-system/classname-passthrough":
     "Any reference to className satisfies it, and a destructured className that is never used is already an unused-variable error.",
   "design-system/complete-composition":
-    "It reports nothing until each component's required parts are listed, and the kit has no component with parts yet. Turn it on with the first one.",
+    "It reports nothing until each component's required parts are listed, and no kit component requires a particular child yet. Turn it on with the first one that does.",
   "design-system/index-in-sync":
     "The kit is a handful of files and docs/agents/UI_MOTION.md already sends agents to the folder. An index is worth keeping in sync once the kit is large enough to scan badly.",
   "design-system/known-tokens":
@@ -42,7 +38,7 @@ export const declinedDesignSystemRules = {
   "design-system/no-template-classname":
     "Its fix is to wrap the template in cn(), which hides an interpolated class without making it one Tailwind can see.",
   "design-system/no-theme-overrides":
-    "It reads the theme's sizes as colors, so dark:text-m and dark:shadow-s fail.",
+    "It reads some of the theme's sizes as colors, so dark:text-m and dark:shadow-m fail.",
   "design-system/one-way-imports":
     "lint/layers.ts enforces the same direction and also knows the demo boundary, server modules, and the Icon import the kit is allowed.",
   "design-system/prefer-shorthand":

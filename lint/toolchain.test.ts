@@ -21,25 +21,42 @@ const sandboxes = withSandbox();
 type Pins = Record<string, string>;
 type Overrides = Record<string, string | Pins>;
 
-function installWithOxlint(root: string, version: string) {
-  const installed = join(repoRoot, "node_modules");
-  const modules = join(root, "node_modules");
+type Installed = { atTheTop?: string; underVitePlus?: string };
+
+function linkInstalledPackages(from: string, to: string, skip: string[]) {
+  for (const name of readdirSync(from).filter((entry) => !skip.includes(entry))) {
+    symlinkSync(join(from, name), join(to, name));
+  }
+}
+
+function fakeOxlint(modules: string, version: string) {
   mkdirSync(join(modules, "oxlint"), { recursive: true });
   writeFileSync(join(modules, "oxlint", "package.json"), JSON.stringify({ version }));
-  for (const name of readdirSync(installed).filter((entry) => entry !== "oxlint")) {
-    symlinkSync(join(installed, name), join(modules, name));
-  }
+}
+
+// why: Node resolves a symlinked package to its real directory, so Vite+ needs its own manifest
+// copied into the sandbox for the check to search the sandbox's copy of its node_modules.
+function installWith(root: string, { atTheTop, underVitePlus }: Installed) {
+  const installed = join(repoRoot, "node_modules");
+  const modules = join(root, "node_modules");
+  const vitePlus = join(modules, "vite-plus");
+  mkdirSync(vitePlus, { recursive: true });
+  linkInstalledPackages(installed, modules, ["oxlint", "vite-plus"]);
+  linkInstalledPackages(join(installed, "vite-plus"), vitePlus, ["package.json", "node_modules"]);
+  cpSync(join(installed, "vite-plus", "package.json"), join(vitePlus, "package.json"));
+  if (atTheTop !== undefined) fakeOxlint(modules, atTheTop);
+  if (underVitePlus !== undefined) fakeOxlint(join(vitePlus, "node_modules"), underVitePlus);
 }
 
 async function checkToolchainWith(
   devDependencies: Pins,
   overrides: Overrides,
-  installedOxlint: string = versions.oxlint,
+  installed: Installed = { atTheTop: versions.oxlint },
 ) {
   const root = sandboxes.temporary("rodeo-toolchain-");
   mkdirSync(join(root, "scripts"));
   cpSync(join(repoRoot, toolchainCheck), join(root, toolchainCheck));
-  installWithOxlint(root, installedOxlint);
+  installWith(root, installed);
   writeFileSync(
     join(root, "package.json"),
     JSON.stringify({
@@ -92,6 +109,15 @@ describe("The toolchain check", { timeout: 30_000 }, () => {
   });
 
   it("fails when the Oxlint at the top of node_modules is not the one Vite+ ships", async () => {
-    expect(await checkToolchainWith({}, {}, "1.81.0")).toMatchObject({ status: 1 });
+    expect(await checkToolchainWith({}, {}, { atTheTop: "1.81.0" })).toMatchObject({ status: 1 });
+  });
+
+  it("reads the Oxlint under Vite+ when none is installed at the top", async () => {
+    expect(await checkToolchainWith({}, {}, { underVitePlus: "1.81.0" })).toMatchObject({
+      status: 1,
+    });
+    expect(await checkToolchainWith({}, {}, { underVitePlus: versions.oxlint })).toMatchObject({
+      status: 0,
+    });
   });
 });
