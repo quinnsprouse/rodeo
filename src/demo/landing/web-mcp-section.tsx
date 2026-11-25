@@ -1,5 +1,5 @@
 import { PageSection } from "@/demo/landing/page-section";
-import { WebMcpSticker } from "@/demo/stickers/reach";
+import { WebMcpSticker } from "@/demo/stickers/brand";
 import { useTheme } from "@/hooks/use-theme";
 
 function componentsAnAgentSees(theme: "light" | "dark") {

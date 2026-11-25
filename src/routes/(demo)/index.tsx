@@ -31,6 +31,7 @@ const stack = [
   { name: "React 19", href: links.react },
   { name: "Tailwind v4", href: links.tailwind },
   { name: "shadcn/ui", href: links.shadcn },
+  { name: "UI SDK", href: links.uiSdk },
   { name: "Nitro", href: links.nitro },
 ];
 

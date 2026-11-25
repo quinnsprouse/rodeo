@@ -3,7 +3,7 @@ import { useId, useRef } from "react";
 import { ExternalLink } from "@/demo/external-link";
 import { PageSection } from "@/demo/landing/page-section";
 import { links } from "@/demo/links";
-import { LighthouseSticker } from "@/demo/stickers/reach";
+import { LighthouseSticker } from "@/demo/stickers/brand";
 import { usePlayOnView, type Playback } from "@/hooks/use-play-on-view";
 import { cn } from "@/lib/utils";
 
