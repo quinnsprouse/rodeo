@@ -73,18 +73,16 @@ function BrandSticker({
 export function LighthouseSticker({ className }: StickerProps) {
   const tower = "M14.5 25.5 H25.5 L28.5 57 H11.5 Z";
   const roof = "M12.5 14 A7.5 6 0 0 1 27.5 14 Z";
-  const beam = "M27.5 17.8 L147.6 5.5 V27 Z";
   return (
     <BrandSticker
       name="Lighthouse"
       nameWidth={111.6}
-      nameStart={34}
-      baseline={53}
+      nameStart={35}
+      baseline={43}
       tilt={-3}
       className={className}
       outline={
         <>
-          <path d={beam} />
           <circle cx="20" cy="5.8" r="2.3" />
           <path d={roof} />
           <rect x="13.5" y="13.5" width="13" height="9" />
@@ -93,13 +91,6 @@ export function LighthouseSticker({ className }: StickerProps) {
         </>
       }
     >
-      <path
-        d={beam}
-        fill={ink.orange}
-        stroke={ink.orange}
-        strokeWidth={2.5}
-        strokeLinejoin="round"
-      />
       <circle cx="20" cy="5.8" r="2.3" fill={ink.charcoal} />
       <path d={roof} fill={ink.charcoal} />
       <rect x="13.5" y="13.5" width="13" height="9" fill={ink.charcoal} />
