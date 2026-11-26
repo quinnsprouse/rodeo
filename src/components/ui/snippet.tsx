@@ -25,7 +25,12 @@ export function Snippet({ text, className }: { text: string; className?: string 
             {text}
           </code>
         </div>
-        <SnippetCopyButton status={status} onCopy={copy} iconClassName="size-5" />
+        <SnippetCopyButton
+          label={`Copy ${text}`}
+          status={status}
+          onCopy={copy}
+          iconClassName="size-5"
+        />
       </div>
     </SnippetRoot>
   );

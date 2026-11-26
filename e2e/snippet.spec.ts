@@ -1,10 +1,10 @@
 import type { Page } from "@playwright/test";
 
-import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./copy-command";
+import { copyFallbacks, copyState, snippetHolding, withCopyFallback } from "./copy-command";
 import { expect, test } from "./fixtures";
 
 function kitSnippet(page: Page) {
-  return snippetAround(page.getByRole("status").last());
+  return snippetHolding(page.getByRole("code").last());
 }
 
 test.describe(() => {
@@ -12,11 +12,11 @@ test.describe(() => {
 
   test("the copy button puts the command shown beside it on the clipboard", async ({ page }) => {
     await page.goto("/");
-    const { command, copy } = kitSnippet(page);
+    const { command, copy, status } = kitSnippet(page);
     const shown = await command.textContent();
 
     await copy.click();
-    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    await expect(status).toHaveText("Copied to clipboard.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
   });
 });
@@ -29,6 +29,6 @@ for (const fallback of copyFallbacks) {
     const shown = String(await snippet.command.textContent());
 
     await snippet.copy.click();
-    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown));
+    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown, `Copy ${shown}`));
   });
 }

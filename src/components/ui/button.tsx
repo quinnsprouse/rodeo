@@ -1,5 +1,6 @@
-import { Button as ButtonPrimitive } from "@base-ui/react/button";
+import { Button as ButtonPrimitive } from "@ui-sdk/react/button";
 import { cva, type VariantProps } from "class-variance-authority";
+import type { ComponentProps } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ const buttonVariants = cva(
         outline:
           "text-foreground inset-ring inset-ring-input hover:bg-neutral-3-transparent disabled:inset-ring-neutral-4-transparent",
         ghost: "text-foreground hover:bg-neutral-3-transparent",
+        quiet: "text-muted-foreground hover:bg-neutral-3-transparent hover:text-foreground",
         destructive:
           "bg-destructive text-destructive-foreground inset-ring inset-ring-destructive-transparent hover:shadow-s disabled:bg-muted disabled:inset-ring-neutral-4-transparent",
         link: "text-primary underline-offset-4 hover:underline",
@@ -36,13 +38,9 @@ function Button({
   variant = "default",
   size = "default",
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ComponentProps<typeof ButtonPrimitive> & VariantProps<typeof buttonVariants>) {
   return (
-    <ButtonPrimitive
-      data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
+    <ButtonPrimitive className={cn(buttonVariants({ variant, size, className }))} {...props} />
   );
 }
 

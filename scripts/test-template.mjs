@@ -156,6 +156,26 @@ function installTheTemplate() {
   assertTree(distributedTree, "pre-commit feedback");
 }
 
+function postEdit(filePath) {
+  return hookOutput("post-edit", {
+    hook_event_name: "PostToolUse",
+    tool_name: "Write",
+    tool_input: { file_path: filePath },
+  });
+}
+
+function guardDecision(command) {
+  return hookOutput("pre-tool-guard", {
+    hook_event_name: "PreToolUse",
+    tool_name: "Bash",
+    tool_input: { command },
+  });
+}
+
+function stopCheck(stopHookActive) {
+  return hookOutput("stop-check", { hook_event_name: "Stop", stop_hook_active: stopHookActive });
+}
+
 function proveTheToolHooks() {
   const codexHooks = JSON.parse(readFileSync(join(appRoot, ".codex/hooks.json"), "utf8"));
   const codexGuard = run("sh", ["-c", codexHooks.hooks.PreToolUse[0].hooks[0].command], {
@@ -167,13 +187,6 @@ function proveTheToolHooks() {
     }),
   });
   assert.match(codexGuard.stdout, /"permissionDecision":"deny"/);
-
-  const postEdit = (filePath) =>
-    hookOutput("post-edit", {
-      hook_event_name: "PostToolUse",
-      tool_name: "Write",
-      tool_input: { file_path: filePath },
-    });
 
   const hookProbe = join(appRoot, ".scratch", "hook-probe.ts");
   mkdirSync(dirname(hookProbe), { recursive: true });
@@ -190,12 +203,6 @@ function proveTheToolHooks() {
   assert.match(postEdit(lintProbe), /react-hooks-js\(exhaustive-deps\)/);
   rmSync(lintProbe);
 
-  const guardDecision = (command) =>
-    hookOutput("pre-tool-guard", {
-      hook_event_name: "PreToolUse",
-      tool_name: "Bash",
-      tool_input: { command },
-    });
   assert.match(guardDecision('git commit -m "feat: x" --no-verify'), /"permissionDecision":"deny"/);
   assert.equal(guardDecision("npm run check"), "");
 }
@@ -216,8 +223,6 @@ function commitTheBaseline() {
 }
 
 function proveTheStopCheck() {
-  const stopCheck = (stopHookActive) =>
-    hookOutput("stop-check", { hook_event_name: "Stop", stop_hook_active: stopHookActive });
   assert.equal(stopCheck(false), "");
   const stopProbe = join(appRoot, "src", "stop-probe.ts");
   writeFileSync(stopProbe, "export function probe(value: any) {\n  return value;\n}\n");

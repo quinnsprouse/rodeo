@@ -1,4 +1,5 @@
 import { ClientOnly } from "@tanstack/react-router";
+import { Button as ChipButton } from "@ui-sdk/react/button";
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
 import { StaticChipFace, type SwapChoice } from "@/demo/landing/swap-chip-face";
@@ -74,8 +75,7 @@ interface ChipProps {
 function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
   const choice = choices[pick % choices.length] ?? choices[0];
   return (
-    <button
-      type="button"
+    <ChipButton
       onClick={onSwap}
       onPointerEnter={() => onHold(true)}
       onPointerLeave={() => onHold(false)}
@@ -93,7 +93,7 @@ function Chip({ choices, pick, animate, hintId, onSwap, onHold }: ChipProps) {
       ) : (
         <StaticChipFace choice={choice} />
       )}
-    </button>
+    </ChipButton>
   );
 }
 

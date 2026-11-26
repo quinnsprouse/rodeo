@@ -8,6 +8,14 @@ const { decisions, edit, projectFile, projectLink } = guardProject();
 const { worktree, write: writeInFixture } = guardGitFixture();
 const inWorktree = (file: string) => writeInFixture(join(worktree(), file));
 
+function write(file: string): ToolCall {
+  return { toolName: "Write", toolInput: { file_path: projectFile(file) } };
+}
+
+function linked(toolName: string, file: string): ToolCall {
+  return { toolName, toolInput: { file_path: join(projectLink(), file) } };
+}
+
 describe.concurrent("edit rules", () => {
   it("denies unit tests in app code", async ({ expect }) => {
     const { actual, expected } = await decisions([
@@ -21,10 +29,6 @@ describe.concurrent("edit rules", () => {
   });
 
   it("denies new Markdown docs outside docs/agents and agent config", async ({ expect }) => {
-    const write = (file: string): ToolCall => ({
-      toolName: "Write",
-      toolInput: { file_path: projectFile(file) },
-    });
     const { actual, expected } = await decisions([
       [write("docs/adr/0011-use-redis.md"), "deny"],
       [write("PLAN.md"), "deny"],
@@ -63,10 +67,6 @@ describe.concurrent("edit rules", () => {
   });
 
   it("compares each edited path by the file it reaches through symlinks", async ({ expect }) => {
-    const linked = (toolName: string, file: string): ToolCall => ({
-      toolName,
-      toolInput: { file_path: join(projectLink(), file) },
-    });
     const { actual, expected } = await decisions([
       [linked("Edit", "package-lock.json"), "deny"],
       [linked("Edit", "src/routeTree.gen.ts"), "deny"],

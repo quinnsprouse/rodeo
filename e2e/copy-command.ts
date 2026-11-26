@@ -1,17 +1,17 @@
 import type { Locator, Page } from "@playwright/test";
 
-type Snippet = ReturnType<typeof snippetAround>;
+type Snippet = ReturnType<typeof snippetHolding>;
 
 const copyFailed = "Couldn't copy. Select and copy the command manually.";
 
-export function snippetAround(status: Locator) {
-  const root = status.locator("..");
-  return { root, status, command: root.getByRole("code"), copy: root.getByRole("button") };
+export function snippetHolding(command: Locator) {
+  const root = command.locator("xpath=ancestor::div[output][1]");
+  return { root, command, status: root.getByRole("status"), copy: root.getByRole("button") };
 }
 
-function copiedThroughSelection(command: string) {
+function copiedThroughSelection(command: string, copyButton: string) {
   return {
-    screenReader: ['- button "Copied"', "- status: Copied to clipboard."],
+    screenReader: [`- button "${copyButton}"`, "- status: Copied to clipboard."],
     shownMessage: null,
     shownIcons: { copy: false, tick: true },
     copied: command,
@@ -19,9 +19,9 @@ function copiedThroughSelection(command: string) {
   };
 }
 
-function leftForManualCopy(command: string) {
+function leftForManualCopy(command: string, copyButton: string) {
   return {
-    screenReader: ['- button "Copy to clipboard"', `- status: ${copyFailed}`],
+    screenReader: [`- button "${copyButton}"`, `- status: ${copyFailed}`],
     shownMessage: copyFailed,
     shownIcons: { copy: true, tick: false },
     copied: null,

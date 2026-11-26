@@ -59,11 +59,13 @@
   }
 }
 
+@custom-variant indicator-unplaced (&:where([role="tablist"]:has(> [data-slot="tabs-indicator"]:not([style*="--active-tab-left"])) *));
+
 @utility clip-to-active-tab {
   clip-path: inset(
     calc(var(--active-tab-top) - var(--clip-outset, 0px))
-      calc(var(--active-tab-right) - var(--clip-outset, 0px))
-      calc(var(--active-tab-bottom) - var(--clip-outset, 0px))
+      calc(100% - var(--active-tab-left) - var(--active-tab-width) - var(--clip-outset, 0px))
+      calc(100% - var(--active-tab-top) - var(--active-tab-height) - var(--clip-outset, 0px))
       calc(var(--active-tab-left) - var(--clip-outset, 0px)) round var(--radius-full)
   );
   @media (prefers-reduced-motion: no-preference) {
@@ -89,6 +91,50 @@
 .hold-still,
 .hold-still * {
   transition: none !important;
+}
+
+@property --gauge-fill {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --gauge-count {
+  syntax: "<integer>";
+  inherits: true;
+  initial-value: 0;
+}
+
+@utility gauge {
+  --gauge-fill: var(--gauge-score);
+  --gauge-count: var(--gauge-score);
+  &[data-empty] {
+    --gauge-fill: 0;
+    --gauge-count: 0;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    transition-property: --gauge-fill, --gauge-count;
+    transition-duration: 1200ms;
+    transition-timing-function: var(--motion-large-easing);
+    transition-delay: calc(var(--gauge-order) * 100ms);
+  }
+}
+
+@utility gauge-arc {
+  opacity: min(1, var(--gauge-fill));
+  stroke-dasharray: 100 110;
+  stroke-dashoffset: calc(100 - var(--gauge-fill));
+}
+
+@utility gauge-stop {
+  stop-color: color-mix(in oklch, var(--primary) var(--gauge-stop-start), var(--success));
+}
+
+@utility gauge-count {
+  counter-reset: gauge var(--gauge-count);
+  &::after {
+    content: counter(gauge);
+  }
 }
 
 @utility hold-entrance {

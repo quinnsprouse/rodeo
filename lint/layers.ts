@@ -48,6 +48,11 @@ const sharedRestrictions = {
         "Import icons from @hugeicons/core-free-icons and draw them with Icon from @/components/icon. See docs/agents/UI_MOTION.md",
     },
     {
+      group: ["@base-ui/react", "@base-ui/react/*"],
+      message:
+        "This app's components are UI SDK, which lets a browser agent operate them. In src/components/ui, import the parts from @ui-sdk/react/<component> and read node_modules/@ui-sdk/react/docs/components/<component>.md for their names, then uninstall @base-ui/react. shadcn add writes this import, so change it in each file the CLI adds. See docs/agents/UI_MOTION.md",
+    },
+    {
       group: ["framer-motion"],
       message: "Import from motion/react; framer-motion is the legacy package name.",
     },

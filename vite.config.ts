@@ -59,6 +59,9 @@ export default defineConfig({
       "GUI.md",
       "gui/",
       ".agents/skills/graphical-*/",
+      // why: skills-lock.json records a hash of this skill's files, and formatting them would
+      // make the skills CLI report the skill as modified.
+      ".agents/skills/ui-sdk/",
     ],
   },
 

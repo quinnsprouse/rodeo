@@ -2,6 +2,7 @@ import type { OxlintConfig } from "vite-plus/lint";
 
 import { exampleFeatureDirectory, generatedFiles } from "#tooling/project";
 
+import { designSystemRules } from "./design-system";
 import { lintExceptions } from "./exceptions";
 import { layerOverrides, restrictImports } from "./layers";
 import { commentScopes, rodeoPlugin, rodeoRules } from "./rodeo-rules";
@@ -25,6 +26,7 @@ const jsPlugins = [
   { name: "shadcn", specifier: "@shadcn/lint" },
   { name: "eslint-tanstack-router", specifier: "@tanstack/eslint-plugin-router" },
   { name: "landmines", specifier: "@interfere/landmines" },
+  { name: "design-system", specifier: "outtrue" },
   rodeoPlugin,
 ] as const;
 
@@ -113,15 +115,7 @@ const reactHooksRules = {
   "react-hooks-js/void-use-memo": "error",
 } as const;
 
-const baseUiControlsNamedByWrappingLabel = [
-  "Checkbox",
-  "Checkbox.Root",
-  "Input",
-  "Radio.Root",
-  "RadioGroupItem",
-  "Switch",
-  "Switch.Root",
-];
+const controlsNamedByWrappingLabel = ["Checkbox", "Input", "Radio", "RadioGroupItem", "Switch"];
 
 export const lintConfig = {
   // why: Setting plugins replaces Oxlint's default set, so oxc and unicorn must stay listed.
@@ -144,6 +138,7 @@ export const lintConfig = {
     respectEslintDisableDirectives: false,
   },
   jsPlugins: [...jsPlugins],
+  settings: { "design-system": { primitives: "src/components/ui" } },
   rules: {
     "typescript/no-deprecated": "error",
 
@@ -151,7 +146,7 @@ export const lintConfig = {
     "react/react-in-jsx-scope": "off",
 
     // why: Inline objects, functions, and JSX in props are normal in React 19. Motion props take
-    // objects, Base UI composes through render={<Link />}, and React Compiler memoizes them.
+    // objects, UI SDK composes through render={<Link />}, and React Compiler memoizes them.
     "react-perf/jsx-no-new-object-as-prop": "off",
     "react-perf/jsx-no-new-function-as-prop": "off",
     "react-perf/jsx-no-new-array-as-prop": "off",
@@ -201,7 +196,7 @@ export const lintConfig = {
     "react/button-has-type": "error",
     "jsx-a11y/label-has-associated-control": [
       "error",
-      { controlComponents: baseUiControlsNamedByWrappingLabel },
+      { controlComponents: controlsNamedByWrappingLabel },
     ],
     "react/checked-requires-onchange-or-readonly": "error",
     "react/no-danger": "error",
@@ -225,6 +220,8 @@ export const lintConfig = {
     "landmines/no-silent-catch": "error",
     "landmines/no-test-doubles": "error",
     "landmines/no-unsignaled-poll": "error",
+
+    ...designSystemRules,
 
     ...rodeoRules,
     ...commentScopes.rules,

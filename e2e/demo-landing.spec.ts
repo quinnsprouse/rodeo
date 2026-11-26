@@ -1,16 +1,17 @@
 import type { Page } from "@playwright/test";
 
-import { copyFallbacks, copyState, snippetAround, withCopyFallback } from "./copy-command";
+import { copyFallbacks, copyState, snippetHolding, withCopyFallback } from "./copy-command";
 import { appOrigin as origin } from "./environment";
 import { expect, test } from "./fixtures";
 import { structuredData } from "./helpers";
+import { callTool, openWithWebMcp } from "./web-mcp";
 
 function chip(page: Page, name: string) {
   return page.getByRole("button", { name, exact: true });
 }
 
 function installCommand(page: Page) {
-  return snippetAround(page.getByRole("status").first());
+  return snippetHolding(page.getByRole("code").first());
 }
 
 test.describe(() => {
@@ -18,11 +19,11 @@ test.describe(() => {
 
   test("the install command in the header copies to the clipboard", async ({ page }) => {
     await page.goto("/");
-    const { command, copy } = installCommand(page);
+    const { command, copy, status } = installCommand(page);
     const shown = await command.textContent();
 
     await copy.click();
-    await expect(page.getByRole("button", { name: "Copied", exact: true })).toBeVisible();
+    await expect(status).toHaveText("Copied to clipboard.");
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(shown);
   });
 });
@@ -35,7 +36,9 @@ for (const fallback of copyFallbacks) {
     const shown = String(await snippet.command.textContent());
 
     await snippet.copy.click();
-    await expect.poll(() => copyState(snippet)).toEqual(fallback.outcome(shown));
+    await expect
+      .poll(() => copyState(snippet))
+      .toEqual(fallback.outcome(shown, "Copy the install command"));
   });
 }
 
@@ -101,6 +104,53 @@ test.describe("server-rendered introduction", () => {
     await expect(page.getByRole("code").first()).toHaveText(/\S/);
     await expect(page.getByText("Format, lint, and types pass")).toBeVisible();
   });
+
+  test("shows the four Lighthouse scores without JavaScript", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("term")).toHaveText([
+      "Performance",
+      "Accessibility",
+      "Best practices",
+      "SEO",
+    ]);
+    await expect(page.getByRole("definition")).toHaveText(["100", "100", "100", "100"]);
+
+    const drawn = await page.getByRole("definition").evaluateAll((gauges) =>
+      gauges.map((gauge) => {
+        const count = gauge.querySelector("span[aria-hidden]");
+        const arc = gauge.querySelector("path:last-of-type");
+        return {
+          count: getComputedStyle(gauge).getPropertyValue("--gauge-count"),
+          counter: count && getComputedStyle(count).counterReset,
+          digits: count && getComputedStyle(count, "::after").content,
+          arcOffset: arc && Number.parseFloat(getComputedStyle(arc).strokeDashoffset),
+          arcOpacity: arc && getComputedStyle(arc).opacity,
+        };
+      }),
+    );
+    expect(drawn).toEqual(
+      Array.from({ length: 4 }, () => ({
+        count: "100",
+        counter: "gauge 100",
+        digits: "counter(gauge)",
+        arcOffset: 0,
+        arcOpacity: "1",
+      })),
+    );
+  });
+
+  test("marks only the current checks stage before the tab indicator is placed", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const stages = page.getByRole("tablist", { name: "When Rodeo checks" });
+    const background = (name: string) =>
+      stages.getByRole("tab", { name }).evaluate((tab) => getComputedStyle(tab).backgroundColor);
+
+    await expect(stages.locator('[data-slot="tabs-indicator"]')).toBeHidden();
+    expect(await background("Every edit")).not.toBe(await background("Every push"));
+    expect(await background("Every push")).toBe(await background("Every pull request"));
+  });
 });
 
 test("the checks demo shows what Rodeo catches at each stage", async ({ page }) => {
@@ -119,6 +169,98 @@ test("the checks demo shows what Rodeo catches at each stage", async ({ page }) 
 
   await stages.getByRole("tab", { name: "Every pull request" }).press("Enter");
   await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
+});
+
+test("a browser agent presses a hero chip by its name through WebMCP", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await openWithWebMcp(page, "/");
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: "button", label: "edit", actions: ["press"] }),
+      ]),
+    );
+
+  expect(await callTool(page, "act", { steps: [{ ref: "edit", action: "press" }] })).toMatchObject({
+    ok: true,
+  });
+  await expect(chip(page, "commit")).toBeVisible();
+});
+
+test("a browser agent reads the checks stages and switches one by name through WebMCP", async ({
+  page,
+}) => {
+  await openWithWebMcp(page, "/");
+
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          component: "tabs",
+          label: "When Rodeo checks",
+          value: "edit",
+          actions: ["setValue"],
+          items: [
+            { value: "edit", label: "Every edit" },
+            { value: "push", label: "Every push" },
+            { value: "pull-request", label: "Every pull request" },
+          ],
+        }),
+      ]),
+    );
+
+  expect(
+    await callTool(page, "act", {
+      steps: [{ ref: "When Rodeo checks", action: "setValue", args: ["Every pull request"] }],
+    }),
+  ).toMatchObject({ ok: true });
+  await expect(page.getByText("CI: Cannot find module './prices.server'")).toBeVisible();
+});
+
+test("a browser agent can use each control the homepage says it sees, by the name shown", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await openWithWebMcp(page, "/");
+  const shown = page.getByRole("table").locator("tbody tr");
+  const rows = () =>
+    shown.evaluateAll((all) =>
+      all.map((row) => Array.from(row.children, (cell) => cell.textContent)),
+    );
+
+  expect(await rows()).toEqual([
+    ["button", "Switch to dark theme", "press"],
+    ["tabs", "When Rodeo checks", "setValue"],
+    ["button", "Copy the install command", "press"],
+  ]);
+  await expect
+    .poll(() => callTool(page, "snapshot", {}))
+    .toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: "button", label: "Switch to dark theme" }),
+        expect.objectContaining({ component: "tabs", label: "When Rodeo checks" }),
+        expect.objectContaining({ component: "button", label: "Copy the install command" }),
+      ]),
+    );
+
+  expect(
+    await callTool(page, "act", {
+      steps: [
+        { ref: "Copy the install command", action: "press" },
+        { ref: "When Rodeo checks", action: "setValue", args: ["Every push"] },
+        { ref: "Switch to dark theme", action: "press" },
+      ],
+    }),
+  ).toMatchObject({ ok: true });
+  await expect(page.getByText("Unused export: formatPrice")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Switch to light theme" })).toBeVisible();
+  expect((await rows())[0]).toEqual(["button", "Switch to light theme", "press"]);
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    await installCommand(page).command.textContent(),
+  );
 });
 
 test("switching checks stages keeps the page where the reader left it", async ({ page }) => {

@@ -1,4 +1,4 @@
-Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on Base UI, Tailwind v4, and Nitro.
+Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on UI SDK, Tailwind v4, and Nitro.
 
 ## Commands
 
@@ -14,7 +14,7 @@ Agent-ready starter: Vite+, TanStack Start, React 19, shadcn/ui on Base UI, Tail
 - **Fix the cause the lint error names.** Warnings fail too. Never suppress a rule inline. If a minimal example proves a rule wrong for a file, add a file-scoped exception with its `why` to `lint/exceptions.ts`.
 - **No comments.** Make the code say it with a clearer name, a smaller function, or a type. A `why:` comment is a last resort, only for a constraint outside the code that you can't fix, such as a browser bug.
 - **No unit tests in app code.** Test behavior end to end with Playwright in `e2e/`.
-- **UI work follows `GUI.md`.** Use the `graphical-ui`, `graphical-convert`, or `graphical-audit` skill as the task needs.
+- **UI work follows `GUI.md`.** Use the `graphical-ui`, `graphical-convert`, or `graphical-audit` skill as the task needs, and the `ui-sdk` skill when you add or change a component.
 - **No new docs.** `docs/agents/` holds the only guides, and `GUI.md` with `gui/` holds the theme guidance. Plans, notes, PRDs, experiments, and generated output go in `.scratch/`.
 - **Commits** follow Conventional Commits, `type(scope): description`, with no Co-Authored-By trailer.
 
@@ -31,7 +31,7 @@ Open one when the task touches it:
 
 - [TanStack Start](docs/agents/TANSTACK_START.md): loaders, server functions, secrets, and the document head.
 - [React](docs/agents/REACT_PATTERNS.md): effects, state, and components.
-- [UI and motion](docs/agents/UI_MOTION.md): components, color tokens, icons, and animation.
+- [UI and motion](docs/agents/UI_MOTION.md): UI SDK components, browser agents, color tokens, icons, and animation.
 - [Testing](docs/agents/TESTING.md): which test to write, and the hooks that check your work.
 - [Lint rules](docs/agents/LINT_RULES.md): comments, where code goes, and errors that need more context.
 - [Vite+](docs/agents/VITE_PLUS.md): the `vp` toolchain and its traps.

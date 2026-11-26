@@ -41,10 +41,15 @@ Some landmines messages name things the starter does not have. Read them this wa
 
 `lint/config.ts` turns each landmines rule on by name, and `declinedLandminesRules` there gives the reason for each one the starter leaves off. `lint/config.repo.test.ts` fails when a new version recommends a rule that is in neither place. Turn it on with a rejected sample in `lint/policy/`, or decline it with a reason.
 
+`lint/design-system.ts` does the same for outtrue's `design-system/*` rules, with `declinedDesignSystemRules` for the ones left off.
+
 ## Errors that need more context
 
 - **`react-hooks-js/todo`.** React Compiler can't compile the component, often because it calls `import()` in its body or has a `try` without a `catch`. Move an `import()` to module scope. For a pending flag around an async submit, drop the `try`/`finally` and pass an async function to `startTransition` from `useTransition`, which tracks the pending state for you.
-- **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for Base UI's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it.
+- **`jsx-a11y/label-has-associated-control` on shadcn's `Label`.** The rule can't see `htmlFor` through `{...props}`, so skip the wrapper. Wrap the control in a native `<label>`, which lint accepts for UI SDK's `Switch`, `Checkbox`, `Radio`, and `Input`, or give it an `id` from `useId()` and point `<label htmlFor>` at it. UI SDK's `Field` with `FieldLabel` passes too.
+- **`design-system/no-rebuilt-primitives` and `design-system/wrapped-libraries`.** "Use Button" means `Button` from `@/components/ui/button`. The message names the kit component, such as `Input` or `Checkbox`, even before the kit has one. Add it to `src/components/ui`, the only folder that imports UI SDK, and build the feature from it. `lint/exceptions.ts` lists the few files that import UI SDK directly, each with its reason.
+- **`design-system/closed-variants` on a numeric `size`.** The rule wants `variant` and `size` to be a fixed set of names. HTML's own `size` on an input takes a number, so a kit component that forwards it needs an entry in `lint/exceptions.ts`.
+- **`design-system/icon-button-label`.** Give an icon-only `Button` an `aria-label`, which is also the name a browser agent finds it by.
 - **`typescript/no-deprecated` on `FormEvent`.** The message drops the names of the replacements. Type a submit handler with `SubmitEvent<HTMLFormElement>`.
 - **`no-warning-comments`.** Finish the work. Rewording the TODO doesn't count.
 - **`landmines/no-silent-catch`.** A rejection handler that does nothing hides every failure, including the ones you did not expect. Name the rejections the code expects and rethrow the rest, as `src/components/theme-toggle.tsx` does for a click sound that the browser blocks or cannot load.

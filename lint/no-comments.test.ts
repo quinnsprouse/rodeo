@@ -83,7 +83,8 @@ export const b = 2;`);
     HTML5: "HTML5 drag events fire without coordinates, so the position comes from the pointer.",
     "Node.js": "Node.js buffers the whole body, so large uploads stream to disk instead.",
     Tailwind: "Tailwind scans source files for literal names, so this list spells each one out.",
-    "Base UI": "Base UI moves focus to the popup, so the trigger restores it on close.",
+    "UI SDK":
+      "UI SDK places the tab indicator after hydration, so the selected tab draws its own pill.",
     Stripe: "Stripe retries a webhook for three days, so the handler must be idempotent.",
   }).map(([cause, reason]) => ({ cause, target: probe(`// why: ${reason}\nexport const a = 1;`) }));
   it.each(namedCauses)("accepts $cause as the cause of an app code why: comment", ({ target }) => {

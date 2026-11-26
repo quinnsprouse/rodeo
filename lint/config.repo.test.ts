@@ -9,6 +9,7 @@ import * as z from "zod/mini";
 import { ignoredDirectories } from "#tooling/project";
 
 import { declinedLandminesRules, lintConfig } from "./config";
+import { declinedDesignSystemRules } from "./design-system";
 import { exceptions } from "./exceptions";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -70,6 +71,29 @@ describe("Lint exceptions", () => {
   });
 });
 
+function reportsAnError(setting: unknown) {
+  return (Array.isArray(setting) ? setting[0] : setting) === "error";
+}
+
+function undecided(shipped: string[], declined: Record<string, string>) {
+  const rules: Record<string, unknown> = lintConfig.rules;
+  return shipped.filter(
+    (rule) => !reportsAnError(rules[rule]) && (declined[rule] ?? "").trim() === "",
+  );
+}
+
+describe("The outtrue design-system rules", () => {
+  it("are each turned on in lint/design-system.ts or declined there with a reason", () => {
+    const every = z
+      .object({ rules: z.record(z.string(), z.unknown()) })
+      .parse(JSON.parse(readFileSync(requireFromRoot.resolve("outtrue/configs/all.json"), "utf8")));
+    expect(
+      undecided(Object.keys(every.rules), declinedDesignSystemRules),
+      "This version of outtrue ships rules that lint/design-system.ts has not decided on. Turn each one on in designSystemRules there with a rejected sample in lint/policy/design-system.ts, or add it to declinedDesignSystemRules with the reason it does not fit the starter.",
+    ).toEqual([]);
+  });
+});
+
 describe("The landmines rules", () => {
   it("are each turned on in lint/config.ts or declined there with a reason", () => {
     const recommended = z
@@ -82,13 +106,8 @@ describe("The landmines rules", () => {
           ),
         ),
       );
-    const decided = new Set([
-      ...Object.keys(lintConfig.rules),
-      ...Object.keys(declinedLandminesRules),
-    ]);
-
     expect(
-      Object.keys(recommended.rules).filter((rule) => !decided.has(rule)),
+      undecided(Object.keys(recommended.rules), declinedLandminesRules),
       "This version of @interfere/landmines recommends rules that lint/config.ts has not decided on. Turn each one on in the rules of lint/config.ts with a rejected sample in lint/policy/, or add it to declinedLandminesRules with the reason it does not fit the starter.",
     ).toEqual([]);
   });

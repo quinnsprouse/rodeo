@@ -1,5 +1,5 @@
-import { Tabs } from "@base-ui/react/tabs";
 import { ArrowUp02Icon, Loading03Icon, PlusSignIcon, Tick02Icon } from "@hugeicons/core-free-icons";
+import { Tabs, TabsIndicator, TabsList, TabsPanel, TabsTab } from "@ui-sdk/react/tabs";
 import { useRef, useState } from "react";
 
 import { Icon } from "@/components/icon";
@@ -29,7 +29,7 @@ export function ChecksDemo({ className }: { className?: string }) {
   const playback = playbackFor(reducedMotion, switched, entrance);
 
   return (
-    <Tabs.Root
+    <Tabs
       defaultValue={scenarios[0]?.value}
       onValueChange={() => setSwitched(true)}
       className={cn("flex flex-col items-center gap-l", className)}
@@ -47,37 +47,36 @@ export function ChecksDemo({ className }: { className?: string }) {
           </span>
         </div>
         {scenarios.map((scenario) => (
-          <Tabs.Panel
+          <TabsPanel
             key={scenario.value}
             value={scenario.value}
             className="grid data-ending-style:hidden lg:min-h-120 lg:grid-cols-[18rem_1fr]"
           >
             <ScenarioPanel scenario={scenario} playback={playback} />
-          </Tabs.Panel>
+          </TabsPanel>
         ))}
       </div>
 
-      <Tabs.List
+      <TabsList
         aria-label="When Rodeo checks"
         {...excludeFromMarkdown}
         className="relative flex rounded-full bg-muted p-xxs"
       >
         {scenarios.map((scenario) => (
-          <Tabs.Tab
+          <TabsTab
             key={scenario.value}
             value={scenario.value}
             className={cn(
               tabFace,
-              "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground noscript:data-active:bg-background noscript:data-active:text-foreground noscript:data-active:ring noscript:data-active:ring-border",
+              "text-muted-foreground transition-colors duration-(--motion-duration) ease-(--motion-easing) hover:text-foreground indicator-unplaced:data-selected:bg-background indicator-unplaced:data-selected:text-foreground indicator-unplaced:data-selected:ring indicator-unplaced:data-selected:ring-border",
             )}
           >
             <TabLabel scenario={scenario} />
-          </Tabs.Tab>
+          </TabsTab>
         ))}
-        <Tabs.Indicator
-          renderBeforeHydration
+        <TabsIndicator
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 indicator-unplaced:invisible"
         >
           <span className="absolute inset-0 bg-border clip-to-active-tab clip-outset-border" />
           <span className="absolute inset-0 flex bg-background p-xxs text-foreground clip-to-active-tab">
@@ -87,18 +86,21 @@ export function ChecksDemo({ className }: { className?: string }) {
               </span>
             ))}
           </span>
-        </Tabs.Indicator>
-      </Tabs.List>
-    </Tabs.Root>
+        </TabsIndicator>
+      </TabsList>
+    </Tabs>
   );
 }
 
 const tabFace = "flex h-9 items-center rounded-full px-s text-s font-medium sm:px-m";
 
 function TabLabel({ scenario }: { scenario: Scenario }) {
+  if (!scenario.shortLabel) return scenario.label;
   return (
     <>
-      <span className="xs:hidden">{scenario.shortLabel ?? scenario.label}</span>
+      <span data-agent-hidden className="xs:hidden">
+        {scenario.shortLabel}
+      </span>
       <span className="max-xs:hidden">{scenario.label}</span>
     </>
   );

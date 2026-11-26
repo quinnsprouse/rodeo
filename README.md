@@ -2,7 +2,7 @@
 
 [Live demo](https://userodeo.dev)
 
-A React starter for working with coding agents. Built on Vite+, TanStack Start, React 19, and Tailwind v4, with shadcn/ui configured for Base UI components. Includes Git hooks, tests, and agent docs.
+A React starter for working with coding agents. Built on Vite+, TanStack Start, React 19, and Tailwind v4, with shadcn/ui components on [UI SDK](https://ui-sdk.dev), which a browser agent can operate. Includes Git hooks, tests, and agent docs.
 
 Requires Git 2.36 or newer, and the Node and npm versions `package.json` sets in `devEngines`.
 
@@ -30,7 +30,7 @@ Set `VITE_APP_URL` in production. The canonical links, social metadata, structur
 
 Agents can read every page as Markdown, at `/index.md` or the page path plus `.md`, or by sending `Accept: text/markdown`. `src/server.ts` converts the rendered page.
 
-Add UI components with the configured shadcn CLI. Three motion packages are installed: [Torph](https://torph.lochie.me/) for text that morphs in place, [Skullet](https://skullet.lochie.me/) for loading skeletons drawn from the real component, and [Glimm](https://glimm.dev/) for a shader sweep on milestone moments. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, icon, and motion conventions.
+Add UI components with the configured shadcn CLI, then convert them to UI SDK as lint directs. Three motion packages are installed: [Torph](https://torph.lochie.me/) for text that morphs in place, [Skullet](https://skullet.lochie.me/) for loading skeletons drawn from the real component, and [Glimm](https://glimm.dev/) for a shader sweep on milestone moments. See [UI and motion](docs/agents/UI_MOTION.md) for component, styling, icon, and motion conventions.
 
 ### Remove the demo
 

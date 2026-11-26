@@ -4,6 +4,7 @@ const rejected: RejectedProbe[] = [
   {
     name: "checked inputs without a change handler or read-only intent",
     rule: "react(checked-requires-onchange-or-readonly)",
+    layer: "src/components/ui",
     source: `export function Probe() {
 return <input type="checkbox" aria-label="Notifications" checked />;
 }`,
@@ -83,28 +84,29 @@ const allowed: Probe[] = [
   {
     name: "a pending flag from useTransition around an async submit",
     source: `import { useTransition } from "react";
+import { ProbeButton } from "${kitStandIn}";
 export function Probe({ save }: { save: () => Promise<void> }) {
   const [saving, startSaving] = useTransition();
   return (
-    <button type="button" disabled={saving} onClick={() => startSaving(async () => { await save(); })}>
+    <ProbeButton disabled={saving} onClick={() => startSaving(async () => { await save(); })}>
       Save
-    </button>
+    </ProbeButton>
   );
 }`,
   },
   {
-    name: "a label wrapped around a Base UI control",
-    source: `import { Checkbox } from "@base-ui/react/checkbox";
-import { Radio } from "@base-ui/react/radio";
-import { RadioGroup } from "@base-ui/react/radio-group";
-import { Switch } from "@base-ui/react/switch";
+    name: "a label wrapped around a UI SDK control",
+    layer: "src/components/ui",
+    source: `import { Checkbox, CheckboxIndicator } from "@ui-sdk/react/checkbox";
+import { Radio, RadioGroup, RadioIndicator } from "@ui-sdk/react/radio";
+import { Switch, SwitchThumb } from "@ui-sdk/react/switch";
 export function Probe() {
   return (
     <>
-      <label className="flex gap-xs"><Switch.Root name="yearly" /> Bill yearly</label>
-      <label className="flex gap-xs"><Checkbox.Root name="terms" /> Accept the terms</label>
+      <label className="flex gap-xs"><Switch name="yearly"><SwitchThumb /></Switch> Bill yearly</label>
+      <label className="flex gap-xs"><Checkbox name="terms"><CheckboxIndicator /></Checkbox> Accept the terms</label>
       <RadioGroup name="plan">
-        <label className="flex gap-xs"><Radio.Root value="pro" /> Pro</label>
+        <label className="flex gap-xs"><Radio value="pro"><RadioIndicator /></Radio> Pro</label>
       </RadioGroup>
     </>
   );
@@ -122,7 +124,7 @@ export function Probe({ delay }: { delay: number }) {
     const timer = window.setInterval(() => setTicks((value) => value + 1), delay);
     return () => window.clearInterval(timer);
   }, [delay]);
-  return <button type="button">{ticks}</button>;
+  return <ProbeButton>{ticks}</ProbeButton>;
 }
 export function label(status: "ready" | "failed") {
   switch (status) {
@@ -147,14 +149,6 @@ export async function removeCache(remove: () => Promise<void>) {
     // why: Cache removal is best-effort, and a failure must not block signing out.
   }
 }
-export function ReadOnly() {
-  return <input type="checkbox" aria-label="Notifications" checked readOnly />;
-}
-export function Editable() {
-  const [checked, setChecked] = useState(false);
-  return <input type="checkbox" aria-label="Notifications" checked={checked}
-    onChange={(event) => setChecked(event.currentTarget.checked)} />;
-}
 export function Themed() {
   return (
     <>
@@ -162,6 +156,19 @@ export function Themed() {
       <p className="text-s font-medium text-success">Ready</p>
     </>
   );
+}`,
+  },
+  {
+    name: "a kit checkbox that is read-only or controlled",
+    layer: "src/components/ui",
+    source: `import { useState } from "react";
+export function ReadOnly() {
+  return <input type="checkbox" aria-label="Notifications" checked readOnly />;
+}
+export function Editable() {
+  const [checked, setChecked] = useState(false);
+  return <input type="checkbox" aria-label="Notifications" checked={checked}
+    onChange={(event) => setChecked(event.currentTarget.checked)} />;
 }`,
   },
 ];
